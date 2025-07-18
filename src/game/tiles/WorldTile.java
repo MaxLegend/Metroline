@@ -10,7 +10,7 @@ public class WorldTile extends Tile {
     private float perm; // 0 = can build, 1 = cannot build
 
     public WorldTile(int x, int y, float perm) {
-        super(x, y, 32);
+        super(x, y, 16);
         this.perm = perm;
     }
 
@@ -41,7 +41,7 @@ public class WorldTile extends Tile {
         g.fillRect(drawX, drawY, drawSize, drawSize);
 
         // Draw border
-        g.setColor(Color.LIGHT_GRAY);
-        g.drawRect(drawX, drawY, drawSize, drawSize);
+   //     g.setColor(Color.GRAY);
+    //    g.drawRect(drawX, drawY, drawSize, drawSize);
     }
 }

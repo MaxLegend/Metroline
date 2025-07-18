@@ -33,11 +33,14 @@ public class WorldScreen extends GameScreen {
     private int widthWorld = 100, heightWorld = 100;
 
     // Game modes
-    public enum GameMode { NONE, STATION, TUNNEL, EDIT }
+    public enum GameMode { NONE, STATION, TUNNEL, EDIT, COLOR }
     private GameMode currentMode = GameMode.NONE;
     private Station firstStationForTunnel = null;
     private GameObject selectedObject = null;
     private PathPoint dragOffset = null;
+
+    private Color currentStationColor = Station.COLORS[0]; // Красный по умолчанию
+    private boolean colorSelectionEnabled = false;
 
     // Input controllers
     private MouseController mouseController;
@@ -73,10 +76,13 @@ public class WorldScreen extends GameScreen {
         JButton editButton = new JButton("Edit (E)");
         editButton.addActionListener(e -> setMode(GameMode.EDIT));
 
+        JButton colorButton = new JButton("Color (C)");
+        editButton.addActionListener(e -> setMode(GameMode.COLOR));
 
         parent.addToolbarButton(stationButton);
         parent.addToolbarButton(tunnelButton);
         parent.addToolbarButton(editButton);
+        parent.addToolbarButton(colorButton);
     }
 
     @Override
@@ -226,6 +232,7 @@ public class WorldScreen extends GameScreen {
             }
         }
     }
+
     /**
      * Handles station placement/removal
      * @param x X coordinate
@@ -238,26 +245,48 @@ public class WorldScreen extends GameScreen {
             // Remove existing station
             world.removeStation(existing);
         } else {
-            // Create new station - show color chooser
-            String[] colors = {"Red", "Green", "Blue", "Orange"};
-            String choice = (String)JOptionPane.showInputDialog(
-                    this,
-                    "Select station color:",
-                    "New Station",
-                    JOptionPane.PLAIN_MESSAGE,
-                    null,
-                    colors,
-                    colors[0]);
+            if (colorSelectionEnabled) {
+                // Show color chooser dialog only when color selection is enabled
+                String[] colors = {"Red", "Green", "Blue", "Orange"};
+                String choice = (String)JOptionPane.showInputDialog(
+                        this,
+                        "Select station color:",
+                        "New Station",
+                        JOptionPane.PLAIN_MESSAGE,
+                        null,
+                        colors,
+                        colors[0]);
 
-            if (choice != null) {
-                Color color = Station.COLORS[Arrays.asList(colors).indexOf(choice)];
-                Station station = new Station(x, y, color, StationType.REGULAR);
-                world.addStation(station);
-
-                // Check if this should be a transfer station
-                checkForTransferStation(station);
+                if (choice != null) {
+                    currentStationColor = Station.COLORS[Arrays.asList(colors).indexOf(choice)];
+                } else {
+                    return; // User canceled
+                }
             }
+
+            // Create new station with current color (red by default or last selected)
+            Station station = new Station(x, y, currentStationColor, StationType.REGULAR);
+            world.addStation(station);
+
+            // Check if this should be a transfer station
+            checkForTransferStation(station);
         }
+    }
+
+    /**
+     * Toggles color selection mode
+     */
+    public void toggleColorSelection() {
+        colorSelectionEnabled = !colorSelectionEnabled;
+        JOptionPane.showMessageDialog(this,
+                "Color selection mode: " + (colorSelectionEnabled ? "ON" : "OFF"));
+    }
+
+    /**
+     * Gets current station color
+     */
+    public Color getCurrentStationColor() {
+        return currentStationColor;
     }
 
     /**
@@ -354,7 +383,13 @@ public class WorldScreen extends GameScreen {
         g2d.scale(zoom, zoom);
         g2d.translate(offsetX, offsetY);
 
-        // Draw world grid
+//        // Draw world grid
+//        for (int y = 0; y < world.getHeight(); y++) {
+//            for (int x = 0; x < world.getWidth(); x++) {
+//                world.getBigWorldGrid()[x][y].draw(g2d, 0, 0, 1);
+//            }
+//        }
+        // Draw small world grid
         for (int y = 0; y < world.getHeight(); y++) {
             for (int x = 0; x < world.getWidth(); x++) {
                 world.getWorldGrid()[x][y].draw(g2d, 0, 0, 1);

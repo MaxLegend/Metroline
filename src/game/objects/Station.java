@@ -103,15 +103,15 @@ public class Station extends GameObject {
 
     @Override
     public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
-        int drawSize = (int)(16 * zoom); // Half size of tile
-        int drawX = (int)((getX() * 32 + offsetX + 8) * zoom); // Centered
-        int drawY = (int)((getY() * 32 + offsetY + 8) * zoom); // Centered
-
+        int drawSize = (int)(24 * zoom); // Half size of tile
+        int drawX = (int)((getX() * 32 + offsetX +4) * zoom); // Centered
+        int drawY = (int)((getY() * 32 + offsetY +4) * zoom); // Centered
+        int arcSize = (int)(drawSize * 0.35);
         // Draw station based on type
         g.setColor(color);
         switch (type) {
             case REGULAR:
-                g.fillRect(drawX, drawY, drawSize, drawSize);
+                g.fillRoundRect(drawX, drawY, drawSize, drawSize,arcSize,arcSize);
                 break;
             case TRANSFER:
                 g.fillOval(drawX, drawY, drawSize, drawSize);

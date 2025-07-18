@@ -28,7 +28,11 @@ public class KeyboardController extends KeyAdapter {
                 screen.setMode(WorldScreen.GameMode.EDIT);
                 break;
             case KeyEvent.VK_D:
-                screen.toggleDebugMode(); // Переключаем режим отладки
+                screen.toggleDebugMode();
+                break;
+            case KeyEvent.VK_C:
+                screen.toggleColorSelection();
+                break;
             case KeyEvent.VK_ESCAPE:
                 screen.setMode(WorldScreen.GameMode.NONE);
                 break;

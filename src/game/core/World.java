@@ -5,6 +5,7 @@ import game.objects.Station;
 import game.objects.Tunnel;
 import game.tiles.GameTile;
 
+import game.tiles.GameTileBig;
 import game.tiles.WorldTile;
 
 import java.awt.*;
@@ -18,6 +19,7 @@ import java.util.Random;
 public class World {
     private WorldTile[][] worldGrid;
     private GameTile[][] gameGrid;
+    private GameTileBig[][] bigWorldGrid;
 
     private List<Station> stations = new ArrayList<>();
     private List<Tunnel> tunnels = new ArrayList<>();
@@ -36,7 +38,7 @@ public class World {
         // Create world grid
         worldGrid = new WorldTile[width][height];
         gameGrid = new GameTile[width][height];
-
+        bigWorldGrid = new GameTileBig[width*4][height*4];
 
         // Initialize with all perm=0
         for (int y = 0; y < height; y++) {
@@ -45,7 +47,11 @@ public class World {
                 gameGrid[x][y] = new GameTile(x, y);
             }
         }
-
+        for (int y = 0; y < height*4; y++) {
+            for (int x = 0; x < width*4; x++) {
+                bigWorldGrid[x][y] = new GameTileBig(x, y);
+            }
+        }
         // Add some perm=0.5 areas
         addRandomAreas(0.5f, 5, 10, 20);
 
@@ -144,6 +150,8 @@ public class World {
 
 
 
+    public GameTileBig[][] getBigWorldGrid() { return bigWorldGrid; }
+
 
     /**
      * Gets all stations
@@ -172,6 +180,9 @@ public class World {
      * @param station Station to remove
      */
     public void removeStation(Station station) {
+        for (Station connectedStation : new ArrayList<>(station.getConnections().values())) {
+            station.disconnect(connectedStation);
+        }
         stations.remove(station);
         gameGrid[station.getX()][station.getY()].setContent(null);
 

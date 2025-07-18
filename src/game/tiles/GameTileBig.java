@@ -3,14 +3,11 @@ package game.tiles;
 import game.core.GameObject;
 import game.core.Tile;
 
-/**
- * Game tile that can contain game objects
- */
-public class GameTile extends Tile {
+public class GameTileBig extends Tile {
     private GameObject content;
 
-    public GameTile(int x, int y) {
-        super(x, y, 16);
+    public GameTileBig(int x, int y) {
+        super(x, y, 64);
     }
     /**
      * Gets the game object in this tile
@@ -30,4 +27,3 @@ public class GameTile extends Tile {
      */
     public boolean isEmpty() { return content == null; }
 }
-
