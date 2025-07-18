@@ -1,7 +1,7 @@
 package game.tiles;
 
-import game.GameObject;
-import game.Tile;
+import game.core.GameObject;
+import game.core.Tile;
 
 /**
  * Game tile that can contain game objects
@@ -10,9 +10,8 @@ public class GameTile extends Tile {
     private GameObject content;
 
     public GameTile(int x, int y) {
-        super(x, y);
+        super(x, y, 32);
     }
-
     /**
      * Gets the game object in this tile
      * @return GameObject or null if empty

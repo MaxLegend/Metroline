@@ -1,6 +1,6 @@
 package game.objects;
 
-import game.GameObject;
+import game.core.GameObject;
 import game.objects.enums.Direction;
 import game.objects.enums.StationType;
 
@@ -104,8 +104,8 @@ public class Station extends GameObject {
     @Override
     public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
         int drawSize = (int)(16 * zoom); // Half size of tile
-        int drawX = (int)((x * 32 + offsetX + 8) * zoom); // Centered
-        int drawY = (int)((y * 32 + offsetY + 8) * zoom); // Centered
+        int drawX = (int)((getX() * 32 + offsetX + 8) * zoom); // Centered
+        int drawY = (int)((getY() * 32 + offsetY + 8) * zoom); // Centered
 
         // Draw station based on type
         g.setColor(color);

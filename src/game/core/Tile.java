@@ -1,4 +1,4 @@
-package game;
+package game.core;
 
 import java.awt.*;
 
@@ -7,13 +7,17 @@ import java.awt.*;
  */
 public class Tile {
     protected int x, y;
-    protected int size = 32;
+    protected int size;
 
+    public Tile(int x, int y, int size) {
+        this.x = x;
+        this.y = y;
+        this.size = size;
+    }
     public Tile(int x, int y) {
         this.x = x;
         this.y = y;
     }
-
     /**
      * Gets the x coordinate of this tile
      * @return X coordinate

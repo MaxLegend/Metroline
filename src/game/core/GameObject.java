@@ -1,4 +1,4 @@
-package game;
+package game.core;
 
 import java.awt.*;
 /**
@@ -12,6 +12,13 @@ public abstract class GameObject {
     public GameObject(int x, int y) {
         this.x = x;
         this.y = y;
+    }
+    /**
+     * Gets the Tile of this coord
+     * @return Tile
+     */
+    public Tile getTile(int xTile, int yTile) {
+        return new Tile(xTile,yTile);
     }
 
     /**

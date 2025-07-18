@@ -1,6 +1,6 @@
 package game.tiles;
 
-import game.Tile;
+import game.core.Tile;
 
 import java.awt.*;
 /**
@@ -10,7 +10,7 @@ public class WorldTile extends Tile {
     private float perm; // 0 = can build, 1 = cannot build
 
     public WorldTile(int x, int y, float perm) {
-        super(x, y);
+        super(x, y, 32);
         this.perm = perm;
     }
 

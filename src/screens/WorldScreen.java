@@ -1,17 +1,17 @@
 package screens;
 
 
-import game.GameObject;
-import game.World;
+import game.core.GameObject;
+import game.core.World;
 
 import game.input.KeyboardController;
 import game.input.MouseController;
 
+import game.objects.PathPoint;
 import game.objects.Station;
 import game.objects.enums.Direction;
 import game.objects.enums.StationType;
 import game.objects.Tunnel;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
@@ -30,12 +30,14 @@ public class WorldScreen extends GameScreen {
     private int dragStartX, dragStartY;
     private boolean dragging = false;
 
+    private int widthWorld = 100, heightWorld = 100;
+
     // Game modes
     public enum GameMode { NONE, STATION, TUNNEL, EDIT }
     private GameMode currentMode = GameMode.NONE;
     private Station firstStationForTunnel = null;
     private GameObject selectedObject = null;
-    private Point dragOffset = null;
+    private PathPoint dragOffset = null;
 
     // Input controllers
     private MouseController mouseController;
@@ -48,7 +50,8 @@ public class WorldScreen extends GameScreen {
 
     public WorldScreen(MainFrame parent) {
         super(parent);
-        world = new World(100, 100);
+        world = new World(widthWorld, heightWorld);
+
 
         // Initialize controllers
         mouseController = new MouseController(this);
@@ -153,20 +156,20 @@ public class WorldScreen extends GameScreen {
         if (station != null) {
             selectedObject = station;
             station.setSelected(true);
-            dragOffset = new Point(x - station.getX(), y - station.getY());
+            dragOffset = new PathPoint(x - station.getX(), y - station.getY());
             return;
         }
 
-        // Then check for tunnel control point
+        // Then check for tunnel control PathPoint
         Tunnel tunnel = world.getTunnelAt(x, y);
         if (tunnel != null) {
             selectedObject = tunnel;
             tunnel.setSelected(true);
 
-            // Find which path point was clicked
-            for (Point p : tunnel.getPath()) {
-                if (p.x == x && p.y == y && !p.equals(tunnel.getStart()) && !p.equals(tunnel.getEnd())) {
-                    dragOffset = new Point(0, 0); // No offset for control points
+            // Find which path PathPoint was clicked
+            for (PathPoint p : tunnel.getPath()) {
+                if (p.getX() == x && p.getY() == y && !p.equals(tunnel.getStart()) && !p.equals(tunnel.getEnd())) {
+                    dragOffset = new PathPoint(0, 0); // No offset for control PathPoints
                     return;
                 }
             }
@@ -332,12 +335,12 @@ public class WorldScreen extends GameScreen {
      * Converts screen coordinates to world coordinates
      * @param screenX Screen X coordinate
      * @param screenY Screen Y coordinate
-     * @return Point in world coordinates
+     * @return PathPoint in world coordinates
      */
-    public Point screenToWorld(int screenX, int screenY) {
+    public PathPoint screenToWorld(int screenX, int screenY) {
         int worldX = (int)((screenX / zoom - offsetX) / 32);
         int worldY = (int)((screenY / zoom - offsetY) / 32);
-        return new Point(worldX, worldY);
+        return new PathPoint(worldX, worldY);
     }
 
     @Override
@@ -465,32 +468,32 @@ public class WorldScreen extends GameScreen {
         g.setColor(Color.RED);
 
         // Информация о начальной и конечной точках
-        Point start = tunnel.getPath().get(0);
-        Point end = tunnel.getPath().get(tunnel.getPath().size() - 1);
+        PathPoint start = tunnel.getPath().get(0);
+        PathPoint end = tunnel.getPath().get(tunnel.getPath().size() - 1);
 
-        int startX = start.x * 32 + 16;
-        int startY = start.y * 32 + 16;
-        int endX = end.x * 32 + 16;
-        int endY = end.y * 32 + 16;
+        int startX = (int)start.getX() * 32 + 16;
+        int startY = (int)start.getY() * 32 + 16;
+        int endX =(int) end.getX() * 32 + 16;
+        int endY = (int)end.getY() * 32 + 16;
 
         g.drawString("Tunnel " + tunnel.hashCode(), startX - 30, startY - 10);
-        g.drawString("From: (" + start.x + "," + start.y + ")", startX - 30, startY + 25);
-        g.drawString("To: (" + end.x + "," + end.y + ")", endX - 30, endY + 25);
+        g.drawString("From: (" + start.getX() + "," + start.getY() + ")", startX - 30, startY + 25);
+        g.drawString("To: (" + end.getX() + "," + end.getY() + ")", endX - 30, endY + 25);
 
         // Информация о контрольных точках
         if (tunnel.getPath().size() > 2) {
-            Point control = tunnel.getPath().get(1);
-            int cX = control.x * 32 + 16;
-            int cY = control.y * 32 + 16;
+            PathPoint control = tunnel.getPath().get(1);
+            int cX = (int)control.getX() * 32 + 16;
+            int cY = (int)control.getY() * 32 + 16;
         //    g.drawString("Ctrl: (" + control.x + "," + control.y + ")", cX - 50, cY - 15);
         }
 
         // Рисуем номера всех точек пути
         g.setColor(Color.RED);
         for (int i = 0; i < tunnel.getPath().size(); i++) {
-            Point p = tunnel.getPath().get(i);
-            int px = p.x * 32 + 16;
-            int py = p.y * 32 + 16;
+            PathPoint p = tunnel.getPath().get(i);
+            int px = (int)p.getX() * 32 + 16;
+            int py = (int)p.getY() * 32 + 16;
             g.drawString(Integer.toString(i), px - 3, py - 5);
         }
     }

@@ -1,5 +1,6 @@
 package game.input;
 
+import game.objects.PathPoint;
 import screens.WorldScreen;
 
 import javax.swing.*;
@@ -23,7 +24,7 @@ public class MouseController extends MouseAdapter {
         if (SwingUtilities.isRightMouseButton(e)) {
             screen.startDrag(e.getX(), e.getY());
         } else if (SwingUtilities.isLeftMouseButton(e)) {
-            Point worldPos = screen.screenToWorld(e.getX(), e.getY());
+            PathPoint worldPos = screen.screenToWorld(e.getX(), e.getY());
             screen.handleClick(worldPos.x, worldPos.y);
         }
     }
@@ -35,7 +36,7 @@ public class MouseController extends MouseAdapter {
         }
         else if (SwingUtilities.isLeftMouseButton(e) &&
                 screen.getCurrentMode() == WorldScreen.GameMode.EDIT) {
-            Point worldPos = screen.screenToWorld(e.getX(), e.getY());
+            PathPoint worldPos = screen.screenToWorld(e.getX(), e.getY());
             if (worldPos != null) {
                 screen.handleEditDrag(worldPos.x, worldPos.y);
             }
@@ -57,13 +58,13 @@ public class MouseController extends MouseAdapter {
         float newZoom = screen.getZoom() * zoomFactor;
 
         // Convert mouse position to world before zoom
-        Point beforeZoom = screen.screenToWorld(e.getX(), e.getY());
+        PathPoint beforeZoom = screen.screenToWorld(e.getX(), e.getY());
 
         // Apply new zoom
         screen.setZoom(newZoom);
 
         // Convert mouse position to world after zoom
-        Point afterZoom = screen.screenToWorld(e.getX(), e.getY());
+        PathPoint afterZoom = screen.screenToWorld(e.getX(), e.getY());
 
         // Adjust offset to keep mouse position stable
         int offsetX = screen.getOffsetX() + (beforeZoom.x - afterZoom.x) * 32;

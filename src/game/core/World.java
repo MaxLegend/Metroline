@@ -1,8 +1,10 @@
-package game;
+package game.core;
 
+import game.objects.PathPoint;
 import game.objects.Station;
 import game.objects.Tunnel;
 import game.tiles.GameTile;
+
 import game.tiles.WorldTile;
 
 import java.awt.*;
@@ -16,6 +18,7 @@ import java.util.Random;
 public class World {
     private WorldTile[][] worldGrid;
     private GameTile[][] gameGrid;
+
     private List<Station> stations = new ArrayList<>();
     private List<Tunnel> tunnels = new ArrayList<>();
     private int width, height;
@@ -33,6 +36,7 @@ public class World {
         // Create world grid
         worldGrid = new WorldTile[width][height];
         gameGrid = new GameTile[width][height];
+
 
         // Initialize with all perm=0
         for (int y = 0; y < height; y++) {
@@ -138,6 +142,9 @@ public class World {
      */
     public GameTile[][] getGameGrid() { return gameGrid; }
 
+
+
+
     /**
      * Gets all stations
      * @return List of stations
@@ -156,6 +163,7 @@ public class World {
      */
     public void addStation(Station station) {
         stations.add(station);
+
         gameGrid[station.getX()][station.getY()].setContent(station);
     }
 
@@ -214,8 +222,8 @@ public class World {
      */
     public Tunnel getTunnelAt(int x, int y) {
         for (Tunnel tunnel : tunnels) {
-            for (Point p : tunnel.getPath()) {
-                if (p.x == x && p.y == y) {
+            for (PathPoint p : tunnel.getPath()) {
+                if (p.getX() == x && p.getY() == y) {
                     return tunnel;
                 }
             }
