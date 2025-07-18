@@ -1,8 +1,10 @@
 package game.objects;
 
 import game.core.GameObject;
+import screens.WorldScreen;
 
 import java.awt.*;
+import java.awt.geom.GeneralPath;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -190,34 +192,38 @@ public class Tunnel extends GameObject {
     }
     @Override
     public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
-
         if (path.size() < 2) return;
-
 
         Graphics2D g2d = (Graphics2D)g;
         g2d.setColor(start.getColor());
-        g2d.setStroke(new BasicStroke(12 * zoom));
+        g2d.setStroke(new BasicStroke(12 * zoom, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
 
-        PathPoint prev = path.get(0);
+        // Создаем путь для плавного соединения сегментов
+        GeneralPath tunnelPath = new GeneralPath();
+
+        PathPoint first = path.get(0);
+        int startX = (int)((first.getX() * 32 + offsetX + 16) * zoom);
+        int startY = (int)((first.getY() * 32 + offsetY + 16) * zoom);
+        tunnelPath.moveTo(startX, startY);
+
         for (int i = 1; i < path.size(); i++) {
             PathPoint current = path.get(i);
-
-            int x1 = (int)((prev.getX() * 32 + offsetX +16) * zoom);
-            int y1 = (int)((prev.getY() * 32 + offsetY + 16) * zoom);
-            int x2 = (int)((current.getX() * 32 + offsetX + 16) * zoom);
-            int y2 = (int)((current.getY() * 32 + offsetY + 16) * zoom);
-
-            g2d.drawLine(x1, y1, x2, y2);
-            prev = current;
+            int x = (int)((current.getX() * 32 + offsetX + 16) * zoom);
+            int y = (int)((current.getY() * 32 + offsetY + 16) * zoom);
+            tunnelPath.lineTo(x, y);
         }
 
-        // Draw control PathPoints if selected or in edit mode
+        g2d.draw(tunnelPath);
+
+        // Отрисовка контрольных точек
         if (selected || pathPoint != null) {
-            g2d.setColor(Color.MAGENTA);
-            for (PathPoint p : path) {
-                int x = (int)((p.getX() * 32 + offsetX + 16) * zoom);
-                int y = (int)((p.getY() * 32 + offsetY + 16) * zoom);
-                g2d.fillOval(x - 3, y - 3, 6, 6);
+            if(WorldScreen.getCurrentMode() == WorldScreen.GameMode.EDIT) {
+                g2d.setColor(Color.MAGENTA);
+                for (PathPoint p : path) {
+                    int x = (int)((p.getX() * 32 + offsetX + 16) * zoom);
+                    int y = (int)((p.getY() * 32 + offsetY + 16) * zoom);
+                    g2d.fillOval(x - 3, y - 3, 6, 6);
+                }
             }
         }
     }

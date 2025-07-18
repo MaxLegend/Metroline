@@ -32,9 +32,10 @@ public class WorldScreen extends GameScreen {
 
     private int widthWorld = 100, heightWorld = 100;
 
+
     // Game modes
     public enum GameMode { NONE, STATION, TUNNEL, EDIT, COLOR }
-    private GameMode currentMode = GameMode.NONE;
+    private static GameMode currentMode = GameMode.NONE;
     private Station firstStationForTunnel = null;
     private GameObject selectedObject = null;
     private PathPoint dragOffset = null;
@@ -91,7 +92,7 @@ public class WorldScreen extends GameScreen {
     }
 
 
-    public GameMode getCurrentMode() {
+    public static GameMode getCurrentMode() {
         return currentMode;
     }
     /**
