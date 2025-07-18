@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="Metroline:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/Metroline_jar</output-path>
+    <root id="archive" name="Metroline.jar">
+      <element id="module-output" name="Metroline" />
+    </root>
+  </artifact>
+</component>
