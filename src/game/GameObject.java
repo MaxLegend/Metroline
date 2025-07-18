@@ -1,25 +1,49 @@
 package game;
 
 import java.awt.*;
-
+/**
+ * Base class for all game objects
+ */
 public abstract class GameObject {
-    protected int x, y; // Координаты в сетке
-    protected Color color;
-    protected boolean selected;
+    public int x;
+    public int y;
+    public boolean selected = false;
 
-    public GameObject(int x, int y, Color color) {
+    public GameObject(int x, int y) {
         this.x = x;
         this.y = y;
-        this.color = color;
-        this.selected = false;
     }
 
+    /**
+     * Gets the x coordinate of this object
+     * @return X coordinate
+     */
     public int getX() { return x; }
+
+    /**
+     * Gets the y coordinate of this object
+     * @return Y coordinate
+     */
     public int getY() { return y; }
-    public Color getColor() { return color; }
-    public void setColor(Color color) { this.color = color; }
+
+    /**
+     * Checks if this object is selected
+     * @return True if selected
+     */
     public boolean isSelected() { return selected; }
+
+    /**
+     * Sets the selected state of this object
+     * @param selected New selected state
+     */
     public void setSelected(boolean selected) { this.selected = selected; }
 
-    public abstract void update();
+    /**
+     * Draws the game object
+     * @param g Graphics context
+     * @param offsetX Horizontal offset
+     * @param offsetY Vertical offset
+     * @param zoom Current zoom level
+     */
+    public abstract void draw(Graphics g, int offsetX, int offsetY, float zoom);
 }

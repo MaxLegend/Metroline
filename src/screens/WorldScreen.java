@@ -1,459 +1,546 @@
 package screens;
 
+
 import game.GameObject;
 import game.World;
-import game.dialog.ColorSelDialog;
+
+import game.input.KeyboardController;
+import game.input.MouseController;
+
 import game.objects.Station;
-import game.tiles.GameTile;
-import game.tiles.WorldTile;
+import game.objects.enums.Direction;
+import game.objects.enums.StationType;
+import game.objects.Tunnel;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseWheelEvent;
-import java.awt.event.MouseWheelListener;
-import java.util.ArrayList;
-import java.util.List;
+import java.awt.geom.AffineTransform;
+import java.util.Arrays;
+import java.util.Map;
 
+
+/**
+ * World screen that displays and interacts with the game world
+ */
 public class WorldScreen extends GameScreen {
     private World world;
     private float zoom = 1.0f;
-    private Point viewOffset = new Point(0, 0);
-    private Point lastMousePos = new Point(0, 0);
+    private int offsetX = 0;
+    private int offsetY = 0;
+    private int dragStartX, dragStartY;
+    private boolean dragging = false;
+
+    // Game modes
+    public enum GameMode { NONE, STATION, TUNNEL, EDIT }
+    private GameMode currentMode = GameMode.NONE;
+    private Station firstStationForTunnel = null;
+    private GameObject selectedObject = null;
+    private Point dragOffset = null;
+
+    // Input controllers
+    private MouseController mouseController;
+    private KeyboardController keyboardController;
+
+    //Debug
+    private boolean debugMode = false;
+    private Font debugFont = new Font("Monospaced", Font.PLAIN, 12);
 
 
-    // Режимы работы
-    private boolean buildStationMode = false;
-    private boolean buildTunnelMode = false;
-    private Station firstSelectedStation = null;
+    public WorldScreen(MainFrame parent) {
+        super(parent);
+        world = new World(100, 100);
 
-    private List<TunnelData> tunnels = new ArrayList<>();
+        // Initialize controllers
+        mouseController = new MouseController(this);
+        keyboardController = new KeyboardController(this);
+
+        addMouseListener(mouseController);
+        addMouseMotionListener(mouseController);
+        addMouseWheelListener(mouseController);
+        addKeyListener(keyboardController);
+
+        // Setup toolbar
+        JButton stationButton = new JButton("Stations (S)");
+        stationButton.addActionListener(e -> setMode(GameMode.STATION));
+
+        JButton tunnelButton = new JButton("Tunnels (T)");
+        tunnelButton.addActionListener(e -> setMode(GameMode.TUNNEL));
+
+        // Add edit button to toolbar
+        JButton editButton = new JButton("Edit (E)");
+        editButton.addActionListener(e -> setMode(GameMode.EDIT));
 
 
-    public WorldScreen(MainFrame frame) {
-        super(frame);
-        world = new World(100, 100, 32);
-
-        setupInputListeners();
+        parent.addToolbarButton(stationButton);
+        parent.addToolbarButton(tunnelButton);
+        parent.addToolbarButton(editButton);
     }
 
-    private void setupInputListeners() {
-        addMouseListener(new MouseAdapter() {
-            @Override
-            public void mousePressed(MouseEvent e) {
-                lastMousePos = e.getPoint();
+    @Override
+    public void onActivate() {
+        requestFocusInWindow();
+    }
 
-                if (SwingUtilities.isRightMouseButton(e)) {
-                    // Начало перетаскивания карты
-                } else if (SwingUtilities.isLeftMouseButton(e)) {
-                    handleLeftClick(e);
+
+    public GameMode getCurrentMode() {
+        return currentMode;
+    }
+    /**
+     * Sets the current game mode
+     * @param mode New game mode
+     */
+    public void setMode(GameMode mode) {
+        currentMode = mode;
+        firstStationForTunnel = null;
+
+        // Deselect all stations
+        for (Station station : world.getStations()) {
+            station.setSelected(false);
+        }
+
+        // Deselect all tunnels
+        for (Tunnel tunnel : world.getTunnels()) {
+            tunnel.setSelected(false);
+        }
+
+        repaint();
+    }
+
+    /**
+     * Handles mouse click on the world
+     * @param x X coordinate in world space
+     * @param y Y coordinate in world space
+     */
+    public void handleClick(int x, int y) {
+        // Check bounds
+        if (x < 0 || x >= world.getWidth() || y < 0 || y >= world.getHeight()) {
+            return;
+        }
+
+        switch (currentMode) {
+            case STATION:
+                handleStationClick(x, y);
+                break;
+            case TUNNEL:
+                handleTunnelClick(x, y);
+                break;
+            case EDIT:
+                handleEditClick(x, y);
+                break;
+            default:
+                handleSelectionClick(x, y);
+                break;
+        }
+
+        repaint();
+    }
+    /**
+     * Handles edit mode click
+     * @param x X coordinate
+     * @param y Y coordinate
+     */
+    private void handleEditClick(int x, int y) {
+        // First check if we're already dragging something
+        if (selectedObject != null) {
+            selectedObject.setSelected(false);
+            selectedObject = null;
+            dragOffset = null;
+            return;
+        }
+
+        // Check for station first
+        Station station = world.getStationAt(x, y);
+        if (station != null) {
+            selectedObject = station;
+            station.setSelected(true);
+            dragOffset = new Point(x - station.getX(), y - station.getY());
+            return;
+        }
+
+        // Then check for tunnel control point
+        Tunnel tunnel = world.getTunnelAt(x, y);
+        if (tunnel != null) {
+            selectedObject = tunnel;
+            tunnel.setSelected(true);
+
+            // Find which path point was clicked
+            for (Point p : tunnel.getPath()) {
+                if (p.x == x && p.y == y && !p.equals(tunnel.getStart()) && !p.equals(tunnel.getEnd())) {
+                    dragOffset = new Point(0, 0); // No offset for control points
+                    return;
                 }
             }
-
-            @Override
-            public void mouseReleased(MouseEvent e) {
-                // Завершение перетаскивания
+        }
+    }
+    /**
+     * Handles mouse drag in edit mode
+     * @param x X coordinate
+     * @param y Y coordinate
+     */
+    public void handleEditDrag(int x, int y) {
+        if (currentMode == GameMode.EDIT && selectedObject != null && dragOffset != null) {
+            // Проверяем границы
+            if (x < 0 || x >= world.getWidth() || y < 0 || y >= world.getHeight()) {
+                return;
             }
-        });
+            if (selectedObject instanceof Station) {
+                Station station = (Station)selectedObject;
+                int newX = x - dragOffset.x;
+                int newY = y - dragOffset.y;
 
-        addMouseMotionListener(new MouseAdapter() {
-            @Override
-            public void mouseDragged(MouseEvent e) {
-                if (SwingUtilities.isRightMouseButton(e)) {
-                    // Перетаскивание карты
-                    int dx = e.getX() - lastMousePos.x;
-                    int dy = e.getY() - lastMousePos.y;
-                    viewOffset.translate(dx, dy);
-                    lastMousePos = e.getPoint();
+                // Check if new position is valid
+                if (newX >= 0 && newX < world.getWidth() &&
+                        newY >= 0 && newY < world.getHeight() &&
+                        world.getStationAt(newX, newY) == null) {
+
+                    // Remove from old position
+                    world.getGameGrid()[station.getX()][station.getY()].setContent(null);
+
+                    // Update position
+                    station.x = newX;
+                    station.y = newY;
+
+                    // Add to new position
+                    world.getGameGrid()[newX][newY].setContent(station);
+
+                    // Recalculate all connected tunnels
+                    for (Tunnel t : world.getTunnels()) {
+                        if (t.getStart() == station || t.getEnd() == station) {
+                            t.calculatePath();
+                        }
+                    }
+                }
+            }
+            else if (selectedObject instanceof Tunnel) {
+                Tunnel tunnel = (Tunnel)selectedObject;
+
+                // Проверяем, что новая позиция не совпадает со станцией
+                Station stationAtPos = world.getStationAt(x, y);
+                if (stationAtPos == null) {
+                    tunnel.moveControlPoint(x, y);
                     repaint();
                 }
             }
-        });
-
-        addMouseWheelListener(new MouseWheelListener() {
-            @Override
-            public void mouseWheelMoved(MouseWheelEvent e) {
-                // Масштабирование относительно курсора
-                float zoomFactor = e.getWheelRotation() < 0 ? 1.1f : 0.9f;
-                Point mousePos = e.getPoint();
-                Point worldPos = screenToWorld(mousePos);
-
-                zoom *= zoomFactor;
-                zoom = Math.max(0.1f, Math.min(5.0f, zoom));
-
-                Point newScreenPos = worldToScreen(worldPos);
-                viewOffset.translate(mousePos.x - newScreenPos.x, mousePos.y - newScreenPos.y);
-
-                repaint();
-            }
-        });
-    }
-
-    /**
-     * Обработка левого клика мыши
-     */
-    private void handleLeftClick(MouseEvent e) {
-        Point worldPos = screenToWorld(e.getPoint());
-        int tileX = worldPos.x / world.getTileSize();
-        int tileY = worldPos.y / world.getTileSize();
-
-        if (tileX >= 0 && tileX < world.getWidth() &&
-                tileY >= 0 && tileY < world.getHeight()) {
-
-            if (buildStationMode) {
-                toggleStation(tileX, tileY);
-            } else if (buildTunnelMode) {
-                handleTunnelBuilding(tileX, tileY);
-            }
         }
     }
-
     /**
-     * Создание/удаление станции
+     * Handles station placement/removal
+     * @param x X coordinate
+     * @param y Y coordinate
      */
-    private void toggleStation(int x, int y) {
-        GameTile tile = world.getGameLayer()[x][y];
-        if (tile.hasGameObject() && tile.getGameObject() instanceof Station) {
-            // Удаляем станцию
-            tile.clearGameObject();
+    private void handleStationClick(int x, int y) {
+        Station existing = world.getStationAt(x, y);
+
+        if (existing != null) {
+            // Remove existing station
+            world.removeStation(existing);
         } else {
-            // Создаем новую станцию
-            showColorSelectionDialog(x, y);
+            // Create new station - show color chooser
+            String[] colors = {"Red", "Green", "Blue", "Orange"};
+            String choice = (String)JOptionPane.showInputDialog(
+                    this,
+                    "Select station color:",
+                    "New Station",
+                    JOptionPane.PLAIN_MESSAGE,
+                    null,
+                    colors,
+                    colors[0]);
+
+            if (choice != null) {
+                Color color = Station.COLORS[Arrays.asList(colors).indexOf(choice)];
+                Station station = new Station(x, y, color, StationType.REGULAR);
+                world.addStation(station);
+
+                // Check if this should be a transfer station
+                checkForTransferStation(station);
+            }
         }
-        repaint();
     }
 
     /**
-     * Показ диалога выбора цвета
+     * Checks if a station should be converted to a transfer station
+     * @param station Station to check
      */
-    private void showColorSelectionDialog(int x, int y) {
-        ColorSelDialog dialog = new ColorSelDialog(frame, x, y, world);
-        dialog.setVisible(true);
-    }
+    private void checkForTransferStation(Station station) {
+        int x = station.getX();
+        int y = station.getY();
 
-    /**
-     * Обработка строительства туннеля
-     */
-    private void handleTunnelBuilding(int x, int y) {
-        GameTile tile = world.getGameLayer()[x][y];
-        if (tile.hasGameObject() && tile.getGameObject() instanceof Station) {
-            Station station = (Station) tile.getGameObject();
+        // Check all 8 directions
+        for (int ny = Math.max(0, y-1); ny < Math.min(world.getHeight(), y+2); ny++) {
+            for (int nx = Math.max(0, x-1); nx < Math.min(world.getWidth(), x+2); nx++) {
+                if (nx == x && ny == y) continue;
 
-            if (firstSelectedStation == null) {
-                firstSelectedStation = station;
-                station.setSelected(true);
-            } else if (!firstSelectedStation.equals(station)) {
-                if (firstSelectedStation.canConnect(station)) {
-                    // Проверяем, нет ли уже соединения
-                    if (!stationsAlreadyConnected(firstSelectedStation, station)) {
-                        TunnelData tunnel = new TunnelData(
-                                firstSelectedStation,
-                                station,
-                                firstSelectedStation.getColor()
-                        );
-                        tunnels.add(tunnel);
-
-                        // Добавляем соединения в обе стороны
-                        firstSelectedStation.addConnection(station);
-                        station.addConnection(firstSelectedStation);
-                    }
+                Station neighbor = world.getStationAt(nx, ny);
+                if (neighbor != null && !neighbor.getColor().equals(station.getColor())) {
+                    station.setType(StationType.TRANSFER);
+                    neighbor.setType(StationType.TRANSFER);
+                    return;
                 }
-                firstSelectedStation.setSelected(false);
-                firstSelectedStation = null;
             }
         }
-        repaint();
-    }
-    private boolean stationsAlreadyConnected(Station s1, Station s2) {
-        for (TunnelData tunnel : tunnels) {
-            if ((tunnel.getStartStation() == s1 && tunnel.getEndStation() == s2) ||
-                    (tunnel.getStartStation() == s2 && tunnel.getEndStation() == s1)) {
-                return true;
-            }
-        }
-        return false;
-    }
-    /**
-     * Преобразование экранных координат в мировые
-     */
-    private Point screenToWorld(Point screenPoint) {
-        return new Point(
-                (int) ((screenPoint.x - viewOffset.x) / zoom),
-                (int) ((screenPoint.y - viewOffset.y) / zoom)
-        );
     }
 
     /**
-     * Преобразование мировых координат в экранные
+     * Handles tunnel creation
+     * @param x X coordinate
+     * @param y Y coordinate
      */
-    private Point worldToScreen(Point worldPoint) {
-        return new Point(
-                (int) (worldPoint.x * zoom + viewOffset.x),
-                (int) (worldPoint.y * zoom + viewOffset.y)
-        );
+    private void handleTunnelClick(int x, int y) {
+        Station station = world.getStationAt(x, y);
+
+        if (station == null) return;
+
+        if (firstStationForTunnel == null) {
+            // First station selection
+            firstStationForTunnel = station;
+            station.setSelected(true);
+        } else if (firstStationForTunnel == station) {
+            // Clicked same station - cancel
+            firstStationForTunnel.setSelected(false);
+            firstStationForTunnel = null;
+        } else {
+            // Second station - create tunnel
+            Tunnel tunnel = new Tunnel(firstStationForTunnel, station);
+            world.addTunnel(tunnel);
+
+            firstStationForTunnel.setSelected(false);
+            firstStationForTunnel = null;
+        }
+    }
+
+    /**
+     * Handles selection of stations/tunnels
+     * @param x X coordinate
+     * @param y Y coordinate
+     */
+    private void handleSelectionClick(int x, int y) {
+        // Check for station first
+        Station station = world.getStationAt(x, y);
+        if (station != null) {
+            station.setSelected(!station.isSelected());
+            return;
+        }
+
+        // Then check for tunnel
+        Tunnel tunnel = world.getTunnelAt(x, y);
+        if (tunnel != null) {
+            tunnel.setSelected(!tunnel.isSelected());
+        }
+    }
+
+    /**
+     * Converts screen coordinates to world coordinates
+     * @param screenX Screen X coordinate
+     * @param screenY Screen Y coordinate
+     * @return Point in world coordinates
+     */
+    public Point screenToWorld(int screenX, int screenY) {
+        int worldX = (int)((screenX / zoom - offsetX) / 32);
+        int worldY = (int)((screenY / zoom - offsetY) / 32);
+        return new Point(worldX, worldY);
     }
 
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        Graphics2D g2d = (Graphics2D) g;
 
-        // Применяем масштаб и смещение
+        Graphics2D g2d = (Graphics2D)g;
+
+        // Apply zoom and offset
+        AffineTransform oldTransform = g2d.getTransform();
         g2d.scale(zoom, zoom);
-        g2d.translate(viewOffset.x / zoom, viewOffset.y / zoom);
+        g2d.translate(offsetX, offsetY);
 
-        // Отрисовка мира
-        drawWorld(g2d);
-        drawTunnels(g2d, world.getTileSize());
-        drawGameObjects(g2d);
-
-        // Возвращаем трансформацию
-        g2d.dispose();
-    }
-
-    /**
-     * Отрисовка базового слоя мира
-     */
-    private void drawWorld(Graphics2D g) {
-        WorldTile[][] worldLayer = world.getWorldLayer();
-        int tileSize = world.getTileSize();
-
-        for (int x = 0; x < world.getWidth(); x++) {
-            for (int y = 0; y < world.getHeight(); y++) {
-                WorldTile tile = worldLayer[x][y];
-
-                // Цвет зависит от значения perm
-                float perm = tile.getPerm();
-                Color color = new Color(
-                        240 - (int)(perm * 100),
-                        240 - (int)(perm * 100),
-                        240 - (int)(perm * 100)
-                );
-
-                g.setColor(color);
-                g.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
-
-                // Границы клеток
-                g.setColor(Color.LIGHT_GRAY);
-                g.drawRect(x * tileSize, y * tileSize, tileSize, tileSize);
+        // Draw world grid
+        for (int y = 0; y < world.getHeight(); y++) {
+            for (int x = 0; x < world.getWidth(); x++) {
+                world.getWorldGrid()[x][y].draw(g2d, 0, 0, 1);
             }
         }
-    }
 
-    /**
-     * Отрисовка игровых объектов
-     */
-    private void drawGameObjects(Graphics2D g) {
-        GameTile[][] gameLayer = world.getGameLayer();
-        int tileSize = world.getTileSize();
-
-        for (int x = 0; x < world.getWidth(); x++) {
-            for (int y = 0; y < world.getHeight(); y++) {
-                GameTile tile = gameLayer[x][y];
-                if (tile.hasGameObject() && tile.getGameObject() instanceof Station) {
-                    drawStation(g, (Station) tile.getGameObject(), tileSize);
-                }
+        // Draw tunnels
+        for (Tunnel tunnel : world.getTunnels()) {
+            tunnel.draw(g2d, 0, 0, 1);
+            if (debugMode) {
+                drawTunnelDebugInfo(g2d, tunnel);
             }
+        }
+
+        // Draw stations
+        for (Station station : world.getStations()) {
+            station.draw(g2d, 0, 0, 1);
+            if (debugMode) {
+                drawStationDebugInfo(g2d, station);
+            }
+        }
+
+        // Draw mode indicator
+        g2d.setTransform(oldTransform);
+        g2d.setColor(Color.BLACK);
+        g2d.drawString("Mode: " + currentMode, 10, 20);
+
+        if (currentMode == GameMode.TUNNEL && firstStationForTunnel != null) {
+            g2d.drawString("Select second station", 10, 40);
+        }
+
+        if (debugMode) {
+            drawGlobalDebugInfo(g2d);
         }
     }
 
     /**
-     * Отрисовка станции
+     * Gets the current zoom level
+     * @return Zoom level
      */
-    private void drawStation(Graphics2D g, Station station, int tileSize) {
-        int size = tileSize / 2;
-        int offset = (tileSize - size) / 2;
-        int x = station.getX() * tileSize + offset;
-        int y = station.getY() * tileSize + offset;
+    public float getZoom() { return zoom; }
 
-        // Основной цвет
-        g.setColor(station.getColor());
-        g.fillRect(x, y, size, size);
+    /**
+     * Sets the zoom level
+     * @param zoom New zoom level
+     */
+    public void setZoom(float zoom) {
+        this.zoom = Math.max(0.1f, Math.min(3.0f, zoom));
+        repaint();
+    }
 
-        // Выделение
-        if (station.isSelected()) {
-            g.setColor(Color.YELLOW);
-            g.drawRect(x - 1, y - 1, size + 2, size + 2);
-        }
+    /**
+     * Gets the horizontal offset
+     * @return X offset
+     */
+    public int getOffsetX() { return offsetX; }
 
-        // Обводка для пересадочных
-        if (station.isTransfer()) {
-            g.setColor(Color.BLACK);
-            g.drawRect(x - 2, y - 2, size + 4, size + 4);
+    /**
+     * Gets the vertical offset
+     * @return Y offset
+     */
+    public int getOffsetY() { return offsetY; }
+
+    /**
+     * Sets the view offset
+     * @param offsetX New X offset
+     * @param offsetY New Y offset
+     */
+    public void setOffset(int offsetX, int offsetY) {
+        this.offsetX = offsetX;
+        this.offsetY = offsetY;
+        repaint();
+    }
+
+    /**
+     * Starts dragging the view
+     * @param x Starting X coordinate
+     * @param y Starting Y coordinate
+     */
+    public void startDrag(int x, int y) {
+        dragging = true;
+        dragStartX = x - offsetX;
+        dragStartY = y - offsetY;
+    }
+
+    /**
+     * Updates view during drag
+     * @param x Current X coordinate
+     * @param y Current Y coordinate
+     */
+    public void updateDrag(int x, int y) {
+        if (dragging) {
+            offsetX = x - dragStartX;
+            offsetY = y - dragStartY;
+            repaint();
         }
     }
 
     /**
-     * Отрисовка туннеля
+     * Stops dragging the view
      */
-    private void drawTunnels(Graphics2D g, int tileSize) {
-        for (TunnelData tunnel : tunnels) {
-            drawSingleTunnel(g, tunnel, tileSize);
-        }
+    public void stopDrag() {
+        dragging = false;
     }
-    private void drawSingleTunnel(Graphics2D g, TunnelData tunnel, int tileSize) {
-        g.setColor(tunnel.getColor());
-        Stroke oldStroke = g.getStroke();
-        g.setStroke(new BasicStroke(6, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
 
-        List<Point> path = tunnel.getPath();
-        if (path.size() < 2) return;
+    /**
+     * Рисует отладочную информацию о туннеле
+     */
+    private void drawTunnelDebugInfo(Graphics2D g, Tunnel tunnel) {
+        g.setFont(debugFont);
+        g.setColor(Color.RED);
 
-        // Рисуем плавные кривые для изгибов
-        if (path.size() == 3) {
-            Point p1 = path.get(0);
-            Point p2 = path.get(1);
-            Point p3 = path.get(2);
+        // Информация о начальной и конечной точках
+        Point start = tunnel.getPath().get(0);
+        Point end = tunnel.getPath().get(tunnel.getPath().size() - 1);
 
-            int x1 = p1.x * tileSize + tileSize/2;
-            int y1 = p1.y * tileSize + tileSize/2;
-            int x2 = p2.x * tileSize + tileSize/2;
-            int y2 = p2.y * tileSize + tileSize/2;
-            int x3 = p3.x * tileSize + tileSize/2;
-            int y3 = p3.y * tileSize + tileSize/2;
+        int startX = start.x * 32 + 16;
+        int startY = start.y * 32 + 16;
+        int endX = end.x * 32 + 16;
+        int endY = end.y * 32 + 16;
 
-            // Плавный угол
-            if (x1 == x2) { // Вертикальная -> горизонтальная
-                g.drawLine(x1, y1, x1, (y1+y2)/2);
-                g.drawLine(x1, (y1+y2)/2, x2, y2);
-                g.drawLine(x2, y2, x3, y3);
-            } else { // Горизонтальная -> вертикальная
-                g.drawLine(x1, y1, (x1+x2)/2, y1);
-                g.drawLine((x1+x2)/2, y1, x2, y2);
-                g.drawLine(x2, y2, x3, y3);
-            }
+        g.drawString("Tunnel " + tunnel.hashCode(), startX - 30, startY - 10);
+        g.drawString("From: (" + start.x + "," + start.y + ")", startX - 30, startY + 25);
+        g.drawString("To: (" + end.x + "," + end.y + ")", endX - 30, endY + 25);
 
-        }
-        else if (path.size() == 2) {
-            Point p1 = path.get(0);
-            Point p2 = path.get(1);
-            g.drawLine(
-                    p1.x * tileSize + tileSize/2,
-                    p1.y * tileSize + tileSize/2,
-                    p2.x * tileSize + tileSize/2,
-                    p2.y * tileSize + tileSize/2
-            );
+        // Информация о контрольных точках
+        if (tunnel.getPath().size() > 2) {
+            Point control = tunnel.getPath().get(1);
+            int cX = control.x * 32 + 16;
+            int cY = control.y * 32 + 16;
+        //    g.drawString("Ctrl: (" + control.x + "," + control.y + ")", cX - 50, cY - 15);
         }
 
-        g.setStroke(oldStroke);
-    }
-    @Override
-    public void update() {
-        // Обновление состояния игры
-    }
-
-    public boolean isBuildStationMode() {
-        return buildStationMode;
-    }
-
-    public void setBuildStationMode(boolean buildStationMode) {
-        this.buildStationMode = buildStationMode;
-        this.buildTunnelMode = !buildStationMode;
-    }
-
-    public boolean isBuildTunnelMode() {
-        return buildTunnelMode;
-    }
-
-    public void setBuildTunnelMode(boolean buildTunnelMode) {
-        this.buildTunnelMode = buildTunnelMode;
-        this.buildStationMode = !buildTunnelMode;
-    }
-
-    public Station getFirstSelectedStation() {
-        return firstSelectedStation;
-    }
-
-    public void setFirstSelectedStation(Station firstSelectedStation) {
-        this.firstSelectedStation = firstSelectedStation;
-    }
-
-    public class TunnelData {
-        private Station startStation;
-        private Station endStation;
-        private Color color;
-        private List<Point> path;
-
-        private boolean isBendPointSelected = false;
-
-        public TunnelData(Station start, Station end, Color color) {
-            this.startStation = start;
-            this.endStation = end;
-            this.color = color;
-            this.path = calculateOptimalPath();
+        // Рисуем номера всех точек пути
+        g.setColor(Color.RED);
+        for (int i = 0; i < tunnel.getPath().size(); i++) {
+            Point p = tunnel.getPath().get(i);
+            int px = p.x * 32 + 16;
+            int py = p.y * 32 + 16;
+            g.drawString(Integer.toString(i), px - 3, py - 5);
         }
+    }
 
+    /**
+     * Рисует отладочную информацию о станции
+     */
+    private void drawStationDebugInfo(Graphics2D g, Station station) {
+        g.setFont(debugFont);
+        g.setColor(Color.BLACK);
 
-        private List<Point> calculateOptimalPath() {
-            List<Point> path = new ArrayList<>();
-            int startX = startStation.getX();
-            int startY = startStation.getY();
-            int endX = endStation.getX();
-            int endY = endStation.getY();
+        int x = station.getX() * 32 + 16;
+        int y = station.getY() * 32 + 16;
 
-            // Центральные точки станций
-            path.add(new Point(startX, startY));
+        // Основная информация
+        g.drawString("Station " + station.hashCode(), x - 30, y - 25);
+        g.drawString("Pos: (" + station.getX() + "," + station.getY() + ")", x - 30, y - 10);
+        g.drawString("Type: " + station.getType(), x - 30, y + 25);
 
-            int dx = endX - startX;
-            int dy = endY - startY;
-
-            // Проверяем возможность прямого диагонального соединения
-            if (Math.abs(dx) == Math.abs(dy)) {
-                // Прямая диагональ без изгибов
-                path.add(new Point(endX, endY));
-            } else {
-                // Определяем основные направления
-                int dirX = Integer.compare(dx, 0);
-                int dirY = Integer.compare(dy, 0);
-
-                // Проверяем существующие соединения стартовой станции
-                if (startStation.hasConnections()) {
-                    Point lastDir = startStation.getLastConnectionDirection();
-
-                    // Если последнее соединение было диагональным
-                    if (Math.abs(lastDir.x) == Math.abs(lastDir.y) && Math.abs(lastDir.x) == 1) {
-                        // Продолжаем в том же направлении насколько возможно
-                        int extendSteps = Math.min(Math.abs(dx), Math.abs(dy));
-                        int extendX = startX + lastDir.x * extendSteps;
-                        int extendY = startY + lastDir.y * extendSteps;
-
-                        path.add(new Point(extendX, extendY));
-
-                        // Обновляем оставшееся расстояние
-                        dx = endX - extendX;
-                        dy = endY - extendY;
-                        dirX = Integer.compare(dx, 0);
-                        dirY = Integer.compare(dy, 0);
-                    }
-                }
-
-                // Строим оставшийся путь с учетом возможного продолжения
-                if (Math.abs(dx) > Math.abs(dy)) {
-                    // Первый изгиб по X, затем по Y
-                    int midX = startX + dx - (dirX * Math.abs(dy));
-                    // Проверяем, не добавили ли мы уже точку продолжения
-                    if (path.size() == 1) {
-                        path.add(new Point(midX, startY));
-                    }
-                    path.add(new Point(endX, endY));
-                } else {
-                    // Первый изгиб по Y, затем по X
-                    int midY = startY + dy - (dirY * Math.abs(dx));
-                    // Проверяем, не добавили ли мы уже точку продолжения
-                    if (path.size() == 1) {
-                        path.add(new Point(startX, midY));
-                    }
-                    path.add(new Point(endX, endY));
-                }
-            }
-
-            return path;
+        // Информация о соединениях
+        int connY = y + 40;
+        for (Map.Entry<Direction, Station> entry : station.getConnections().entrySet()) {
+            g.drawString(entry.getKey() + " -> " + entry.getValue().hashCode(),
+                    x - 50, connY);
+            connY += 15;
         }
+    }
 
-        public List<Point> getPath() { return path; }
-        public Color getColor() { return color; }
-        public Station getStartStation() { return startStation; }
-        public Station getEndStation() { return endStation; }
+    /**
+     * Рисует глобальную отладочную информацию
+     */
+    private void drawGlobalDebugInfo(Graphics2D g) {
+        g.setFont(debugFont);
+        g.setColor(Color.BLACK);
+
+        int yPos = 60;
+        g.drawString("=== DEBUG INFO ===", 10, yPos);
+        yPos += 15;
+        g.drawString("Stations: " + world.getStations().size(), 10, yPos);
+        yPos += 15;
+        g.drawString("Tunnels: " + world.getTunnels().size(), 10, yPos);
+        yPos += 15;
+        g.drawString("Zoom: " + String.format("%.2f", zoom), 10, yPos);
+        yPos += 15;
+        g.drawString("Offset: (" + offsetX + "," + offsetY + ")", 10, yPos);
+    }
+
+    // Добавляем метод для переключения режима отладки
+    public void toggleDebugMode() {
+        debugMode = !debugMode;
+        repaint();
     }
 }

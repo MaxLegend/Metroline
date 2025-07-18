@@ -3,11 +3,15 @@ package screens;
 import javax.swing.*;
 
 public abstract class GameScreen extends JPanel {
-    protected MainFrame frame;
+    protected MainFrame parent;
 
-    public GameScreen(MainFrame frame) {
-        this.frame = frame;
+    public GameScreen(MainFrame parent) {
+        this.parent = parent;
+        setFocusable(true);
     }
 
-    public abstract void update();
+    /**
+     * Called when screen becomes active
+     */
+    public abstract void onActivate();
 }

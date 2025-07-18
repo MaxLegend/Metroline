@@ -1,100 +1,177 @@
 package game.objects;
 
 import game.GameObject;
+import game.objects.enums.Direction;
+import game.objects.enums.StationType;
 
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.EnumMap;
+import java.util.Map;
+
+/**
+ * Station game object
+ */
 public class Station extends GameObject {
-    private boolean isTransfer; // Является ли пересадочной
-    private Station[] connections; // Соединения с другими станциями
-    private List<Point> lastConnectionPath;
-    public Station(int x, int y, Color color) {
-        super(x, y, color);
-        this.isTransfer = false;
-        this.connections = new Station[8]; // 8 направлений
-        this.lastConnectionPath = new ArrayList<>();
+    public static final Color[] COLORS = {
+            new Color(150, 0, 0),    // Dark red
+            new Color(0, 100, 0),    // Dark green
+            new Color(0, 0, 150),    // Dark blue
+            new Color(200, 100, 0)   // Dark orange
+    };
+
+    private Color color;
+    private StationType type;
+    private Map<Direction, Station> connections = new EnumMap<>(Direction.class);
+
+    public Station(int x, int y, Color color, StationType type) {
+        super(x, y);
+        this.color = color;
+        this.type = type;
     }
+
     /**
-     * Проверяет, есть ли у станции соединения с другими станциями
-     * @return true если есть хотя бы одно соединение
+     * Gets the station color
+     * @return Color of the station
      */
-    public boolean hasConnections() {
-        for (Station s : connections) {
-            if (s != null) return true;
-        }
-        return false;
-    }
+    public Color getColor() { return color; }
+
     /**
-     * Возвращает направление последнего сегмента последнего соединения
-     * @return Point с направлением (x, y) где значения -1, 0 или 1
+     * Sets the station color
+     * @param color New color
      */
-    public Point getLastConnectionDirection() {
-        if (lastConnectionPath.size() < 2) {
-            return new Point(0, 0);
-        }
+    public void setColor(Color color) { this.color = color; }
 
-        // Берем последние две точки пути
-        Point lastPoint = lastConnectionPath.get(lastConnectionPath.size() - 1);
-        Point prevPoint = lastConnectionPath.get(lastConnectionPath.size() - 2);
-
-        // Вычисляем направление
-        int dirX = Integer.compare(lastPoint.x - prevPoint.x, 0);
-        int dirY = Integer.compare(lastPoint.y - prevPoint.y, 0);
-
-        return new Point(dirX, dirY);
-    }
     /**
-     * Обновляет информацию о последнем построенном пути соединения
-     * @param path список точек пути соединения
+     * Gets the station type
+     * @return Station type
      */
-    public void setLastConnectionPath(List<Point> path) {
-        this.lastConnectionPath = new ArrayList<>(path);
+    public StationType getType() { return type; }
+
+    /**
+     * Sets the station type
+     * @param type New station type
+     */
+    public void setType(StationType type) { this.type = type; }
+
+    /**
+     * Gets connected stations with their directions
+     * @return Map of directions to connected stations
+     */
+    public Map<Direction, Station> getConnections() { return connections; }
+
+    /**
+     * Connects this station to another
+     * @param other Station to connect to
+     * @return True if connection was successful
+     */
+    public boolean connect(Station other) {
+        Direction dir = getDirectionTo(other);
+        Direction oppositeDir = dir.getOpposite();
+
+        // Check if we can make this connection
+        if (connections.size() >= 2) return false;
+        if (connections.containsKey(oppositeDir)) return false;
+
+        // Check if other station can accept this connection
+        if (other.connections.size() >= 2) return false;
+        if (other.connections.containsKey(dir)) return false;
+
+        // Make the connection
+        connections.put(oppositeDir, other);
+        other.connections.put(dir, this);
+        return true;
     }
-    public boolean isTransfer() { return isTransfer; }
-    public void setTransfer(boolean transfer) { isTransfer = transfer; }
 
-    public boolean canConnect(Station other) {
-        return this.color.equals(other.color);
-    }
-
-    public boolean addConnection(Station station) {
-        if (!canConnect(station)) return false;
-
-        // Определяем направление соединения (0-7)
-        int direction = calculateDirection(station);
-
-        if (connections[direction] == null) {
-            connections[direction] = station;
-            return true;
-        }
-        return false;
-    }
-    private int calculateDirection(Station other) {
-        int dx = other.getX() - this.x;
-        int dy = other.getY() - this.y;
-
-        if (dx == 0 && dy < 0) return 0; // Север
-        if (dx > 0 && dy < 0) return 1;  // Северо-восток
-        if (dx > 0 && dy == 0) return 2; // Восток
-        if (dx > 0 && dy > 0) return 3;  // Юго-восток
-        if (dx == 0 && dy > 0) return 4; // Юг
-        if (dx < 0 && dy > 0) return 5;  // Юго-запад
-        if (dx < 0 && dy == 0) return 6; // Запад
-        if (dx < 0 && dy < 0) return 7;  // Северо-запад
-
-        return 0; // По умолчанию
-    }
-
-    @Override
-    public void update() {
-        // Проверяем, стала ли станция пересадочной
-        isTransfer = false;
-        for (Station s : connections) {
-            if (s != null && !s.color.equals(this.color)) {
-                isTransfer = true;
+    /**
+     * Disconnects this station from another
+     * @param other Station to disconnect from
+     */
+    public void disconnect(Station other) {
+        Direction dirToRemove = null;
+        for (Map.Entry<Direction, Station> entry : connections.entrySet()) {
+            if (entry.getValue() == other) {
+                dirToRemove = entry.getKey();
                 break;
             }
         }
+
+        if (dirToRemove != null) {
+            connections.remove(dirToRemove);
+            other.connections.remove(dirToRemove.getOpposite());
+        }
+    }
+
+    @Override
+    public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
+        int drawSize = (int)(16 * zoom); // Half size of tile
+        int drawX = (int)((x * 32 + offsetX + 8) * zoom); // Centered
+        int drawY = (int)((y * 32 + offsetY + 8) * zoom); // Centered
+
+        // Draw station based on type
+        g.setColor(color);
+        switch (type) {
+            case REGULAR:
+                g.fillRect(drawX, drawY, drawSize, drawSize);
+                break;
+            case TRANSFER:
+                g.fillOval(drawX, drawY, drawSize, drawSize);
+                break;
+            case TERMINAL:
+                int[] xPoints = {drawX, drawX + drawSize/2, drawX + drawSize, drawX + drawSize/2};
+                int[] yPoints = {drawY + drawSize/2, drawY, drawY + drawSize/2, drawY + drawSize};
+                g.fillPolygon(xPoints, yPoints, 4);
+                break;
+            case TRANSIT:
+                g.fillRect(drawX, drawY + drawSize/4, drawSize, drawSize/2);
+                g.fillRect(drawX + drawSize/4, drawY, drawSize/2, drawSize);
+                break;
+        }
+
+        // Draw selection indicator
+        if (selected) {
+            g.setColor(Color.YELLOW);
+            g.drawOval(drawX - 2, drawY - 2, drawSize + 4, drawSize + 4);
+        }
+    }
+
+    /**
+     * Gets the direction from this station to another
+     * @param other Target station
+     * @return Direction to the other station
+     */
+    private Direction getDirectionTo(Station other) {
+        int dx = other.getX() - x;
+        int dy = other.getY() - y;
+
+        if (dx == 0 && dy < 0) return Direction.NORTH;
+        if (dx > 0 && dy < 0) return Direction.NORTHEAST;
+        if (dx > 0 && dy == 0) return Direction.EAST;
+        if (dx > 0 && dy > 0) return Direction.SOUTHEAST;
+        if (dx == 0 && dy > 0) return Direction.SOUTH;
+        if (dx < 0 && dy > 0) return Direction.SOUTHWEST;
+        if (dx < 0 && dy == 0) return Direction.WEST;
+        if (dx < 0 && dy < 0) return Direction.NORTHWEST;
+
+        return Direction.NORTH; // default
+    }
+
+    /**
+     * Выводит отладочную информацию о станции
+     */
+    public void printDebugInfo() {
+        System.out.println("=== Station Debug Info ===");
+        System.out.println("Position: (" + x + "," + y + ")");
+        System.out.println("Type: " + type);
+        System.out.println("Color: " + color);
+        System.out.println("Connections: " + connections.size());
+
+        for (Map.Entry<Direction, Station> entry : connections.entrySet()) {
+            System.out.println("  " + entry.getKey() + " -> Station@" + entry.getValue().hashCode());
+        }
+
+        System.out.println("HashCode: " + hashCode());
     }
 }
+
+
+

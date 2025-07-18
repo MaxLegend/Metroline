@@ -1,57 +1,67 @@
 package screens;
 
-import game.input.InputHandler;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.HashMap;
+import java.util.Map;
 
+/**
+ * Main application frame that contains all game screens and toolbar
+ */
 public class MainFrame extends JFrame {
     private GameScreen currentScreen;
     private JToolBar toolBar;
+    private Map<String, GameScreen> screens = new HashMap<>();
 
     public MainFrame() {
-        setTitle("Metro Constructor");
+        super("Metro Map Constructor");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1024, 768);
         setLayout(new BorderLayout());
 
-        initToolBar();
-        switchToMenuScreen();
-    }
-
-    private void initToolBar() {
+        // Initialize toolbar (will be visible only in game screen)
         toolBar = new JToolBar();
         toolBar.setFloatable(false);
+        toolBar.setVisible(false);
         add(toolBar, BorderLayout.NORTH);
-        toolBar.setVisible(false);
+
+        // Create screens
+        screens.put("menu", new MenuScreen(this));
+        screens.put("game", new WorldScreen(this));
+
+        // Set initial screen
+        switchScreen("menu");
+
+        setVisible(true);
     }
 
-    public void switchToMenuScreen() {
+    /**
+     * Switches between different game screens
+     * @param screenName Name of the screen to switch to
+     */
+    public void switchScreen(String screenName) {
         if (currentScreen != null) {
             remove(currentScreen);
         }
-        currentScreen = new MenuScreen(this);
+
+        currentScreen = screens.get(screenName);
         add(currentScreen, BorderLayout.CENTER);
-        toolBar.setVisible(false);
+
+        // Show toolbar only in game screen
+        toolBar.setVisible("game".equals(screenName));
+
         revalidate();
         repaint();
-    }
-
-    public void switchToGameScreen() {
-        if (currentScreen != null) {
-            remove(currentScreen);
-        }
-        currentScreen = new WorldScreen(this);
-        add(currentScreen, BorderLayout.CENTER);
-
-        // Добавляем обработчик ввода
-        InputHandler inputHandler = new InputHandler((WorldScreen) currentScreen);
-        currentScreen.addKeyListener(inputHandler);
-        currentScreen.setFocusable(true);
         currentScreen.requestFocusInWindow();
-
-        toolBar.setVisible(true);
-        revalidate();
-        repaint();
     }
+
+    /**
+     * Adds a button to the toolbar
+     * @param button Button to add
+     */
+    public void addToolbarButton(JButton button) {
+        toolBar.add(button);
+    }
+
 }
