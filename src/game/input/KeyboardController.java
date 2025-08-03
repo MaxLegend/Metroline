@@ -31,7 +31,7 @@ public class KeyboardController extends KeyAdapter {
                 screen.toggleDebugMode();
                 break;
             case KeyEvent.VK_C:
-                screen.toggleColorSelection();
+                ClickHandler.toggleColorSelection();
                 break;
             case KeyEvent.VK_ESCAPE:
                 screen.setMode(WorldScreen.GameMode.NONE);

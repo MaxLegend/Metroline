@@ -7,6 +7,7 @@ import game.objects.enums.StationType;
 import java.awt.*;
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.Random;
 
 /**
  * Station game object
@@ -18,6 +19,12 @@ public class Station extends GameObject {
             new Color(0, 0, 150),    // Dark blue
             new Color(200, 100, 0)   // Dark orange
     };
+    private Direction namePosition = Direction.EAST;
+
+    private String name;
+    private static final String[] NAME_PARTS = {"Pyatorocka", "Magnit", "Nizhni", "Kotova", "Baton", "Butilka",
+            "Lolkek", "Tesmio", "Geroyev", "Svetofor", "Ploshad", "Proezd",
+            "Sobakov", "Balka", "Ulitca", "Bred"};
 
     private Color color;
     private StationType type;
@@ -27,8 +34,25 @@ public class Station extends GameObject {
         super(x, y);
         this.color = color;
         this.type = type;
+        this.name = generateRandomName();
+    }
+    private String generateRandomName() {
+        Random rand = new Random();
+        return NAME_PARTS[rand.nextInt(NAME_PARTS.length)];
+    }
+    public String getName() {
+        return name;
+    }
+    public Direction getNamePosition() {
+        return namePosition;
     }
 
+    public void setNamePosition(Direction position) {
+        this.namePosition = position;
+    }
+    public void setName(String name) {
+        this.name = name;
+    }
     /**
      * Gets the station color
      * @return Color of the station
@@ -99,47 +123,7 @@ public class Station extends GameObject {
             other.updateType();
         }
     }
-//    /**
-//     * Connects this station to another
-//     * @param other Station to connect to
-//     * @return True if connection was successful
-//     */
-//    public boolean connect(Station other) {
-//        Direction dir = getDirectionTo(other);
-//        Direction oppositeDir = dir.getOpposite();
-//
-//        // Check if we can make this connection
-//        if (connections.size() >= 2) return false;
-//        if (connections.containsKey(oppositeDir)) return false;
-//
-//        // Check if other station can accept this connection
-//        if (other.connections.size() >= 2) return false;
-//        if (other.connections.containsKey(dir)) return false;
-//
-//        // Make the connection
-//        connections.put(oppositeDir, other);
-//        other.connections.put(dir, this);
-//        return true;
-//    }
-//
-//    /**
-//     * Disconnects this station from another
-//     * @param other Station to disconnect from
-//     */
-//    public void disconnect(Station other) {
-//        Direction dirToRemove = null;
-//        for (Map.Entry<Direction, Station> entry : connections.entrySet()) {
-//            if (entry.getValue() == other) {
-//                dirToRemove = entry.getKey();
-//                break;
-//            }
-//        }
-//
-//        if (dirToRemove != null) {
-//            connections.remove(dirToRemove);
-//            other.connections.remove(dirToRemove.getOpposite());
-//        }
-//    }
+
     /**
      * Automatically determines and updates station type based on connections
      */
@@ -164,38 +148,7 @@ public class Station extends GameObject {
             type = StationType.TRANSIT;
         }
     }
-//    @Override
-//    public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
-//        int drawSize = (int)(24 * zoom); // Half size of tile
-//        int drawX = (int)((getX() * 32 + offsetX +4) * zoom); // Centered
-//        int drawY = (int)((getY() * 32 + offsetY +4) * zoom); // Centered
-//        int arcSize = (int)(drawSize * 0.35);
-//        // Draw station based on type
-//        g.setColor(color);
-//        switch (type) {
-//            case REGULAR:
-//                g.fillRoundRect(drawX, drawY, drawSize, drawSize,arcSize,arcSize);
-//                break;
-//            case TRANSFER:
-//                g.fillOval(drawX, drawY, drawSize, drawSize);
-//                break;
-//            case TERMINAL:
-//                int[] xPoints = {drawX, drawX + drawSize/2, drawX + drawSize, drawX + drawSize/2};
-//                int[] yPoints = {drawY + drawSize/2, drawY, drawY + drawSize/2, drawY + drawSize};
-//                g.fillPolygon(xPoints, yPoints, 4);
-//                break;
-//            case TRANSIT:
-//                g.fillRect(drawX, drawY + drawSize/4, drawSize, drawSize/2);
-//                g.fillRect(drawX + drawSize/4, drawY, drawSize/2, drawSize);
-//                break;
-//        }
-//
-//        // Draw selection indicator
-//        if (selected) {
-//            g.setColor(Color.YELLOW);
-//            g.drawOval(drawX - 2, drawY - 2, drawSize + 4, drawSize + 4);
-//        }
-//    }
+
 @Override
 public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
     int drawSize = (int)(24 * zoom);
@@ -244,7 +197,53 @@ public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
         g2d.setStroke(new BasicStroke(2 * zoom));
         g2d.drawRoundRect(drawX - 2, drawY - 2, drawSize + 4, drawSize + 4, arcSize, arcSize);
     }
+    // Draw station name
+    if (zoom > 0.5f) {
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        Font font = new Font("Arial", Font.BOLD, (int)(10 * zoom));
+        g2d.setFont(font);
+        FontMetrics fm = g2d.getFontMetrics();
+        int textWidth = fm.stringWidth(name);
+        int textHeight = fm.getHeight();
+
+        // Определяем позицию текста в зависимости от namePosition
+        int textX = drawX;
+        int textY = drawY;
+
+        switch (namePosition) {
+            case NORTH:
+                textX += drawSize/2 - textWidth/2;
+                textY -= textHeight/2;
+                break;
+            case SOUTH:
+                textX += drawSize/2 - textWidth/2;
+                textY += drawSize + textHeight;
+                break;
+            case EAST:
+                textX += drawSize + 5;
+                textY += drawSize/2 + textHeight/3;
+                break;
+            case WEST:
+                textX -= textWidth + 5;
+                textY += drawSize/2 + textHeight/3;
+                break;
+        }
+
+        // Рисуем текст
+        g2d.setColor(Color.BLACK);
+        g2d.drawString(name, textX, textY);
+
+        // Подчеркивание для выбранной станции
+        if (selected) {
+            g2d.setColor(Color.YELLOW);
+            g2d.setStroke(new BasicStroke(2 * zoom));
+            g2d.drawLine(textX, textY + 2, textX + textWidth, textY + 2);
+        }
+    }
 }
+
+
 
     private void drawTransferConnector(Graphics2D g, int x1, int y1, int size, int x2, int y2, Direction dir) {
         int connectorSize = size / 2;

@@ -22,7 +22,7 @@ public class MouseController extends MouseAdapter {
     @Override
     public void mousePressed(MouseEvent e) {
         if (SwingUtilities.isRightMouseButton(e)) {
-            screen.startDrag(e.getX(), e.getY());
+            ClickHandler.startDrag(e.getX(), e.getY());
         } else if (SwingUtilities.isLeftMouseButton(e)) {
             PathPoint worldPos = screen.screenToWorld(e.getX(), e.getY());
             screen.handleClick(worldPos.x, worldPos.y);
@@ -32,13 +32,13 @@ public class MouseController extends MouseAdapter {
     @Override
     public void mouseDragged(MouseEvent e) {
         if (SwingUtilities.isRightMouseButton(e)) {
-            screen.updateDrag(e.getX(), e.getY());
+            ClickHandler.updateDrag(e.getX(), e.getY());
         }
         else if (SwingUtilities.isLeftMouseButton(e) &&
                 screen.getCurrentMode() == WorldScreen.GameMode.EDIT) {
             PathPoint worldPos = screen.screenToWorld(e.getX(), e.getY());
             if (worldPos != null) {
-                screen.handleEditDrag(worldPos.x, worldPos.y);
+                ClickHandler.handleEditDrag(worldPos.x, worldPos.y);
             }
         }
     }
@@ -47,7 +47,7 @@ public class MouseController extends MouseAdapter {
     public void mouseReleased(MouseEvent e) {
         if (SwingUtilities.isRightMouseButton(e)) {
             // Stop dragging
-            screen.stopDrag();
+            ClickHandler.stopDrag();
         }
     }
 
