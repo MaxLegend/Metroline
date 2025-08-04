@@ -4,19 +4,23 @@ import game.core.GameObject;
 
 import java.awt.*;
 import java.awt.geom.GeneralPath;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Tunnel game object connecting stations
  */
-public class Tunnel extends GameObject {
+public class Tunnel extends GameObject implements Serializable {
+    private static final long serialVersionUID = 1L;
     private Station start;
     private Station end;
     private List<PathPoint> path = new ArrayList<>();
     private PathPoint pathPoint; // For single bend tunnels
 
-
+    public Tunnel() {
+        super(0, 0);
+    }
     public Tunnel(Station start, Station end) {
         super(start.getX(), start.getY());
         this.start = start;

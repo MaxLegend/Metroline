@@ -20,12 +20,31 @@ public class MainFrame extends JFrame {
         setSize(1024, 768);
         setLayout(new BorderLayout());
 
+
+
         // Initialize toolbar (will be visible only in game screen)
         toolBar = new JToolBar();
         toolBar.setFloatable(false);
         toolBar.setVisible(false);
-        add(toolBar, BorderLayout.NORTH);
 
+        // Создаем кнопки
+        JButton saveButton = new JButton("Save Game");
+        JButton loadButton = new JButton("Load Game");
+        // Добавляем обработчики
+        saveButton.addActionListener(e -> {
+            if (currentScreen instanceof WorldGameScreen) {
+                ((WorldGameScreen)currentScreen).saveWorld();
+            }
+        });
+
+        loadButton.addActionListener(e -> {
+            if (currentScreen instanceof WorldGameScreen) {
+                ((WorldGameScreen)currentScreen).loadWorld();
+            }
+        });
+        toolBar.add(saveButton);
+        toolBar.add(loadButton);
+        add(toolBar, BorderLayout.NORTH);
         // Create screens
         screens.put("menu", new MenuScreen(this));
         screens.put("game", new WorldGameScreen(this));
@@ -36,7 +55,9 @@ public class MainFrame extends JFrame {
 
         setVisible(true);
     }
-
+    public GameScreen getCurrentScreen() {
+        return currentScreen;
+    }
     /**
      * Switches between different game screens
      * @param screenName Name of the screen to switch to

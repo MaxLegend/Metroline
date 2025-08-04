@@ -1,11 +1,16 @@
-package game.tiles;
+package game.core.world.tiles;
 
 import game.core.GameObject;
 import game.core.Tile;
 
-public class GameTileBig extends Tile {
-    private GameObject content;
+import java.io.Serializable;
 
+public class GameTileBig extends Tile implements Serializable {
+    private static final long serialVersionUID = 1L;
+    private GameObject content;
+    public GameTileBig() {
+        super(0, 0, 64); // Значения по умолчанию
+    }
     public GameTileBig(int x, int y) {
         super(x, y, 64);
     }

@@ -40,6 +40,12 @@ public class KeyboardController extends KeyAdapter {
     }
     @Override
     public void keyPressed(KeyEvent e) {
+        if (e.isControlDown() && e.getKeyCode() == KeyEvent.VK_S) {
+            if(screen instanceof WorldGameScreen gamescreen) {
+                gamescreen.saveWorldToPNG();
+                e.consume(); // Предотвращаем дальнейшую обработку
+            }
+        }
         switch (e.getKeyCode()) {
             case KeyEvent.VK_CONTROL:
                 WorldGameScreen.getInstance().isCtrlPressed = true;

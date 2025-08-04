@@ -4,13 +4,16 @@ import game.core.GameObject;
 import screens.WorldGameScreen;
 
 import java.awt.*;
+import java.io.Serializable;
 
 
-
-public class Label extends GameObject {
+public class Label extends GameObject implements Serializable {
+    private static final long serialVersionUID = 1L;
     private String text;
     private Station parentStation;
-
+    public Label() {
+        super(0, 0);
+    }
 
     public Label(int x, int y, String text, Station parentStation) {
         super(x, y);

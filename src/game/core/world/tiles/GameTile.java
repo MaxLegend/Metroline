@@ -1,14 +1,19 @@
-package game.tiles;
+package game.core.world.tiles;
 
 import game.core.GameObject;
 import game.core.Tile;
 
+import java.io.Serializable;
+
 /**
  * Game tile that can contain game objects
  */
-public class GameTile extends Tile {
+public class GameTile extends Tile implements Serializable {
+    private static final long serialVersionUID = 1L;
     private GameObject content;
-
+    public GameTile() {
+        super(0, 0, 16); // Значения по умолчанию
+    }
     public GameTile(int x, int y) {
         super(x, y, 16);
     }

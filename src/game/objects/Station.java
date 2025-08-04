@@ -6,6 +6,7 @@ import game.objects.enums.StationType;
 import screens.WorldGameScreen;
 
 import java.awt.*;
+import java.io.Serializable;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Random;
@@ -14,7 +15,8 @@ import java.util.Random;
 /**
  * Station game object
  */
-public class Station extends GameObject {
+public class Station extends GameObject implements Serializable {
+    private static final long serialVersionUID = 1L;
     public static final Color[] COLORS = {
             new Color(150, 0, 0),    // Dark red
             new Color(0, 100, 0),    // Dark green
@@ -31,7 +33,9 @@ public class Station extends GameObject {
     private Color color;
     private StationType type;
     private Map<Direction, Station> connections = new EnumMap<>(Direction.class);
-
+    public Station() {
+        super(0, 0);
+    }
     public Station(int x, int y, Color color, StationType type) {
         super(x, y);
         this.color = color;

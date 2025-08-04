@@ -1,14 +1,18 @@
 package game.core;
 
 import java.awt.*;
+import java.io.Serializable;
 
 /**
  * Represents a basic tile in the game world
  */
-public class Tile {
+public class Tile implements Serializable {
+    private static final long serialVersionUID = 1L;
     protected int x, y;
     protected int size;
-
+    protected Tile() {
+        this(0, 0, 0); // Инициализация значениями по умолчанию
+    }
     public Tile(int x, int y, int size) {
         this.x = x;
         this.y = y;

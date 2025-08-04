@@ -3,15 +3,19 @@ package game.objects;
 import game.core.GameObject;
 
 import java.awt.*;
+import java.io.Serializable;
 
 /**
  * Point in the tunnel path that uses world grid coordinates (like Station)
  */
-public class PathPoint extends GameObject {
+public class PathPoint extends GameObject implements Serializable {
+    private static final long serialVersionUID = 1L;
     public PathPoint(int x, int y) {
         super(x, y);
     }
-
+    public PathPoint() {
+        super(0, 0);
+    }
     @Override
     public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
         // Optional: можно реализовать отрисовку точки, если нужно

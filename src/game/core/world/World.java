@@ -6,17 +6,21 @@ import game.objects.PathPoint;
 import game.objects.Station;
 import game.objects.Tunnel;
 import game.objects.enums.Direction;
-import game.tiles.GameTile;
+import game.core.world.tiles.GameTile;
 
-import game.tiles.GameTileBig;
-import game.tiles.WorldTile;
+import game.core.world.tiles.GameTileBig;
+import game.core.world.tiles.WorldTile;
 
+import java.io.Serializable;
 import java.util.*;
 
 /**
  * World class containing game logic and state
  */
-public class World {
+public class World implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     protected WorldTile[][] worldGrid;
     protected GameTile[][] gameGrid;
     protected GameTileBig[][] bigWorldGrid;
@@ -25,7 +29,9 @@ public class World {
     protected List<Tunnel> tunnels = new ArrayList<>();
     protected List<Label> labels = new ArrayList<>();
     protected int width, height;
-
+    public World() {
+        super();
+    }
     public World(int width, int height) {
         this.width = width;
         this.height = height;

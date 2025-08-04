@@ -1,14 +1,19 @@
 package game.core;
 
 import java.awt.*;
+import java.io.Serializable;
+
 /**
  * Base class for all game objects
  */
-public abstract class GameObject {
+public abstract class GameObject implements Serializable {
+    private static final long serialVersionUID = 1L;
     public int x;
     public int y;
     public boolean selected = false;
-
+    public GameObject() {
+        super();
+    }
     public GameObject(int x, int y) {
         this.x = x;
         this.y = y;
