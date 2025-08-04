@@ -12,9 +12,13 @@ import game.core.world.tiles.GameTileBig;
 import game.core.world.tiles.WorldTile;
 import screens.WorldGameScreen;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
+import javax.swing.Timer;
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.*;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
 
@@ -531,12 +535,23 @@ public class World implements Serializable {
         try (ObjectOutputStream oos = new ObjectOutputStream(
                 new FileOutputStream(saveFile))) {
             oos.writeObject(WorldGameScreen.getInstance().world);
-            showMessageDialog("Сохранение", "Мир успешно сохранен!");
+            showTimedMessage("World successfully saved", false, 2000);
         } catch (IOException ex) {
-            showErrorDialog("Ошибка сохранения", "Ошибка сохранения: " + ex.getMessage());
+            showTimedMessage("Saved Error: " + ex.getMessage(), true, 2000);
         }
     }
 
+
+    public List<Label> getLabelsForStation(Station station) {
+        // Возвращает метки для конкретной станции
+        List<Label> stationLabels = new ArrayList<>();
+        for (Label label : getLabels()) {
+            if (label.getParentStation().equals(station)) {
+                stationLabels.add(label);
+            }
+        }
+        return stationLabels;
+    }
     public boolean loadWorld() {
         File saveFile = new File(SAVE_FOLDER + File.separator + SAVE_FILE);
 
@@ -549,51 +564,123 @@ public class World implements Serializable {
             WorldGameScreen.getInstance().world = (World) ois.readObject();
             WorldGameScreen.getInstance().invalidateCache();
             WorldGameScreen.getInstance().repaint();
-            showMessageDialog("Загрузка", "Мир успешно загружен!");
+            showTimedMessage("World successfully loaded", false, 2000);
             return true;
         } catch (Exception ex) {
             ex.printStackTrace();
-            showErrorDialog("Ошибка загрузки", "Ошибка загрузки: " + ex.getMessage());
+            showTimedMessage("Loaded Error: " + ex.getMessage(), true, 2000);
         }
         return false;
     }
+    /**
+     * Показывает временное сообщение (исчезает через 2 секунды)
+     * @param message Текст сообщения
+     * @param isError true для сообщения об ошибке (красный цвет)
+     */
+    public void showTimedMessage(String message, boolean isError, int delay) {
+        // Создаем прозрачную панель для сообщения
+        JPanel messagePanel = new JPanel(new BorderLayout());
+        messagePanel.setOpaque(false);
+        messagePanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 
-    private void showMessageDialog(String title, String message) {
-        JOptionPane pane = new JOptionPane(
-                "<html><body><p style='width: 200px;'>" + message + "</p></body></html>",
-                JOptionPane.INFORMATION_MESSAGE
+        // Настраиваем стиль текста
+        JLabel label = new JLabel(message, SwingConstants.CENTER);
+        label.setFont(new Font("Arial", Font.PLAIN, 14));
+        label.setForeground(isError ? new Color(255, 100, 100) : Color.BLACK);
+
+        messagePanel.add(label, BorderLayout.CENTER);
+
+        // Создаем прозрачное окно
+        JWindow popup = new JWindow();
+        popup.getContentPane().setBackground(new Color(0, 0, 0, 0));
+        popup.getContentPane().add(messagePanel);
+        popup.pack();
+
+        // Позиционируем по центру экрана
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        popup.setLocation(
+                (screenSize.width - popup.getWidth()) / 2,
+                (screenSize.height - popup.getHeight()) / 2
         );
 
-        JDialog dialog = pane.createDialog(WorldGameScreen.getInstance(), title);
+        // Делаем окно полупрозрачным
+        popup.setOpacity(0.9f);
 
-        // Дополнительная стилизация окна
-        dialog.getContentPane().setBackground(new Color(45, 45, 45));
-        for (Component comp : dialog.getContentPane().getComponents()) {
-            if (comp instanceof JLabel) {
-                ((JLabel)comp).setForeground(Color.WHITE);
-            }
-        }
+        // Показываем сообщение
+        popup.setVisible(true);
 
-        dialog.setVisible(true);
+        // Таймер для автоматического закрытия через 2 секунды
+        Timer timer = new Timer(delay, e -> popup.dispose());
+        timer.setRepeats(false);
+        timer.start();
     }
-
-    private void showErrorDialog(String title, String message) {
-        JOptionPane pane = new JOptionPane(
-                "<html><body><p style='width: 200px; color:#ff6666;'>" + message + "</p></body></html>",
-                JOptionPane.ERROR_MESSAGE
-        );
-
-        JDialog dialog = pane.createDialog(WorldGameScreen.getInstance(), title);
-
-        // Стилизация для ошибок
-        dialog.getContentPane().setBackground(new Color(45, 45, 45));
-        for (Component comp : dialog.getContentPane().getComponents()) {
-            if (comp instanceof JLabel) {
-                ((JLabel)comp).setForeground(new Color(255, 100, 100));
-            }
+    public void saveWorldToPNG() {
+        // Создаем папку screenshots, если ее нет
+        File screenshotsDir = new File("screenshots");
+        if (!screenshotsDir.exists()) {
+            screenshotsDir.mkdir();
         }
 
-        dialog.setVisible(true);
+        // Генерируем имя файла с timestamp для уникальности
+        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String filename = "metro_map_" + timestamp + ".png";
+        File file = new File(screenshotsDir, filename);
+
+        try {
+            // Вызываем ваш метод сохранения
+            saveWorldToPNG(file);
+
+            // Показываем сообщение с путем к файлу
+            String message = "Save: " + file.getAbsolutePath();
+            WorldGameScreen.getInstance().world.showTimedMessage(message, false, 4000);
+
+        } catch (IOException ex) {
+            // Показываем сообщение об ошибке
+            WorldGameScreen.getInstance().world.showTimedMessage("Save Error: " + ex.getMessage(), true, 4000);
+            ex.printStackTrace();
+        }
+    }
+    /**
+     * Сохраняет текущее состояние мира в PNG файл
+     * @param file Файл для сохранения
+     * @throws IOException Если произошла ошибка сохранения
+     */
+    public void saveWorldToPNG(File file) throws IOException {
+        // Создаем изображение размером с мир
+        int width =  WorldGameScreen.getInstance().widthWorld * 32;  // 32 пикселя на клетку
+        int height =  WorldGameScreen.getInstance().heightWorld * 32;
+        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = image.createGraphics();
+
+        try {
+            // Очищаем фон (прозрачный)
+            g2d.setComposite(AlphaComposite.Clear);
+            g2d.fillRect(0, 0, width, height);
+            g2d.setComposite(AlphaComposite.SrcOver);
+
+            // Рисуем все элементы мира
+            WorldGameScreen.getInstance().drawStaticWorld(g2d);  // Сетка и статические объекты
+
+            // Рисуем туннели
+            for (Tunnel tunnel :  WorldGameScreen.getInstance().world.getTunnels()) {
+                tunnel.draw(g2d, 0, 0, 1);
+            }
+
+            // Рисуем станции
+            for (Station station : WorldGameScreen.getInstance(). world.getStations()) {
+                station.draw(g2d, 0, 0, 1);
+            }
+
+            // Рисуем метки
+            for (Label label :  WorldGameScreen.getInstance().world.getLabels()) {
+                label.draw(g2d, 0, 0, 1);
+            }
+        } finally {
+            g2d.dispose();
+        }
+
+        // Сохраняем в файл
+        ImageIO.write(image, "PNG", file);
     }
 }
 

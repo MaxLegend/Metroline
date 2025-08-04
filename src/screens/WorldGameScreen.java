@@ -21,6 +21,8 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Map;
 
 
@@ -134,7 +136,7 @@ public class WorldGameScreen extends WorldScreen {
         }
         cacheValid = true;
     }
-    private void drawStaticWorld(Graphics2D g) {
+    public void drawStaticWorld(Graphics2D g) {
         // Рисуем сетку
         AffineTransform originalTransform = g.getTransform();
         g.scale(2, 2);
@@ -161,16 +163,18 @@ public class WorldGameScreen extends WorldScreen {
      */
     private void drawDebugInfo(Graphics2D g) {
         g.setFont(debugFont);
-        g.setColor(Color.BLACK);
+        g.setColor(Color.YELLOW);
 
         int yPos = 60; // Начальная позиция по Y
 
         // Глобальная информация
-        g.drawString("=== DEBUG INFO ===", 10, yPos);
+        g.drawString("=== GLOBAL DEBUG INFO ===", 10, yPos);
         yPos += 15;
         g.drawString("Stations: " + world.getStations().size(), 10, yPos);
         yPos += 15;
         g.drawString("Tunnels: " + world.getTunnels().size(), 10, yPos);
+        yPos += 15;
+        g.drawString("Labels: " + world.getLabels().size(), 10, yPos);
         yPos += 15;
         g.drawString("Zoom: " + String.format("%.2f", zoom), 10, yPos);
         yPos += 15;
@@ -194,6 +198,16 @@ public class WorldGameScreen extends WorldScreen {
             g.drawString("Color: " + String.format("#%06X", (0xFFFFFF & station.getColor().getRGB())), 10, yPos);
             yPos += 15;
 
+            if (!world.getLabelsForStation(station).isEmpty()) {
+                g.drawString("Labels (" + world.getLabelsForStation(station).size() + "):", 10, yPos);
+                yPos += 15;
+
+                for (Label label : world.getLabelsForStation(station)) {
+                    g.drawString("- '" + label.getText() + "' at (" +
+                            label.getX() + "," + label.getY() + ")", 20, yPos);
+                    yPos += 15;
+                }
+            }
             // Информация о соединениях
             if (!station.getConnections().isEmpty()) {
                 g.drawString("Connections:", 10, yPos);
@@ -205,7 +219,22 @@ public class WorldGameScreen extends WorldScreen {
                 }
             }
         }
-
+        else if (selectedObject instanceof Label) {
+            Label label = (Label)selectedObject;
+            yPos += 15;
+            g.drawString("=== SELECTED LABEL ===", 10, yPos);
+            yPos += 15;
+            g.drawString("Hash: " + label.hashCode(), 10, yPos);
+            yPos += 15;
+            g.drawString("Text: '" + label.getText() + "'", 10, yPos);
+            yPos += 15;
+            g.drawString("Position: (" + label.getX() + "," + label.getY() + ")", 10, yPos);
+            yPos += 15;
+            g.drawString("Parent Station: " + label.getParentStation().getName() +
+                    " (" + label.getParentStation().getX() + "," +
+                    label.getParentStation().getY() + ")", 10, yPos);
+            yPos += 15;
+        }
         // Информация о выбранном туннеле
         else if (selectedObject instanceof Tunnel) {
             Tunnel tunnel = (Tunnel)selectedObject;
@@ -246,75 +275,7 @@ public class WorldGameScreen extends WorldScreen {
     }
 
 
-    public void saveWorldToPNG() {
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle("Сохранить мир как PNG");
-        fileChooser.setFileFilter(new FileNameExtensionFilter("PNG Images", "png"));
 
-        // Устанавливаем начальное имя файла
-        fileChooser.setSelectedFile(new File("metro_map.png"));
-
-        if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
-            File file = fileChooser.getSelectedFile();
-            // Добавляем расширение, если его нет
-            if (!file.getName().toLowerCase().endsWith(".png")) {
-                file = new File(file.getAbsolutePath() + ".png");
-            }
-
-            try {
-                // Используем метод сохранения, который у вас уже есть
-                saveWorldToPNG(file); // или saveWorldToPNG(file), в зависимости от реализации
-                JOptionPane.showMessageDialog(this, "World Saved", "Save",
-                        JOptionPane.INFORMATION_MESSAGE);
-            } catch (IOException ex) {
-                JOptionPane.showMessageDialog(this, "Save error: " + ex.getMessage(),
-                        "Error", JOptionPane.ERROR_MESSAGE);
-                ex.printStackTrace();
-            }
-        }
-    }
-    /**
-     * Сохраняет текущее состояние мира в PNG файл
-     * @param file Файл для сохранения
-     * @throws IOException Если произошла ошибка сохранения
-     */
-    public void saveWorldToPNG(File file) throws IOException {
-        // Создаем изображение размером с мир
-        int width = widthWorld * 32;  // 32 пикселя на клетку
-        int height = heightWorld * 32;
-        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2d = image.createGraphics();
-
-        try {
-            // Очищаем фон (прозрачный)
-            g2d.setComposite(AlphaComposite.Clear);
-            g2d.fillRect(0, 0, width, height);
-            g2d.setComposite(AlphaComposite.SrcOver);
-
-            // Рисуем все элементы мира
-            drawStaticWorld(g2d);  // Сетка и статические объекты
-
-            // Рисуем туннели
-            for (Tunnel tunnel : world.getTunnels()) {
-                tunnel.draw(g2d, 0, 0, 1);
-            }
-
-            // Рисуем станции
-            for (Station station : world.getStations()) {
-                station.draw(g2d, 0, 0, 1);
-            }
-
-            // Рисуем метки
-            for (Label label : world.getLabels()) {
-                label.draw(g2d, 0, 0, 1);
-            }
-        } finally {
-            g2d.dispose();
-        }
-
-        // Сохраняем в файл
-        ImageIO.write(image, "PNG", file);
-    }
 
 
 }

@@ -21,7 +21,9 @@ public class WorldScreen extends GameScreen{
     //Central click handler
     private ClickHandler clickHandler;
     public World world;
-    // Game modes
+    // Service keys
+    public boolean isEscPressed = false;
+    public boolean isAltPressed = false;
     public boolean isCtrlPressed = false;
     public boolean isShiftPressed = false;
     public boolean isCPressed = false;

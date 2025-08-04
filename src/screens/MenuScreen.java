@@ -39,6 +39,10 @@ public class MenuScreen extends GameScreen {
 
         JButton loadButton = createMenuButton("Load Game");
         loadButton.addActionListener(e -> loadGame(parent));
+
+        JButton exitButton = createMenuButton("Exit");
+        exitButton.addActionListener(e -> System.exit(0));
+
         startButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
@@ -61,8 +65,20 @@ public class MenuScreen extends GameScreen {
                 loadButton.setBackground(new Color(60, 60, 60));
             }
         });
+        exitButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                exitButton.setBackground(new Color(80, 80, 80));
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                exitButton.setBackground(new Color(60, 60, 60));
+            }
+        });
         add(startButton, gbc);
         add(loadButton, gbc);
+        add(exitButton, gbc);
     }
 
     private JButton createMenuButton(String text) {

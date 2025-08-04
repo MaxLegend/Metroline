@@ -1,6 +1,7 @@
 package game.objects;
 
 import game.core.GameObject;
+import screens.WorldScreen;
 
 import java.awt.*;
 import java.awt.geom.GeneralPath;
@@ -218,17 +219,17 @@ public class Tunnel extends GameObject {
         }
 
         g2d.draw(tunnelPath);
-
-        // Отрисовка контрольных точек
-        if (selected || pathPoint != null) {
-                g2d.setColor(Color.MAGENTA);
+        if(WorldScreen.getInstance().debugMode) {
+            // Отрисовка контрольных точек
+            if (selected || pathPoint != null) {
+                g2d.setColor(Color.LIGHT_GRAY);
                 for (PathPoint p : path) {
-                    int x = (int)((p.getX() * 32 + offsetX + 16) * zoom);
-                    int y = (int)((p.getY() * 32 + offsetY + 16) * zoom);
+                    int x = (int) ((p.getX() * 32 + offsetX + 16) * zoom);
+                    int y = (int) ((p.getY() * 32 + offsetY + 16) * zoom);
                     g2d.fillOval(x - 3, y - 3, 6, 6);
                 }
             }
-
+        }
     }
 
 }

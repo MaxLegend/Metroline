@@ -42,7 +42,7 @@ public class KeyboardController extends KeyAdapter {
     public void keyPressed(KeyEvent e) {
         if (e.isControlDown() && e.getKeyCode() == KeyEvent.VK_S) {
             if(screen instanceof WorldGameScreen gamescreen) {
-                gamescreen.saveWorldToPNG();
+                WorldGameScreen.getInstance().world.saveWorldToPNG();
                 e.consume(); // Предотвращаем дальнейшую обработку
             }
         }
@@ -52,10 +52,15 @@ public class KeyboardController extends KeyAdapter {
                 break;
             case KeyEvent.VK_SHIFT:
                 WorldGameScreen.getInstance().isShiftPressed = true;
-
                 break;
             case KeyEvent.VK_C:
                 WorldGameScreen.getInstance().isCPressed = true;
+                break;
+            case KeyEvent.VK_ESCAPE:
+                WorldGameScreen.getInstance().isEscPressed = true;
+                break;
+            case KeyEvent.VK_ALT:
+                WorldGameScreen.getInstance().isAltPressed = true;
                 break;
             case KeyEvent.VK_DELETE:
                 WorldGameScreen.getInstance().deleteSelectedStation();
@@ -77,6 +82,12 @@ public class KeyboardController extends KeyAdapter {
 
                 WorldGameScreen.getInstance().isCPressed = false;
 
+                break;
+            case KeyEvent.VK_ESCAPE:
+                WorldGameScreen.getInstance().isEscPressed = false;
+                break;
+            case KeyEvent.VK_ALT:
+                WorldGameScreen.getInstance().isAltPressed = false;
                 break;
         }
     }
