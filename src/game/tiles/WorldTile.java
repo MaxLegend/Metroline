@@ -1,6 +1,7 @@
 package game.tiles;
 
 import game.core.Tile;
+import screens.WorldGameScreen;
 
 import java.awt.*;
 /**
@@ -38,10 +39,13 @@ public class WorldTile extends Tile {
         int grayValue = 230 - (int)(perm * 100);
         grayValue = Math.max(100, Math.min(230, grayValue));
         g.setColor(new Color(grayValue, grayValue, grayValue));
-        g.fillRect(drawX, drawY, drawSize, drawSize);
+        // Рисуем без границ (на 1 пиксель больше)
+        g.fillRect(drawX - 1, drawY - 1, drawSize + 2, drawSize + 2);
 
-        // Draw border
-   //     g.setColor(Color.GRAY);
-    //    g.drawRect(drawX, drawY, drawSize, drawSize);
+        // Только в debug-режиме рисуем границы
+        if (WorldGameScreen.getInstance().debugMode) {
+            g.setColor(Color.GRAY);
+            g.drawRect(drawX, drawY, drawSize, drawSize);
+        }
     }
 }

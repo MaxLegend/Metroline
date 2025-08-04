@@ -3,11 +3,13 @@ package game.objects;
 import game.core.GameObject;
 import game.objects.enums.Direction;
 import game.objects.enums.StationType;
+import screens.WorldGameScreen;
 
 import java.awt.*;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Random;
+
 
 /**
  * Station game object
@@ -19,9 +21,9 @@ public class Station extends GameObject {
             new Color(0, 0, 150),    // Dark blue
             new Color(200, 100, 0)   // Dark orange
     };
-    private Direction namePosition = Direction.EAST;
 
     private String name;
+
     private static final String[] NAME_PARTS = {"Pyatorocka", "Magnit", "Nizhni", "Kotova", "Baton", "Butilka",
             "Lolkek", "Tesmio", "Geroyev", "Svetofor", "Ploshad", "Proezd",
             "Sobakov", "Balka", "Ulitca", "Bred"};
@@ -43,17 +45,16 @@ public class Station extends GameObject {
     public String getName() {
         return name;
     }
-    public Direction getNamePosition() {
-        return namePosition;
-    }
 
-    public void setNamePosition(Direction position) {
-        this.namePosition = position;
-    }
     public void setName(String name) {
         this.name = name;
+        // Обновляем метку, если она существует
+        Label label = WorldGameScreen.getInstance().world.getLabelForStation(this);
+        if (label != null) {
+            label.setText(name);
+        }
     }
-    /**
+/**
      * Gets the station color
      * @return Color of the station
      */
@@ -93,7 +94,7 @@ public class Station extends GameObject {
         // Check if other station can accept this connection
         if (other.connections.size() >= 2) return false;
         if (other.connections.containsKey(dir)) return false;
-
+        if(other.getColor() != this.getColor()) return false;
         // Make the connection
         connections.put(oppositeDir, other);
         other.connections.put(dir, this);
@@ -190,57 +191,14 @@ public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
             break;
 
     }
-
+    //решить проблему почему соединяются станции разных цветов
     // Draw selection indicator
     if (selected) {
         g2d.setColor(Color.YELLOW);
         g2d.setStroke(new BasicStroke(2 * zoom));
         g2d.drawRoundRect(drawX - 2, drawY - 2, drawSize + 4, drawSize + 4, arcSize, arcSize);
     }
-    // Draw station name
-    if (zoom > 0.5f) {
-        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        Font font = new Font("Arial", Font.BOLD, (int)(10 * zoom));
-        g2d.setFont(font);
-        FontMetrics fm = g2d.getFontMetrics();
-        int textWidth = fm.stringWidth(name);
-        int textHeight = fm.getHeight();
-
-        // Определяем позицию текста в зависимости от namePosition
-        int textX = drawX;
-        int textY = drawY;
-
-        switch (namePosition) {
-            case NORTH:
-                textX += drawSize/2 - textWidth/2;
-                textY -= textHeight/2;
-                break;
-            case SOUTH:
-                textX += drawSize/2 - textWidth/2;
-                textY += drawSize + textHeight;
-                break;
-            case EAST:
-                textX += drawSize + 5;
-                textY += drawSize/2 + textHeight/3;
-                break;
-            case WEST:
-                textX -= textWidth + 5;
-                textY += drawSize/2 + textHeight/3;
-                break;
-        }
-
-        // Рисуем текст
-        g2d.setColor(Color.BLACK);
-        g2d.drawString(name, textX, textY);
-
-        // Подчеркивание для выбранной станции
-        if (selected) {
-            g2d.setColor(Color.YELLOW);
-            g2d.setStroke(new BasicStroke(2 * zoom));
-            g2d.drawLine(textX, textY + 2, textX + textWidth, textY + 2);
-        }
-    }
 }
 
 
@@ -295,22 +253,6 @@ public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
         return Direction.NORTH; // default
     }
 
-    /**
-     * Выводит отладочную информацию о станции
-     */
-    public void printDebugInfo() {
-        System.out.println("=== Station Debug Info ===");
-        System.out.println("Position: (" + x + "," + y + ")");
-        System.out.println("Type: " + type);
-        System.out.println("Color: " + color);
-        System.out.println("Connections: " + connections.size());
-
-        for (Map.Entry<Direction, Station> entry : connections.entrySet()) {
-            System.out.println("  " + entry.getKey() + " -> Station@" + entry.getValue().hashCode());
-        }
-
-        System.out.println("HashCode: " + hashCode());
-    }
 }
 
 

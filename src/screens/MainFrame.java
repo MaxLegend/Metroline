@@ -15,7 +15,7 @@ public class MainFrame extends JFrame {
     private Map<String, GameScreen> screens = new HashMap<>();
 
     public MainFrame() {
-        super("Metro Map Constructor");
+        super("Metroline");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1024, 768);
         setLayout(new BorderLayout());
@@ -28,7 +28,8 @@ public class MainFrame extends JFrame {
 
         // Create screens
         screens.put("menu", new MenuScreen(this));
-        screens.put("game", new WorldScreen(this));
+        screens.put("game", new WorldGameScreen(this));
+
 
         // Set initial screen
         switchScreen("menu");

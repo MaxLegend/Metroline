@@ -17,6 +17,7 @@ public class MenuScreen extends GameScreen {
         startButton.addActionListener(e -> parent.switchScreen("game"));
 
         add(startButton);
+
     }
 
     @Override

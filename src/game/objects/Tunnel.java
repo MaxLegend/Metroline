@@ -1,7 +1,6 @@
 package game.objects;
 
 import game.core.GameObject;
-import screens.WorldScreen;
 
 import java.awt.*;
 import java.awt.geom.GeneralPath;
@@ -56,6 +55,7 @@ public class Tunnel extends GameObject {
 
         // Check if straight line is possible (horizontal, vertical or perfect diagonal)
         if (isStraightLinePossible(x1, y1, x2, y2)) {
+            pathPoint = new PathPoint((x1 + x2) / 2, (y1 + y2) / 2);
             addStraightPath(x1, y1, x2, y2);
         } else {
             // Find optimal bend point that creates angle >= 90 degrees
@@ -217,7 +217,6 @@ public class Tunnel extends GameObject {
 
         // Отрисовка контрольных точек
         if (selected || pathPoint != null) {
-            if(WorldScreen.getCurrentMode() == WorldScreen.GameMode.EDIT) {
                 g2d.setColor(Color.MAGENTA);
                 for (PathPoint p : path) {
                     int x = (int)((p.getX() * 32 + offsetX + 16) * zoom);
@@ -225,7 +224,7 @@ public class Tunnel extends GameObject {
                     g2d.fillOval(x - 3, y - 3, 6, 6);
                 }
             }
-        }
+
     }
 
 }

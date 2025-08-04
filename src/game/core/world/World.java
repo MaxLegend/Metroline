@@ -1,30 +1,30 @@
 package game.core.world;
 
 import game.core.GameObject;
+import game.objects.Label;
 import game.objects.PathPoint;
 import game.objects.Station;
 import game.objects.Tunnel;
+import game.objects.enums.Direction;
 import game.tiles.GameTile;
 
 import game.tiles.GameTileBig;
 import game.tiles.WorldTile;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 /**
  * World class containing game logic and state
  */
 public class World {
-    private WorldTile[][] worldGrid;
-    private GameTile[][] gameGrid;
-    private GameTileBig[][] bigWorldGrid;
+    protected WorldTile[][] worldGrid;
+    protected GameTile[][] gameGrid;
+    protected GameTileBig[][] bigWorldGrid;
     Random rand = new Random();
-    private List<Station> stations = new ArrayList<>();
-    private List<Tunnel> tunnels = new ArrayList<>();
-
-    private int width, height;
+    protected List<Station> stations = new ArrayList<>();
+    protected List<Tunnel> tunnels = new ArrayList<>();
+    protected List<Label> labels = new ArrayList<>();
+    protected int width, height;
 
     public World(int width, int height) {
         this.width = width;
@@ -35,13 +35,14 @@ public class World {
     /**
      * Generates the world with terrain permissions
      */
-    private void generateWorld() {
+    public void generateWorld() {
         // Create world grid
         worldGrid = new WorldTile[width][height];
         gameGrid = new GameTile[width][height];
         bigWorldGrid = new GameTileBig[width*4][height*4];
 
         // Initialize with all perm=0
+       // for(int i = 0; i < 4; i++)
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 worldGrid[x][y] = new WorldTile(x, y, 0);
@@ -53,16 +54,11 @@ public class World {
                 bigWorldGrid[x][y] = new GameTileBig(x, y);
             }
         }
+        //in game mode
         addRivers(1);
-        // Add some perm=0.5 areas
         addOrganicAreas(0.5f, 8, 5, 15, 0.7f);
-
-        // Add some perm=1 areas (smaller)
         addOrganicAreas(1.0f, 5, 8, 20, 0.5f);
-
-
-        // Apply gradient smoothing
-            applyGradient();
+        applyGradient();
 
     }
 
@@ -318,9 +314,52 @@ public class World {
     public GameTile[][] getGameGrid() { return gameGrid; }
 
 
-
+    public boolean isLabelPositionValid(int labelX, int labelY, Station station) {
+        // Проверяем, что позиция находится в пределах 1 клетки от станции
+        return Math.abs(labelX - station.getX()) <= 1 &&
+                Math.abs(labelY - station.getY()) <= 1 &&
+                getStationAt(labelX, labelY) == null; // И клетка свободна
+    }
     public GameTileBig[][] getBigWorldGrid() { return bigWorldGrid; }
+    public Label getLabelForStation(Station station) {
+        for (Label label : labels) {
+            if (label.getParentStation() == station) {
+                return label;
+            }
+        }
+        return null;
+    }
+    public PathPoint findFreePositionNear(int x, int y, String name) {
+        // Сортируем направления по приоритету (право, низ, лево, верх, затем диагонали)
+        List<Direction> priorityDirections = Arrays.asList(
+                Direction.EAST, Direction.SOUTH, Direction.WEST, Direction.NORTH,
+                Direction.SOUTHEAST, Direction.SOUTHWEST, Direction.NORTHEAST, Direction.NORTHWEST
+        );
 
+        for (Direction dir : priorityDirections) {
+            int nx = x + dir.getDx();
+            int ny = y + dir.getDy();
+
+            if (nx >= 0 && nx < width && ny >= 0 && ny < height &&
+                    getStationAt(nx, ny) == null && getLabelAt(nx, ny) == null) {
+
+                // Проверяем, что текст не будет перекрывать станцию
+                if (isTextPositionGood(dir, name)) {
+                    return new PathPoint(nx, ny);
+                }
+            }
+        }
+        return null;
+    }
+
+    private boolean isTextPositionGood(Direction dir, String name) {
+        // Для коротких названий любая позиция подходит
+        if (name.length() <= 6) return true;
+
+        // Для длинных названий предпочитаем право и низ
+        return dir == Direction.EAST || dir == Direction.SOUTH ||
+                dir == Direction.SOUTHEAST || dir == Direction.SOUTHWEST;
+    }
 
     /**
      * Gets all stations
@@ -335,13 +374,51 @@ public class World {
     public List<Tunnel> getTunnels() { return tunnels; }
 
     /**
+     * Gets all labels
+     * @return List of labels
+     */
+    public List<Label> getLabels() { return labels; }
+
+    /**
+     * Adds a label to the world
+     * @param label Station to add
+     */
+    public void addLabel(Label label) {
+        labels.add(label);
+        gameGrid[label.getX()][label.getY()].setContent(label);
+    }
+    public void removeLabel(Label label) {
+        labels.remove(label);
+        gameGrid[label.getX()][label.getY()].setContent(null);
+    }
+    /**
+     * Gets the label at specified coordinates
+     * @param x X coordinate
+     * @param y Y coordinate
+     * @return label or null if none exists
+     */
+    public Label getLabelAt(int x, int y) {
+        if (x < 0 || x >= width || y < 0 || y >= height) return null;
+        GameObject obj = gameGrid[x][y].getContent();
+        return obj instanceof Label ? (Label)obj : null;
+    }
+    /**
      * Adds a station to the world
      * @param station Station to add
      */
     public void addStation(Station station) {
+        if (gameGrid[station.getX()][station.getY()].getContent() != null) {
+            return;
+        }
         stations.add(station);
-
         gameGrid[station.getX()][station.getY()].setContent(station);
+
+        // Передаем имя станции для выбора оптимальной позиции
+        PathPoint labelPos = findFreePositionNear(station.getX(), station.getY(), station.getName());
+        if (labelPos != null) {
+            Label label = new Label(labelPos.x, labelPos.y, station.getName(), station);
+            addLabel(label);
+        }
     }
 
     /**
@@ -349,10 +426,15 @@ public class World {
      * @param station Station to remove
      */
     public void removeStation(Station station) {
+        Label label = getLabelForStation(station);
+        if (label != null) {
+            removeLabel(label);
+        }
         for (Station connectedStation : new ArrayList<>(station.getConnections().values())) {
             station.disconnect(connectedStation);
         }
         stations.remove(station);
+        // Удаляем метку станции
         gameGrid[station.getX()][station.getY()].setContent(null);
 
         // Remove any tunnels connected to this station
@@ -365,6 +447,7 @@ public class World {
      * @return True if tunnel was added successfully
      */
     public boolean addTunnel(Tunnel tunnel) {
+
         if (tunnel.getStart().connect(tunnel.getEnd())) {
             tunnels.add(tunnel);
             return true;
