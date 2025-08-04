@@ -10,9 +10,13 @@ import game.core.world.tiles.GameTile;
 
 import game.core.world.tiles.GameTileBig;
 import game.core.world.tiles.WorldTile;
+import screens.WorldGameScreen;
 
-import java.io.Serializable;
+import javax.swing.*;
+import java.awt.*;
+import java.io.*;
 import java.util.*;
+import java.util.List;
 
 /**
  * World class containing game logic and state
@@ -20,6 +24,9 @@ import java.util.*;
 public class World implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
+    private static final String SAVE_FOLDER = "metroline_saves";
+    private static final String SAVE_FILE = "save.metro";
 
     protected WorldTile[][] worldGrid;
     protected GameTile[][] gameGrid;
@@ -511,5 +518,82 @@ public class World implements Serializable {
      * @return Height in tiles
      */
     public int getHeight() { return height; }
+
+
+    public void saveWorld() {
+        File saveDir = new File(SAVE_FOLDER);
+        if (!saveDir.exists()) {
+            saveDir.mkdir();
+        }
+
+        File saveFile = new File(SAVE_FOLDER + File.separator + SAVE_FILE);
+
+        try (ObjectOutputStream oos = new ObjectOutputStream(
+                new FileOutputStream(saveFile))) {
+            oos.writeObject(WorldGameScreen.getInstance().world);
+            showMessageDialog("Сохранение", "Мир успешно сохранен!");
+        } catch (IOException ex) {
+            showErrorDialog("Ошибка сохранения", "Ошибка сохранения: " + ex.getMessage());
+        }
+    }
+
+    public boolean loadWorld() {
+        File saveFile = new File(SAVE_FOLDER + File.separator + SAVE_FILE);
+
+        if (!saveFile.exists()) {
+            return false;
+        }
+
+        try (ObjectInputStream ois = new ObjectInputStream(
+                new FileInputStream(saveFile))) {
+            WorldGameScreen.getInstance().world = (World) ois.readObject();
+            WorldGameScreen.getInstance().invalidateCache();
+            WorldGameScreen.getInstance().repaint();
+            showMessageDialog("Загрузка", "Мир успешно загружен!");
+            return true;
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            showErrorDialog("Ошибка загрузки", "Ошибка загрузки: " + ex.getMessage());
+        }
+        return false;
+    }
+
+    private void showMessageDialog(String title, String message) {
+        JOptionPane pane = new JOptionPane(
+                "<html><body><p style='width: 200px;'>" + message + "</p></body></html>",
+                JOptionPane.INFORMATION_MESSAGE
+        );
+
+        JDialog dialog = pane.createDialog(WorldGameScreen.getInstance(), title);
+
+        // Дополнительная стилизация окна
+        dialog.getContentPane().setBackground(new Color(45, 45, 45));
+        for (Component comp : dialog.getContentPane().getComponents()) {
+            if (comp instanceof JLabel) {
+                ((JLabel)comp).setForeground(Color.WHITE);
+            }
+        }
+
+        dialog.setVisible(true);
+    }
+
+    private void showErrorDialog(String title, String message) {
+        JOptionPane pane = new JOptionPane(
+                "<html><body><p style='width: 200px; color:#ff6666;'>" + message + "</p></body></html>",
+                JOptionPane.ERROR_MESSAGE
+        );
+
+        JDialog dialog = pane.createDialog(WorldGameScreen.getInstance(), title);
+
+        // Стилизация для ошибок
+        dialog.getContentPane().setBackground(new Color(45, 45, 45));
+        for (Component comp : dialog.getContentPane().getComponents()) {
+            if (comp instanceof JLabel) {
+                ((JLabel)comp).setForeground(new Color(255, 100, 100));
+            }
+        }
+
+        dialog.setVisible(true);
+    }
 }
 

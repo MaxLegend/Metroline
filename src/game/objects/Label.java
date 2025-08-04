@@ -7,8 +7,7 @@ import java.awt.*;
 import java.io.Serializable;
 
 
-public class Label extends GameObject implements Serializable {
-    private static final long serialVersionUID = 1L;
+public class Label extends GameObject {
     private String text;
     private Station parentStation;
     public Label() {

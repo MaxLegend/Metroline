@@ -8,8 +8,8 @@ import java.io.Serializable;
 /**
  * Game tile that can contain game objects
  */
-public class GameTile extends Tile implements Serializable {
-    private static final long serialVersionUID = 1L;
+public class GameTile extends Tile {
+
     private GameObject content;
     public GameTile() {
         super(0, 0, 16); // Значения по умолчанию

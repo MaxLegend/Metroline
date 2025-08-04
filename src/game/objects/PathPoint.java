@@ -8,8 +8,7 @@ import java.io.Serializable;
 /**
  * Point in the tunnel path that uses world grid coordinates (like Station)
  */
-public class PathPoint extends GameObject implements Serializable {
-    private static final long serialVersionUID = 1L;
+public class PathPoint extends GameObject {
     public PathPoint(int x, int y) {
         super(x, y);
     }

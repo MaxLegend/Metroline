@@ -5,8 +5,7 @@ import game.core.Tile;
 
 import java.io.Serializable;
 
-public class GameTileBig extends Tile implements Serializable {
-    private static final long serialVersionUID = 1L;
+public class GameTileBig extends Tile {
     private GameObject content;
     public GameTileBig() {
         super(0, 0, 64); // Значения по умолчанию

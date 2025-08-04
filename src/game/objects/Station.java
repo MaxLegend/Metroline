@@ -15,8 +15,7 @@ import java.util.Random;
 /**
  * Station game object
  */
-public class Station extends GameObject implements Serializable {
-    private static final long serialVersionUID = 1L;
+public class Station extends GameObject {
     public static final Color[] COLORS = {
             new Color(150, 0, 0),    // Dark red
             new Color(0, 100, 0),    // Dark green

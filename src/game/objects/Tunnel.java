@@ -11,8 +11,8 @@ import java.util.List;
 /**
  * Tunnel game object connecting stations
  */
-public class Tunnel extends GameObject implements Serializable {
-    private static final long serialVersionUID = 1L;
+public class Tunnel extends GameObject {
+
     private Station start;
     private Station end;
     private List<PathPoint> path = new ArrayList<>();

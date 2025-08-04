@@ -4,6 +4,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 /**
  * Menu screen implementation
@@ -24,8 +26,8 @@ public class MenuScreen extends GameScreen {
         // Title
         JLabel title = new JLabel("METROLINE");
         title.setForeground(Color.WHITE);
-        title.setFont(new Font("Arial", Font.BOLD, 32));
-        gbc.insets = new Insets(0, 50, 50, 0);
+        title.setFont(new Font("Arial", Font.BOLD, 42));
+        gbc.insets = new Insets(0, 30, 50, 0);
         add(title, gbc);
 
         // Reset insets for buttons
@@ -37,7 +39,28 @@ public class MenuScreen extends GameScreen {
 
         JButton loadButton = createMenuButton("Load Game");
         loadButton.addActionListener(e -> loadGame(parent));
+        startButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                startButton.setBackground(new Color(80, 80, 80));
+            }
 
+            @Override
+            public void mouseExited(MouseEvent e) {
+                startButton.setBackground(new Color(60, 60, 60));
+            }
+        });
+        loadButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                loadButton.setBackground(new Color(80, 80, 80));
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                loadButton.setBackground(new Color(60, 60, 60));
+            }
+        });
         add(startButton, gbc);
         add(loadButton, gbc);
     }
@@ -49,7 +72,7 @@ public class MenuScreen extends GameScreen {
         button.setForeground(Color.WHITE);
         button.setBorder(BorderFactory.createEmptyBorder(5, 15, 5, 15));
         button.setFocusPainted(false);
-        button.setHorizontalAlignment(SwingConstants.LEFT);
+        button.setHorizontalAlignment(SwingConstants.CENTER);
         button.setContentAreaFilled(false);
         button.setOpaque(true);
         return button;
@@ -61,7 +84,7 @@ public class MenuScreen extends GameScreen {
 
         // Затем загружаем мир
         WorldGameScreen gameScreen = (WorldGameScreen) parent.getCurrentScreen();
-        gameScreen.loadWorld();
+        gameScreen.world.loadWorld();
 
         // Если загрузка не удалась, предлагаем создать новый мир
         if (gameScreen.getWorld() == null) {

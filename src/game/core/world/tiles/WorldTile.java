@@ -9,8 +9,7 @@ import java.io.Serializable;
 /**
  * World tile that represents terrain with building permissions
  */
-public class WorldTile extends Tile implements Serializable {
-    private static final long serialVersionUID = 1L;
+public class WorldTile extends Tile {
     private float perm; // 0 = can build, 1 = cannot build
     public WorldTile() {
         super(0, 0, 16);

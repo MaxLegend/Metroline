@@ -28,9 +28,8 @@ import java.util.Map;
  * World screen that displays and interacts with the game world
  */
 public class WorldGameScreen extends WorldScreen {
-    private static final String SAVE_FOLDER = "metroline_saves";
-    private static final String SAVE_FILE = "save.metro";
-    
+
+
     public static int widthWorld = 100, heightWorld = 100;
 
     // Input controllers
@@ -317,45 +316,5 @@ public class WorldGameScreen extends WorldScreen {
         ImageIO.write(image, "PNG", file);
     }
 
-    public void saveWorld() {
-        // Создаем папку для сохранений, если ее нет
-        File saveDir = new File(SAVE_FOLDER);
-        if (!saveDir.exists()) {
-            saveDir.mkdir();
-        }
 
-        File saveFile = new File(SAVE_FOLDER + File.separator + SAVE_FILE);
-
-        try (ObjectOutputStream oos = new ObjectOutputStream(
-                new FileOutputStream(saveFile))) {
-            oos.writeObject(world);
-            JOptionPane.showMessageDialog(this, "Мир успешно сохранен!");
-        } catch (IOException ex) {
-            JOptionPane.showMessageDialog(this, "Ошибка сохранения: " + ex.getMessage(),
-                    "Ошибка", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    public boolean loadWorld() {
-        File saveFile = new File(SAVE_FOLDER + File.separator + SAVE_FILE);
-
-        if (!saveFile.exists()) {
-            return false;
-        }
-
-        try (ObjectInputStream ois = new ObjectInputStream(
-                new FileInputStream(saveFile))) {
-
-            this.world = (World) ois.readObject();
-            invalidateCache();
-            repaint();
-            return true;
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(this,
-                    "Ошибка загрузки: " + ex.getMessage(),
-                    "Ошибка загрузки", JOptionPane.ERROR_MESSAGE);
-        }
-        return false;
-    }
 }
