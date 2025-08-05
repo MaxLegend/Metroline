@@ -40,12 +40,12 @@ public class WorldTile extends Tile {
         int drawY = (int)((y * size + offsetY) * zoom);
 
         // Темная цветовая схема на основе уровня разрешения (perm)
-        int baseDark = 30; // Базовый темный цвет
-        int range = 100;    // Диапазон вариаций
+        int baseDark = 110; // Базовый темный цвет
+        int range = 50;    // Диапазон вариаций
 
         // Инвертируем значение perm для темной темы (0 = светлее, 1 = темнее)
-        int darkValue = baseDark + (int)(perm * range);
-        darkValue = Math.max(baseDark, Math.min(baseDark + range, darkValue));
+        int darkValue = baseDark - (int)(perm * range);
+        darkValue = Math.max(baseDark - range, Math.min(baseDark + range, darkValue));
 
         // Создаем основной цвет плитки
         Color tileColor = new Color(darkValue, darkValue, darkValue);
