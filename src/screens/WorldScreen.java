@@ -1,10 +1,8 @@
 package screens;
 
-import game.core.GameObject;
-import game.core.world.World;
+import game.core.world.SandboxWorld;
 import game.input.ClickHandler;
 import game.objects.PathPoint;
-import game.objects.Station;
 
 import java.awt.*;
 
@@ -12,15 +10,14 @@ import java.awt.*;
  * The main class for summarizing all game mechanics for the basics of the world.
  */
 public class WorldScreen extends GameScreen{
-    public static WorldGameScreen INSTANCE;
-    public static Station selectedStation = null;
-    public static GameObject selectedObject = null;
+    public static WorldScreen INSTANCE;
+
     public float zoom = 1.0f;
     public  int offsetX = 0;
     public  int offsetY = 0;
     //Central click handler
-    private ClickHandler clickHandler;
-    public World world;
+    public ClickHandler clickHandler;
+    public SandboxWorld sandboxWorld;
     // Service keys
     public boolean isEscPressed = false;
     public boolean isAltPressed = false;
@@ -32,13 +29,15 @@ public class WorldScreen extends GameScreen{
         super(parent);
         this.clickHandler = new ClickHandler();
     }
+
+
     /**
      * Handles mouse click on the world
      * @param x X coordinate in world space
      * @param y Y coordinate in world space
      */
     public void handleClick(int x, int y) {
-        if (x < 0 || x >= world.getWidth() || y < 0 || y >= world.getHeight()) {
+        if (x < 0 || x >= sandboxWorld.getWidth() || y < 0 || y >= sandboxWorld.getHeight()) {
             return;
         }
         if (isShiftPressed && isCPressed) {
@@ -56,7 +55,7 @@ public class WorldScreen extends GameScreen{
 
         repaint();
     }
-    public static WorldGameScreen getInstance() {
+    public static WorldScreen getInstance() {
         return INSTANCE;
     }
     @Override

@@ -1,10 +1,9 @@
 package game.objects;
 
 import game.core.GameObject;
-import screens.WorldGameScreen;
+import screens.WorldSandboxScreen;
 
 import java.awt.*;
-import java.io.Serializable;
 
 
 public class Label extends GameObject {
@@ -34,14 +33,14 @@ public class Label extends GameObject {
 
     public boolean tryMoveTo(int newX, int newY) {
         Station parent = getParentStation();
-        if (WorldGameScreen.getInstance().world.isLabelPositionValid(newX, newY, parent)) {
+        if (WorldSandboxScreen.getInstance().sandboxWorld.isLabelPositionValid(newX, newY, parent)) {
             // Освобождаем старую позицию
-            WorldGameScreen.getInstance().world.getGameGrid()[getX()][getY()].setContent(null);
+            WorldSandboxScreen.getInstance().sandboxWorld.getGameGrid()[getX()][getY()].setContent(null);
 
             // Занимаем новую позицию
             this.x = newX;
             this.y = newY;
-            WorldGameScreen.getInstance().world.getGameGrid()[newX][newY].setContent(this);
+            WorldSandboxScreen.getInstance().sandboxWorld.getGameGrid()[newX][newY].setContent(this);
             return true;
         }
         return false;

@@ -4,7 +4,10 @@ import game.core.GameObject;
 import game.core.Tile;
 
 import java.io.Serializable;
-
+/**
+ * Big game tile that can contain game objects
+ * @author Tesmio
+ */
 public class GameTileBig extends Tile {
     private GameObject content;
     public GameTileBig() {

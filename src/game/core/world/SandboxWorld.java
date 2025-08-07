@@ -1,6 +1,7 @@
 package game.core.world;
 
 import game.core.GameObject;
+import game.core.GameTime;
 import game.objects.Label;
 import game.objects.PathPoint;
 import game.objects.Station;
@@ -10,7 +11,8 @@ import game.core.world.tiles.GameTile;
 
 import game.core.world.tiles.GameTileBig;
 import game.core.world.tiles.WorldTile;
-import screens.WorldGameScreen;
+import screens.WorldSandboxScreen;
+import util.MetroLogger;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -24,9 +26,10 @@ import java.util.List;
 
 /**
  * World class containing game logic and state
+ * @author Tesmio
  */
-public class World implements Serializable {
-
+public class SandboxWorld implements Serializable {
+    protected GameTime gameTime;
     private static final long serialVersionUID = 1L;
 
     private static final String SAVE_FOLDER = "metroline_saves";
@@ -40,45 +43,90 @@ public class World implements Serializable {
     protected List<Tunnel> tunnels = new ArrayList<>();
     protected List<Label> labels = new ArrayList<>();
     protected int width, height;
-    public World() {
+    public SandboxWorld() {
         super();
     }
-    public World(int width, int height) {
+//    public SandboxWorld(int width, int height) {
+//        this.width = width;
+//        this.height = height;
+//        this.gameTime = new GameTime();
+//        generateWorld();
+//    }
+
+    public SandboxWorld(int width, int height, boolean hasOrganicPatches, boolean hasRivers) {
         this.width = width;
         this.height = height;
-        generateWorld();
+        this.gameTime = new GameTime();
+        generateWorld(hasOrganicPatches, hasRivers);
     }
 
-    /**
-     * Generates the world with terrain permissions
-     */
-    public void generateWorld() {
+    public void generateWorld(boolean hasOrganicPatches, boolean hasRivers) {
         // Create world grid
         worldGrid = new WorldTile[width][height];
         gameGrid = new GameTile[width][height];
         bigWorldGrid = new GameTileBig[width*4][height*4];
 
         // Initialize with all perm=0
-       // for(int i = 0; i < 4; i++)
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 worldGrid[x][y] = new WorldTile(x, y, 0);
                 gameGrid[x][y] = new GameTile(x, y);
             }
         }
+
         for (int y = 0; y < height*4; y++) {
             for (int x = 0; x < width*4; x++) {
                 bigWorldGrid[x][y] = new GameTileBig(x, y);
             }
         }
-        //in game mode
-        addRivers(1);
-        addOrganicAreas(0.5f, 8, 5, 15, 0.7f);
-        addOrganicAreas(1.0f, 5, 8, 20, 0.5f);
+
+        // Generate features based on parameters
+        if (hasRivers) {
+            addRivers(1);
+        }
+
+        if (hasOrganicPatches) {
+            addOrganicAreas(0.5f, 8, 5, 15, 0.7f);
+            addOrganicAreas(1.0f, 5, 8, 20, 0.5f);
+        }
+
         applyGradient();
-
     }
-
+//    /**
+//     * Generates the world with terrain permissions
+//     */
+//    public void generateWorld() {
+//        // Create world grid
+//        worldGrid = new WorldTile[width][height];
+//        gameGrid = new GameTile[width][height];
+//        bigWorldGrid = new GameTileBig[width*4][height*4];
+//
+//        // Initialize with all perm=0
+//       // for(int i = 0; i < 4; i++)
+//        for (int y = 0; y < height; y++) {
+//            for (int x = 0; x < width; x++) {
+//                worldGrid[x][y] = new WorldTile(x, y, 0);
+//                gameGrid[x][y] = new GameTile(x, y);
+//            }
+//        }
+//        for (int y = 0; y < height*4; y++) {
+//            for (int x = 0; x < width*4; x++) {
+//                bigWorldGrid[x][y] = new GameTileBig(x, y);
+//            }
+//        }
+//        //in game mode
+//        addRivers(1);
+//        addOrganicAreas(0.5f, 8, 5, 15, 0.7f);
+//        addOrganicAreas(1.0f, 5, 8, 20, 0.5f);
+//        applyGradient();
+//
+//    }
+public void updateWorldTime() {
+    gameTime.update();
+}
+    public GameTime getGameTime() {
+        return gameTime;
+    }
     private void addOrganicAreas(float perm, int count, int minSize, int maxSize, float irregularity) {
         Random rand = new Random();
 
@@ -443,6 +491,7 @@ public class World implements Serializable {
      * @param station Station to remove
      */
     public void removeStation(Station station) {
+
         Label label = getLabelForStation(station);
         if (label != null) {
             removeLabel(label);
@@ -534,9 +583,11 @@ public class World implements Serializable {
 
         try (ObjectOutputStream oos = new ObjectOutputStream(
                 new FileOutputStream(saveFile))) {
-            oos.writeObject(WorldGameScreen.getInstance().world);
+            oos.writeObject(WorldSandboxScreen.getInstance().sandboxWorld);
+            MetroLogger.logInfo("World successfully saved");
             showTimedMessage("World successfully saved", false, 2000);
         } catch (IOException ex) {
+            MetroLogger.logError("Failed to save world", ex);
             showTimedMessage("Saved Error: " + ex.getMessage(), true, 2000);
         }
     }
@@ -561,13 +612,15 @@ public class World implements Serializable {
 
         try (ObjectInputStream ois = new ObjectInputStream(
                 new FileInputStream(saveFile))) {
-            WorldGameScreen.getInstance().world = (World) ois.readObject();
-            WorldGameScreen.getInstance().invalidateCache();
-            WorldGameScreen.getInstance().repaint();
+            WorldSandboxScreen.getInstance().sandboxWorld = (SandboxWorld) ois.readObject();
+            WorldSandboxScreen.getInstance().invalidateCache();
+            WorldSandboxScreen.getInstance().repaint();
+            MetroLogger.logInfo("World successfully loaded");
             showTimedMessage("World successfully loaded", false, 2000);
             return true;
         } catch (Exception ex) {
             ex.printStackTrace();
+            MetroLogger.logError("Failed to load world", ex);
             showTimedMessage("Loaded Error: " + ex.getMessage(), true, 2000);
         }
         return false;
@@ -632,11 +685,11 @@ public class World implements Serializable {
 
             // Показываем сообщение с путем к файлу
             String message = "Save: " + file.getAbsolutePath();
-            WorldGameScreen.getInstance().world.showTimedMessage(message, false, 4000);
+            WorldSandboxScreen.getInstance().sandboxWorld.showTimedMessage(message, false, 4000);
 
         } catch (IOException ex) {
             // Показываем сообщение об ошибке
-            WorldGameScreen.getInstance().world.showTimedMessage("Save Error: " + ex.getMessage(), true, 4000);
+            WorldSandboxScreen.getInstance().sandboxWorld.showTimedMessage("Save Error: " + ex.getMessage(), true, 4000);
             ex.printStackTrace();
         }
     }
@@ -647,8 +700,8 @@ public class World implements Serializable {
      */
     public void saveWorldToPNG(File file) throws IOException {
         // Создаем изображение размером с мир
-        int width =  WorldGameScreen.getInstance().widthWorld * 32;  // 32 пикселя на клетку
-        int height =  WorldGameScreen.getInstance().heightWorld * 32;
+        int width =  WorldSandboxScreen.getInstance().widthWorld * 32;  // 32 пикселя на клетку
+        int height =  WorldSandboxScreen.getInstance().heightWorld * 32;
         BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2d = image.createGraphics();
 
@@ -659,20 +712,20 @@ public class World implements Serializable {
             g2d.setComposite(AlphaComposite.SrcOver);
 
             // Рисуем все элементы мира
-            WorldGameScreen.getInstance().drawStaticWorld(g2d);  // Сетка и статические объекты
+            WorldSandboxScreen.getInstance().drawStaticWorld(g2d);  // Сетка и статические объекты
 
             // Рисуем туннели
-            for (Tunnel tunnel :  WorldGameScreen.getInstance().world.getTunnels()) {
+            for (Tunnel tunnel :  WorldSandboxScreen.getInstance().sandboxWorld.getTunnels()) {
                 tunnel.draw(g2d, 0, 0, 1);
             }
 
             // Рисуем станции
-            for (Station station : WorldGameScreen.getInstance(). world.getStations()) {
+            for (Station station : WorldSandboxScreen.getInstance().sandboxWorld.getStations()) {
                 station.draw(g2d, 0, 0, 1);
             }
 
             // Рисуем метки
-            for (Label label :  WorldGameScreen.getInstance().world.getLabels()) {
+            for (Label label :  WorldSandboxScreen.getInstance().sandboxWorld.getLabels()) {
                 label.draw(g2d, 0, 0, 1);
             }
         } finally {

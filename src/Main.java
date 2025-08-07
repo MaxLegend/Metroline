@@ -1,5 +1,7 @@
 import screens.MainFrame;
 
+import util.MetroLogger;
+
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
@@ -7,51 +9,62 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Date;
+import java.util.logging.Level;
 
+/**
+ * Main class my game Metroline.
+ * @author  Tesmio
+ * @Create Application birth July 17, 2025
+ */
 public class Main {
     public static void main(String[] args) {
         try {
-            PrintStream logFile = new PrintStream(new File("metroline_startup.log"));
-            System.setOut(logFile);
-            System.setErr(logFile);
-            // Устанавливаем обработчик неперехваченных исключений
+            MetroLogger.setup();
+
+            MetroLogger.logInfo( "=== Start Metroline ===");
+            MetroLogger.logInfo("Java version: " + System.getProperty("java.version"));
+            MetroLogger.logInfo( "OS: " + System.getProperty("os.name"));
+
             Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
-                showFatalError("Strange error in flow " + thread.getName(), throwable);
+                MetroLogger.logError("Uncaught exception in thread: " + thread.getName(), throwable);
+                showFatalError("Critical error in thread " + thread.getName(), throwable);
             });
-            System.out.println("=== Start Metroline " + new Date() + " ===");
-            System.out.println("Java version: " + System.getProperty("java.version"));
-            System.out.println("OS: " + System.getProperty("os.name"));
-            System.out.println("Launch...");
-            MainFrame frame = new MainFrame();
-            frame.setVisible(true);
-            System.out.println("Main window is launched");
-        }   catch (Throwable t) {
-        try (PrintWriter pw = new PrintWriter("metroline_crash.log")) {
-            t.printStackTrace(pw);
+
+            SwingUtilities.invokeLater(() -> {
+                try {
+                    MainFrame frame = new MainFrame();
+                    frame.setVisible(true);
+                    MetroLogger.logInfo("Main window launched successfully");
+                } catch (Exception e) {
+                    MetroLogger.logError( "Failed to create main window", e);
+                    showFatalError("Failed to create main window", e);
+                }
+            });
+
+        } catch (Throwable t) {
+            MetroLogger.logError( "Application startup failed", t);
+            showFatalError("Application startup failed", t);
+        }
+    }
+
+    private static void showFatalError(String title, Throwable throwable) {
+        try (PrintWriter pw = new PrintWriter("metroline_crash_" + System.currentTimeMillis() + ".log")) {
+            pw.println("=== CRASH REPORT ===");
+            pw.println("Time: " + new Date());
+            pw.println("Title: " + title);
+            pw.println("\nStack Trace:");
+            throwable.printStackTrace(pw);
+
             pw.println("\nSystem properties:");
             System.getProperties().forEach((k,v) -> pw.println(k + "=" + v));
         } catch (Exception e) {
-            // Если даже запись в файл не сработала
-            JOptionPane.showMessageDialog(null,
-                    "Critical error: " + e.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
+            System.err.println("Failed to write crash report: " + e.getMessage());
         }
-        JOptionPane.showMessageDialog(null,
-                "Application failed to start. See metroline_crash.log",
-                "Error", JOptionPane.ERROR_MESSAGE);
-    }
-    }
-    private static void showFatalError(String title, Throwable throwable) {
-        System.err.println(title + ":");
-        throwable.printStackTrace();
 
-        // Формируем детализированное сообщение об ошибке
         StringWriter sw = new StringWriter();
         throwable.printStackTrace(new PrintWriter(sw));
-        String errorDetails = sw.toString();
 
-        // Создаем панель с прокруткой для отображения полного стека ошибок
-        JTextArea textArea = new JTextArea(errorDetails);
+        JTextArea textArea = new JTextArea(sw.toString());
         textArea.setEditable(false);
         textArea.setBackground(new Color(30, 30, 30));
         textArea.setForeground(Color.WHITE);
@@ -60,7 +73,6 @@ public class Main {
         JScrollPane scrollPane = new JScrollPane(textArea);
         scrollPane.setPreferredSize(new Dimension(800, 600));
 
-        // Создаем кастомное диалоговое окно
         JOptionPane.showMessageDialog(
                 null,
                 scrollPane,
@@ -68,6 +80,7 @@ public class Main {
                 JOptionPane.ERROR_MESSAGE
         );
 
+        MetroLogger.close();
         System.exit(1);
     }
 }

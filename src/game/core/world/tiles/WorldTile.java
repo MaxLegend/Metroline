@@ -1,13 +1,13 @@
 package game.core.world.tiles;
 
 import game.core.Tile;
-import screens.WorldGameScreen;
+import screens.WorldSandboxScreen;
 
 import java.awt.*;
-import java.io.Serializable;
 
 /**
  * World tile that represents terrain with building permissions
+ * @author Tesmio
  */
 public class WorldTile extends Tile {
     private float perm; // 0 = can build, 1 = cannot build
@@ -55,7 +55,7 @@ public class WorldTile extends Tile {
         g.fillRect(drawX - 1, drawY - 1, drawSize + 2, drawSize + 2);
 
         // В debug-режиме рисуем границы
-        if (WorldGameScreen.getInstance().debugMode) {
+        if (WorldSandboxScreen.getInstance().debugMode) {
             g.setColor(new Color(80, 80, 80)); // Темно-серые границы
             g.drawRect(drawX, drawY, drawSize, drawSize);
 

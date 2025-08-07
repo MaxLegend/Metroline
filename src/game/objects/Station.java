@@ -3,10 +3,9 @@ package game.objects;
 import game.core.GameObject;
 import game.objects.enums.Direction;
 import game.objects.enums.StationType;
-import screens.WorldGameScreen;
+import screens.WorldSandboxScreen;
 
 import java.awt.*;
-import java.io.Serializable;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Random;
@@ -17,10 +16,22 @@ import java.util.Random;
  */
 public class Station extends GameObject {
     public static final Color[] COLORS = {
-            new Color(150, 0, 0),    // Dark red
-            new Color(0, 100, 0),    // Dark green
-            new Color(0, 0, 150),    // Dark blue
-            new Color(200, 100, 0)   // Dark orange
+            new Color(150, 0, 0),
+            new Color(0, 100, 0),
+            new Color(0, 120, 190),
+            new Color(12, 53, 255),
+            new Color(38, 190, 224),
+            new Color(110, 63, 21),
+            new Color(200, 100, 0),
+            new Color(133, 7, 133),
+            new Color(211, 179, 8),
+            new Color(153, 153, 153),
+            new Color(153, 204, 0),
+            new Color(79, 155, 155),
+            new Color(201, 48, 128),
+            new Color(3, 121, 95),
+            new Color(172, 23, 83),
+            new Color(109, 148, 104),
     };
 
     private String name;
@@ -52,7 +63,7 @@ public class Station extends GameObject {
     public void setName(String name) {
         this.name = name;
         // Обновляем метку, если она существует
-        Label label = WorldGameScreen.getInstance().world.getLabelForStation(this);
+        Label label = WorldSandboxScreen.getInstance().sandboxWorld.getLabelForStation(this);
         if (label != null) {
             label.setText(name);
         }

@@ -1,11 +1,9 @@
 package screens;
 
+import util.StyleUtil;
+
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 
 /**
  * Menu screen implementation
@@ -26,7 +24,7 @@ public class MenuScreen extends GameScreen {
         // Title
         JLabel title = new JLabel("METROLINE");
         title.setForeground(Color.WHITE);
-        title.setFont(new Font("Arial", Font.BOLD, 42));
+        title.setFont(new Font("Arial", Font.BOLD, 52));
         gbc.insets = new Insets(0, 30, 50, 0);
         add(title, gbc);
 
@@ -34,73 +32,24 @@ public class MenuScreen extends GameScreen {
         gbc.insets = new Insets(10, 50, 10, 0);
 
         // Minimalist buttons aligned to left
-        JButton startButton = createMenuButton("New Game");
-        startButton.addActionListener(e -> parent.switchScreen("game"));
+        JButton startButton = StyleUtil.createMetrolineButton("New Game",e -> parent.switchScreen("world_settings"));
+        JButton loadButton = StyleUtil.createMetrolineButton("Load Game",e -> loadGame(parent));
+        JButton exitButton = StyleUtil.createMetrolineButton("Exit", e -> System.exit(0));
 
-        JButton loadButton = createMenuButton("Load Game");
-        loadButton.addActionListener(e -> loadGame(parent));
-
-        JButton exitButton = createMenuButton("Exit");
-        exitButton.addActionListener(e -> System.exit(0));
-
-        startButton.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                startButton.setBackground(new Color(80, 80, 80));
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                startButton.setBackground(new Color(60, 60, 60));
-            }
-        });
-        loadButton.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                loadButton.setBackground(new Color(80, 80, 80));
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                loadButton.setBackground(new Color(60, 60, 60));
-            }
-        });
-        exitButton.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                exitButton.setBackground(new Color(80, 80, 80));
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                exitButton.setBackground(new Color(60, 60, 60));
-            }
-        });
         add(startButton, gbc);
         add(loadButton, gbc);
         add(exitButton, gbc);
+
     }
 
-    private JButton createMenuButton(String text) {
-        JButton button = new JButton(text);
-        button.setPreferredSize(new Dimension(200, 40));
-        button.setBackground(new Color(50, 50, 50));
-        button.setForeground(Color.WHITE);
-        button.setBorder(BorderFactory.createEmptyBorder(5, 15, 5, 15));
-        button.setFocusPainted(false);
-        button.setHorizontalAlignment(SwingConstants.CENTER);
-        button.setContentAreaFilled(false);
-        button.setOpaque(true);
-        return button;
-    }
 
     private void loadGame(MainFrame parent) {
         // Сначала переключаемся на игровой экран
         parent.switchScreen("game");
 
         // Затем загружаем мир
-        WorldGameScreen gameScreen = (WorldGameScreen) parent.getCurrentScreen();
-        gameScreen.world.loadWorld();
+        WorldSandboxScreen gameScreen = (WorldSandboxScreen) parent.getCurrentScreen();
+        gameScreen.sandboxWorld.loadWorld();
 
         // Если загрузка не удалась, предлагаем создать новый мир
         if (gameScreen.getWorld() == null) {

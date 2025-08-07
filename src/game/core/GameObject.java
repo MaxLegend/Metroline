@@ -5,6 +5,7 @@ import java.io.Serializable;
 
 /**
  * Base class for all game objects
+ * @author Tesmio
  */
 public abstract class GameObject implements Serializable {
     private static final long serialVersionUID = 1L;

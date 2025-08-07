@@ -5,6 +5,7 @@ import java.io.Serializable;
 
 /**
  * Represents a basic tile in the game world
+ * @author Tesmio
  */
 public class Tile implements Serializable {
     private static final long serialVersionUID = 1L;

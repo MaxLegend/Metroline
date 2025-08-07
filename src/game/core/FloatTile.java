@@ -4,6 +4,7 @@ import java.awt.*;
 
 /**
  * Represents a basic tile in the game world
+ * @author Tesmio
  */
 public class FloatTile {
     protected float x, y;

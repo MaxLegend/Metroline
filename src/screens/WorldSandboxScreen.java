@@ -1,10 +1,7 @@
 package screens;
 
+import game.core.world.SandboxWorld;
 
-import game.core.GameObject;
-import game.core.world.World;
-
-import game.input.ClickHandler;
 import game.input.KeyboardController;
 import game.input.MouseController;
 
@@ -14,23 +11,18 @@ import game.objects.Station;
 import game.objects.enums.Direction;
 import game.objects.Tunnel;
 
-import javax.imageio.ImageIO;
-import javax.swing.*;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
-import java.io.*;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+
 import java.util.Map;
 
 
 /**
  * World screen that displays and interacts with the game world
  */
-public class WorldGameScreen extends WorldScreen {
-
+public class WorldSandboxScreen extends WorldScreen {
+    public static WorldSandboxScreen INSTANCE;
 
     public static int widthWorld = 100, heightWorld = 100;
 
@@ -48,9 +40,10 @@ public class WorldGameScreen extends WorldScreen {
     private boolean cacheValid = false; // Флаг валидности кеша
 
 
-    public WorldGameScreen(MainFrame parent) {
+    public WorldSandboxScreen(MainFrame parent) {
         super(parent);
-        world = new World(widthWorld, heightWorld);
+
+        sandboxWorld = new SandboxWorld(widthWorld, heightWorld, false, false);
         INSTANCE = this;
 
         // Initialize controllers
@@ -62,8 +55,18 @@ public class WorldGameScreen extends WorldScreen {
         addMouseWheelListener(mouseController);
         addKeyListener(keyboardController);
         initWorldCache();
+        sandboxWorld.getGameTime().start();
 
-
+    }
+    public void createNewWorld(int width, int height, boolean hasOrganicPatches, boolean hasRivers) {
+        widthWorld = width;
+        heightWorld = height;
+        sandboxWorld = new SandboxWorld(width, height, hasOrganicPatches, hasRivers);
+        invalidateCache();
+        repaint();
+    }
+    public static WorldSandboxScreen getInstance() {
+        return INSTANCE;
     }
     private void initWorldCache() {
         // Создаем кеш достаточного размера
@@ -74,8 +77,8 @@ public class WorldGameScreen extends WorldScreen {
     public void invalidateCache() {
         cacheValid = false;
     }
-    public World getWorld() {
-        return world;
+    public SandboxWorld getWorld() {
+        return sandboxWorld;
     }
     @Override
     protected void paintComponent(Graphics g) {
@@ -95,16 +98,16 @@ public class WorldGameScreen extends WorldScreen {
         // Рисуем кешированный мир
         g2d.drawImage(worldCache, 0, 0, null);
 
-        for (Tunnel tunnel : world.getTunnels()) {
+        for (Tunnel tunnel : sandboxWorld.getTunnels()) {
             tunnel.draw(g, 0, 0, 1);
         }
 
 
-        for (Station station : world.getStations()) {
+        for (Station station : sandboxWorld.getStations()) {
             station.draw(g, 0, 0, 1);
         }
 
-        for (Label label : world.getLabels()) {
+        for (Label label : sandboxWorld.getLabels()) {
             label.draw(g2d, 0, 0, 1);
         }
 
@@ -140,22 +143,16 @@ public class WorldGameScreen extends WorldScreen {
         // Рисуем сетку
         AffineTransform originalTransform = g.getTransform();
         g.scale(2, 2);
-            for (int y = 0; y < world.getHeight(); y++) {
-                for (int x = 0; x < world.getWidth(); x++) {
-                    world.getWorldGrid()[x][y].draw(g, 0, 0, 1);
+            for (int y = 0; y < sandboxWorld.getHeight(); y++) {
+                for (int x = 0; x < sandboxWorld.getWidth(); x++) {
+                    sandboxWorld.getWorldGrid()[x][y].draw(g, 0, 0, 1);
                 }
             }
 
         g.setTransform(originalTransform);
     }
 
-    public void deleteSelectedStation() {
-        if (selectedStation != null) {
-            world.removeStation(selectedStation);
-            selectedStation = null;
-            repaint();
-        }
-    }
+
 
 
     /**
@@ -170,11 +167,11 @@ public class WorldGameScreen extends WorldScreen {
         // Глобальная информация
         g.drawString("=== GLOBAL DEBUG INFO ===", 10, yPos);
         yPos += 15;
-        g.drawString("Stations: " + world.getStations().size(), 10, yPos);
+        g.drawString("Stations: " + sandboxWorld.getStations().size(), 10, yPos);
         yPos += 15;
-        g.drawString("Tunnels: " + world.getTunnels().size(), 10, yPos);
+        g.drawString("Tunnels: " + sandboxWorld.getTunnels().size(), 10, yPos);
         yPos += 15;
-        g.drawString("Labels: " + world.getLabels().size(), 10, yPos);
+        g.drawString("Labels: " + sandboxWorld.getLabels().size(), 10, yPos);
         yPos += 15;
         g.drawString("Zoom: " + String.format("%.2f", zoom), 10, yPos);
         yPos += 15;
@@ -182,8 +179,8 @@ public class WorldGameScreen extends WorldScreen {
         yPos += 15;
 
         // Информация о выбранной станции
-        if (selectedObject instanceof Station) {
-            Station station = (Station)selectedObject;
+        if (clickHandler.getSelectedObject() instanceof Station) {
+            Station station = (Station)clickHandler.getSelectedObject();
             yPos += 15;
             g.drawString("=== SELECTED STATION ===", 10, yPos);
             yPos += 15;
@@ -198,11 +195,11 @@ public class WorldGameScreen extends WorldScreen {
             g.drawString("Color: " + String.format("#%06X", (0xFFFFFF & station.getColor().getRGB())), 10, yPos);
             yPos += 15;
 
-            if (!world.getLabelsForStation(station).isEmpty()) {
-                g.drawString("Labels (" + world.getLabelsForStation(station).size() + "):", 10, yPos);
+            if (!sandboxWorld.getLabelsForStation(station).isEmpty()) {
+                g.drawString("Labels (" + sandboxWorld.getLabelsForStation(station).size() + "):", 10, yPos);
                 yPos += 15;
 
-                for (Label label : world.getLabelsForStation(station)) {
+                for (Label label : sandboxWorld.getLabelsForStation(station)) {
                     g.drawString("- '" + label.getText() + "' at (" +
                             label.getX() + "," + label.getY() + ")", 20, yPos);
                     yPos += 15;
@@ -219,8 +216,8 @@ public class WorldGameScreen extends WorldScreen {
                 }
             }
         }
-        else if (selectedObject instanceof Label) {
-            Label label = (Label)selectedObject;
+        else if (clickHandler.getSelectedObject() instanceof Label) {
+            Label label = (Label)clickHandler.getSelectedObject();
             yPos += 15;
             g.drawString("=== SELECTED LABEL ===", 10, yPos);
             yPos += 15;
@@ -236,8 +233,8 @@ public class WorldGameScreen extends WorldScreen {
             yPos += 15;
         }
         // Информация о выбранном туннеле
-        else if (selectedObject instanceof Tunnel) {
-            Tunnel tunnel = (Tunnel)selectedObject;
+        else if (clickHandler.getSelectedObject() instanceof Tunnel) {
+            Tunnel tunnel = (Tunnel)clickHandler.getSelectedObject();
             yPos += 15;
             g.drawString("=== SELECTED TUNNEL ===", 10, yPos);
             yPos += 15;

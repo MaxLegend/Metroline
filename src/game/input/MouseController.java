@@ -2,11 +2,11 @@ package game.input;
 
 import game.objects.PathPoint;
 import game.objects.Station;
-import screens.GameScreen;
-import screens.WorldGameScreen;
+import screens.WorldSandboxScreen;
 import screens.WorldScreen;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
@@ -16,17 +16,22 @@ import static game.input.ClickHandler.editStationName;
 
 /**
  * Mouse controller for world interaction
+ * @author Tesmio
  */
 public class MouseController extends MouseAdapter {
     private WorldScreen screen;
+    private Point lastDragPoint;
+    private Point dragVelocity;
+
 
 
     public MouseController(WorldScreen screen) {
         this.screen = screen;
+        this.dragVelocity = new Point(0, 0);
+
     }
     @Override
     public void mouseClicked(MouseEvent e) {
-
             if (!screen.isShiftPressed && e.getClickCount() == 2 && SwingUtilities.isLeftMouseButton(e)) {
                 // Обработка двойного клика
                 PathPoint worldPos = screen.screenToWorld(e.getX(), e.getY());
@@ -34,16 +39,18 @@ public class MouseController extends MouseAdapter {
             }
 
     }
+
     private void handleDoubleClick(int x, int y) {
-        Station station = WorldGameScreen.getInstance().world.getStationAt(x, y);
+        Station station = WorldSandboxScreen.getInstance().sandboxWorld.getStationAt(x, y);
         if (station != null) {
             editStationName(station);
         }
     }
     @Override
     public void mousePressed(MouseEvent e) {
-
             if (SwingUtilities.isRightMouseButton(e)) {
+                lastDragPoint = e.getPoint();
+                dragVelocity.setLocation(0, 0);
                 ClickHandler.startDrag(e.getX(), e.getY());
             } else if (SwingUtilities.isLeftMouseButton(e)) {
                 PathPoint worldPos = screen.screenToWorld(e.getX(), e.getY());
@@ -51,30 +58,37 @@ public class MouseController extends MouseAdapter {
             }
 
     }
-
     @Override
     public void mouseDragged(MouseEvent e) {
+        if (SwingUtilities.isRightMouseButton(e)) {
+            Point currentPoint = e.getPoint();
+            float zoomFactor = 1.0f / screen.getZoom();
+            int dx = (int)((currentPoint.x - lastDragPoint.x) * zoomFactor);
+            int dy = (int)((currentPoint.y - lastDragPoint.y) * zoomFactor);
 
-            if (SwingUtilities.isRightMouseButton(e)) {
-                ClickHandler.updateDrag(e.getX(), e.getY());
-            } else if (SwingUtilities.isLeftMouseButton(e)) {
-                PathPoint worldPos = screen.screenToWorld(e.getX(), e.getY());
-                if (worldPos != null) {
-                    ClickHandler.handleEditDrag(worldPos.x, worldPos.y);
+            screen.setOffset(
+                    screen.getOffsetX() + dx,
+                    screen.getOffsetY() + dy
+            );
+            lastDragPoint = currentPoint;
+
+        } else if (SwingUtilities.isLeftMouseButton(e)) {
+            PathPoint worldPos = screen.screenToWorld(e.getX(), e.getY());
+            if (worldPos != null) {
+                if(screen instanceof WorldSandboxScreen gamescreen) {
+                    gamescreen.clickHandler.handleEditDrag(worldPos.x, worldPos.y);
                 }
-
+            }
         }
     }
 
     @Override
     public void mouseReleased(MouseEvent e) {
-
             if (SwingUtilities.isLeftMouseButton(e)) {
-                screen.selectedObject = null;
+                screen.clickHandler.selectedObject = null;
                 ClickHandler.dragOffset = null;
             }
-            if (SwingUtilities.isRightMouseButton(e)) {
-                // Stop dragging
+            if (SwingUtilities.isRightMouseButton(e) ) {
                 ClickHandler.stopDrag();
             }
 
@@ -82,24 +96,22 @@ public class MouseController extends MouseAdapter {
 
     @Override
     public void mouseWheelMoved(MouseWheelEvent e) {
-
-        // Zoom in/out based on wheel movement
-        float zoomFactor = 1.0f - e.getWheelRotation() * 0.1f;
-        float newZoom = screen.getZoom() * zoomFactor;
-
-        // Convert mouse position to world before zoom
-        PathPoint beforeZoom = screen.screenToWorld(e.getX(), e.getY());
-
-        // Apply new zoom
+        float currentZoom = screen.getZoom();
+        int currentOffsetX = screen.getOffsetX();
+        int currentOffsetY = screen.getOffsetY();
+        PathPoint worldPosBefore = screen.screenToWorld(e.getX(), e.getY());
+        float zoomDelta = -e.getWheelRotation() * 0.1f;
+        float newZoom = currentZoom * (1 + zoomDelta);
+        newZoom = Math.max(0.1f, Math.min(3.0f, newZoom));
+        if (currentZoom == newZoom) return;
         screen.setZoom(newZoom);
-
-        // Convert mouse position to world after zoom
-        PathPoint afterZoom = screen.screenToWorld(e.getX(), e.getY());
-
-        // Adjust offset to keep mouse position stable
-        int offsetX = screen.getOffsetX() + (beforeZoom.x - afterZoom.x) * 32;
-        int offsetY = screen.getOffsetY() + (beforeZoom.y - afterZoom.y) * 32;
-        screen.setOffset(offsetX, offsetY);
+        Point screenPosAfter = screen.worldToScreen(worldPosBefore.x, worldPosBefore.y);
+        int dx = e.getX() - screenPosAfter.x;
+        int dy = e.getY() - screenPosAfter.y;
+        screen.setOffset(
+                currentOffsetX + dx,
+                currentOffsetY + dy
+        );
 
     }
 }

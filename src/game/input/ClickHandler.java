@@ -1,12 +1,12 @@
 package game.input;
 
+import game.core.GameObject;
 import game.objects.Label;
 import game.objects.PathPoint;
 import game.objects.Station;
 import game.objects.Tunnel;
 import game.objects.enums.StationType;
-import screens.WorldScreen;
-import screens.WorldScreen;
+import screens.WorldSandboxScreen;
 
 import javax.swing.*;
 import java.awt.*;
@@ -15,9 +15,15 @@ import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
-import static screens.WorldScreen.*;
+import static screens.WorldSandboxScreen.*;
 
+/**
+ * Main world click handler
+ * @author Tesmio
+ */
 public class ClickHandler {
+    public static Station selectedStation = null;
+    public GameObject selectedObject = null;
     private static int dragStartX;
     private static int dragStartY;
     private static boolean dragging = false;
@@ -31,71 +37,93 @@ public class ClickHandler {
      * @param x X coordinate
      * @param y Y coordinate
      */
-    public static void handleEditDrag(int x, int y) {
+    public  void handleEditDrag(int x, int y) {
         if ( selectedObject != null && dragOffset != null) {
             // Проверяем границы
-            if (x < 0 || x >= WorldScreen.getInstance().world.getWidth() || y < 0 || y >= WorldScreen.getInstance().world.getHeight()) {
+            if (x < 0 || x >= WorldSandboxScreen.getInstance().sandboxWorld.getWidth() || y < 0 || y >= WorldSandboxScreen.getInstance().sandboxWorld.getHeight()) {
                 return;
             }
 
                 if (selectedObject instanceof Label) {
+
                     Label label = (Label) selectedObject;
                     int newX = x - dragOffset.x;
                     int newY = y - dragOffset.y;
 
                     if (label.tryMoveTo(newX, newY)) {
-                        WorldScreen.getInstance().repaint();
+                        WorldSandboxScreen.getInstance().repaint();
                     }
                     return;
                 }
 
             if ( selectedObject instanceof Station) {
                 Station station = (Station)selectedObject;
+
                 int newX = x - dragOffset.x;
                 int newY = y - dragOffset.y;
 
                 // Check if new position is valid
-                if (newX >= 0 && newX < WorldScreen.getInstance().world.getWidth() &&
-                        newY >= 0 && newY < WorldScreen.getInstance().world.getHeight() &&
-                        WorldScreen.getInstance().world.getStationAt(newX, newY) == null) {
-                    Label label = WorldScreen.getInstance().world.getLabelForStation(station);
+                if (newX >= 0 && newX < WorldSandboxScreen.getInstance().sandboxWorld.getWidth() &&
+                        newY >= 0 && newY < WorldSandboxScreen.getInstance().sandboxWorld.getHeight() &&
+                        WorldSandboxScreen.getInstance().sandboxWorld.getStationAt(newX, newY) == null) {
+                    Label label = WorldSandboxScreen.getInstance().sandboxWorld.getLabelForStation(station);
                     // Remove from old position
-                    WorldScreen.getInstance().world.getGameGrid()[station.getX()][station.getY()].setContent(null);
+                    WorldSandboxScreen.getInstance().sandboxWorld.getGameGrid()[station.getX()][station.getY()].setContent(null);
 
                     // Update position
                     station.x = newX;
                     station.y = newY;
 
                     // Add to new position
-                    WorldScreen.getInstance().world.getGameGrid()[newX][newY].setContent(station);
+                    WorldSandboxScreen.getInstance().sandboxWorld.getGameGrid()[newX][newY].setContent(station);
 
                     // Recalculate all connected tunnels
-                    for (Tunnel t : WorldScreen.getInstance().world.getTunnels()) {
+                    for (Tunnel t : WorldSandboxScreen.getInstance().sandboxWorld.getTunnels()) {
                         if (t.getStart() == station || t.getEnd() == station) {
                             t.calculatePath();
                         }
                     }
                     if (label != null) {
                         // Находим новую позицию для метки (рядом со станцией)
-                        PathPoint newLabelPos = WorldScreen.getInstance().world.findFreePositionNear(station.getX(), station.getY(), station.getName());
+                        PathPoint newLabelPos = WorldSandboxScreen.getInstance().sandboxWorld.findFreePositionNear(station.getX(), station.getY(), station.getName());
                         if (newLabelPos != null) {
                             label.tryMoveTo(newLabelPos.x, newLabelPos.y);
                         }
                     }
-                    WorldScreen.getInstance().repaint();
+                    WorldSandboxScreen.getInstance().repaint();
                 }
             }
             else if (selectedObject instanceof Tunnel) {
+
                 Tunnel tunnel = (Tunnel)selectedObject;
 
                 // Проверяем, что новая позиция не совпадает со станцией
-                Station stationAtPos = WorldScreen.getInstance().world.getStationAt(x, y);
+                Station stationAtPos = WorldSandboxScreen.getInstance().sandboxWorld.getStationAt(x, y);
                 if (stationAtPos == null) {
                     tunnel.moveControlPoint(x, y);
-                    WorldScreen.getInstance().repaint();
+                    WorldSandboxScreen.getInstance().repaint();
                 }
             }
         }
+    }
+    /**
+     * Handles delete game objects
+     */
+    public  void deleteSelectedObject() {
+        if (selectedObject == null) return;
+
+        if (selectedObject instanceof Station) {
+            WorldSandboxScreen.getInstance().sandboxWorld.removeStation((Station)selectedObject);
+        }
+        else if (selectedObject instanceof Tunnel) {
+            WorldSandboxScreen.getInstance().sandboxWorld.removeTunnel((Tunnel)selectedObject);
+        }
+        else if (selectedObject instanceof Label) {
+            WorldSandboxScreen.getInstance().sandboxWorld.removeLabel((Label)selectedObject);
+        }
+
+        selectedObject = null;
+        WorldSandboxScreen.getInstance().repaint();
     }
     /**
      * Handles tunnel creation
@@ -103,36 +131,38 @@ public class ClickHandler {
      * @param y Y coordinate
      */
     public void handleTunnelClick(int x, int y) {
-        Station station = WorldScreen.getInstance().world.getStationAt(x, y);
+
+        Station station = WorldSandboxScreen.getInstance().sandboxWorld.getStationAt(x, y);
         if (station == null) return;
 
         // Если есть уже выбранная станция и это не та же самая
-        if (selectedStation != null && selectedStation != station) {
-            // Создаём туннель
-            Tunnel tunnel = new Tunnel(selectedStation, station);
-            WorldScreen.getInstance().world.addTunnel(tunnel);
 
-            // Снимаем выделение
-            selectedStation.setSelected(false);
-            selectedStation = null;
-        }
-        else {
-            // Выбираем новую станцию (или снимаем выделение если кликнули ту же)
-            if (selectedStation == station) {
-                station.setSelected(false);
-                selectedStation = null;
-            } else {
-                deselectAll(); // Снимаем выделение со всех других объектов
-                station.setSelected(true);
-                selectedStation = station;
-            }
-        }
-        WorldScreen.getInstance().repaint();
+           if (selectedStation != null && selectedStation != station) {
+               // Создаём туннель
+               Tunnel tunnel = new Tunnel(selectedStation, station);
+               WorldSandboxScreen.getInstance().sandboxWorld.addTunnel(tunnel);
+
+               // Снимаем выделение
+               selectedStation.setSelected(false);
+               selectedStation = null;
+           } else {
+               // Выбираем новую станцию (или снимаем выделение если кликнули ту же)
+               if (selectedStation == station) {
+                   station.setSelected(false);
+                   selectedStation = null;
+               } else {
+                   deselectAll(); // Снимаем выделение со всех других объектов
+                   station.setSelected(true);
+                   selectedStation = station;
+               }
+           }
+
+        WorldSandboxScreen.getInstance().repaint();
     }
 
     public void showColorSelectionPopup(int x, int y) {
         // Создаем прозрачное безрамочное окно
-        Window parentWindow = SwingUtilities.getWindowAncestor(WorldScreen.getInstance());
+        Window parentWindow = SwingUtilities.getWindowAncestor(WorldSandboxScreen.getInstance());
         JDialog colorDialog = new JDialog(parentWindow);
         colorDialog.setUndecorated(true); // Убираем рамку и заголовок
         colorDialog.setBackground(new Color(0, 0, 0, 0)); // Прозрачный фон
@@ -143,7 +173,7 @@ public class ClickHandler {
         colorPanel.setBackground(new Color(50, 50, 50)); // Темный фон
 
         // Конвертируем мировые координаты в экранные
-        Point screenPos = WorldScreen.getInstance().worldToScreen(x, y);
+        Point screenPos = WorldSandboxScreen.getInstance().worldToScreen(x, y);
 
         for (Color color : Station.COLORS) {
             JButton colorBtn = new JButton();
@@ -157,8 +187,8 @@ public class ClickHandler {
             colorBtn.addActionListener(e -> {
                 ClickHandler.currentStationColor = color;
                 Station newStation = new Station(x, y, color, StationType.REGULAR);
-                WorldScreen.getInstance().world.addStation(newStation);
-                WorldScreen.getInstance().repaint();
+                WorldSandboxScreen.getInstance().sandboxWorld.addStation(newStation);
+                WorldSandboxScreen.getInstance().repaint();
                 colorDialog.dispose();
                 colorSelectionEnabled = false;
             });
@@ -209,27 +239,27 @@ public class ClickHandler {
         // Сначала снимаем выделение со всех объектов
         deselectAll();
 
-        Label label = WorldScreen.getInstance().world.getLabelAt(x, y);
+        Label label = WorldSandboxScreen.getInstance().sandboxWorld.getLabelAt(x, y);
         if (label != null) {
             label.setSelected(true);
             selectedObject = label;
             dragOffset = new PathPoint(x - label.getX(), y - label.getY());
-            WorldScreen.getInstance().repaint();
+            WorldSandboxScreen.getInstance().repaint();
             return;
         }
 
         // Проверяем станции
-        Station station = WorldScreen.getInstance().world.getStationAt(x, y);
+        Station station = WorldSandboxScreen.getInstance().sandboxWorld.getStationAt(x, y);
         if (station != null) {
             station.setSelected(true);
             selectedObject = station;
             dragOffset = new PathPoint(x - station.getX(), y - station.getY());
-            WorldScreen.getInstance().repaint();
+            WorldSandboxScreen.getInstance().repaint();
             return;
         }
 
         // Проверяем туннели
-        Tunnel tunnel = WorldScreen.getInstance().world.getTunnelAt(x, y);
+        Tunnel tunnel = WorldSandboxScreen.getInstance().sandboxWorld.getTunnelAt(x, y);
         if (tunnel != null) {
             // Ищем конкретную точку туннеля
             for (PathPoint p : tunnel.getPath()) {
@@ -240,37 +270,40 @@ public class ClickHandler {
                     break;
                 }
             }
-            WorldScreen.getInstance().repaint();
+            WorldSandboxScreen.getInstance().repaint();
             return;
         }
 
-        if (WorldScreen.getInstance().isShiftPressed) {
+        if (WorldSandboxScreen.getInstance().isShiftPressed) {
             // Дополнительная проверка (хотя предыдущие проверки уже гарантируют пустую клетку)
-            if (WorldScreen.getInstance().world.getStationAt(x, y) == null) {
+            if (WorldSandboxScreen.getInstance().sandboxWorld.getStationAt(x, y) == null) {
                 Station newStation = new Station(x, y, ClickHandler.currentStationColor, StationType.REGULAR);
-                WorldScreen.getInstance().world.addStation(newStation);
+                WorldSandboxScreen.getInstance().sandboxWorld.addStation(newStation);
                 checkForTransferStation(newStation);
-                WorldScreen.getInstance().repaint();
+                WorldSandboxScreen.getInstance().repaint();
             }
         }
+    }
+    public GameObject getSelectedObject() {
+        return selectedObject;
     }
 
     /**
      * Deselects all game objects
      */
-    private static void deselectAll() {
+    private void deselectAll() {
         // Снимаем выделение со всех станций
-        for (Station station : WorldScreen.getInstance().world.getStations()) {
+        for (Station station : WorldSandboxScreen.getInstance().sandboxWorld.getStations()) {
             station.setSelected(false);
         }
 
         // Снимаем выделение со всех меток
-        for (Label label : WorldScreen.getInstance().world.getLabels()) {
+        for (Label label : WorldSandboxScreen.getInstance().sandboxWorld.getLabels()) {
             label.setSelected(false);
         }
 
         // Снимаем выделение со всех туннелей
-        for (Tunnel tunnel : WorldScreen.getInstance().world.getTunnels()) {
+        for (Tunnel tunnel : WorldSandboxScreen.getInstance().sandboxWorld.getTunnels()) {
             tunnel.setSelected(false);
         }
 
@@ -290,7 +323,7 @@ public class ClickHandler {
 
         // Показываем диалоговое окно
         int result = JOptionPane.showConfirmDialog(
-                WorldScreen.getInstance(),
+                WorldSandboxScreen.getInstance(),
                 panel,
                 "Edit name",
                 JOptionPane.OK_CANCEL_OPTION,
@@ -302,7 +335,7 @@ public class ClickHandler {
             String newName = textField.getText().trim();
             if (!newName.isEmpty()) {
                 station.setName(newName);
-                WorldScreen.getInstance().repaint();
+                WorldSandboxScreen.getInstance().repaint();
             }
         }
     }
@@ -312,21 +345,23 @@ public class ClickHandler {
      * @param y Y coordinate
      */
     public void handleStationClick(int x, int y) {
-        Station existing = WorldScreen.getInstance().world.getStationAt(x, y);
+        Station existing = WorldSandboxScreen.getInstance().sandboxWorld.getStationAt(x, y);
         if (existing != null) {
-            if (!existing.selected) {
+            if (!existing.selected && !getInstance().isShiftPressed) {
                 existing.setSelected(true);
+            } else if(getInstance().isShiftPressed) {
+                WorldSandboxScreen.getInstance().sandboxWorld.removeStation(existing);
             }
             return; // Выходим, если станция уже существует
         }
-        if (WorldScreen.getInstance().isCPressed) { // Проверяем зажат ли Ctrl+C
+        if (WorldSandboxScreen.getInstance().isCPressed) { // Проверяем зажат ли Ctrl+C
             showColorSelectionPopup(x, y);
             return; // Выходим, чтобы не создавать станцию дважды
         }
 
         // Создаем новую станцию с текущим цветом
         Station station = new Station(x, y, currentStationColor, StationType.REGULAR);
-        WorldScreen.getInstance().world.addStation(station);
+        WorldSandboxScreen.getInstance().sandboxWorld.addStation(station);
         checkForTransferStation(station);
     }
 
@@ -339,11 +374,11 @@ public class ClickHandler {
         int y = station.getY();
 
         // Check all 8 directions
-        for (int ny = Math.max(0, y-1); ny < Math.min(WorldScreen.getInstance().world.getHeight(), y+2); ny++) {
-            for (int nx = Math.max(0, x-1); nx < Math.min(WorldScreen.getInstance().world.getWidth(), x+2); nx++) {
+        for (int ny = Math.max(0, y-1); ny < Math.min(WorldSandboxScreen.getInstance().sandboxWorld.getHeight(), y+2); ny++) {
+            for (int nx = Math.max(0, x-1); nx < Math.min(WorldSandboxScreen.getInstance().sandboxWorld.getWidth(), x+2); nx++) {
                 if (nx == x && ny == y) continue;
 
-                Station neighbor = WorldScreen.getInstance().world.getStationAt(nx, ny);
+                Station neighbor = WorldSandboxScreen.getInstance().sandboxWorld.getStationAt(nx, ny);
                 if (neighbor != null && !neighbor.getColor().equals(station.getColor())) {
                     station.setType(StationType.TRANSFER);
                     neighbor.setType(StationType.TRANSFER);
@@ -360,8 +395,8 @@ public class ClickHandler {
      */
     public static void startDrag(int x, int y) {
         dragging = true;
-        dragStartX = x - WorldScreen.getInstance().offsetX;
-        dragStartY = y - WorldScreen.getInstance().offsetY;
+        dragStartX = x - WorldSandboxScreen.getInstance().offsetX;
+        dragStartY = y - WorldSandboxScreen.getInstance().offsetY;
     }
 
     /**
@@ -371,9 +406,9 @@ public class ClickHandler {
      */
     public static void updateDrag(int x, int y) {
         if (dragging) {
-            WorldScreen.getInstance().offsetX = x - dragStartX;
-            WorldScreen.getInstance().offsetY = y - dragStartY;
-            WorldScreen.getInstance().repaint();
+            WorldSandboxScreen.getInstance().offsetX = x - dragStartX;
+            WorldSandboxScreen.getInstance().offsetY = y - dragStartY;
+            WorldSandboxScreen.getInstance().repaint();
         }
     }
 

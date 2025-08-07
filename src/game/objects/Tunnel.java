@@ -1,11 +1,10 @@
 package game.objects;
 
 import game.core.GameObject;
-import screens.WorldScreen;
+import screens.WorldSandboxScreen;
 
 import java.awt.*;
 import java.awt.geom.GeneralPath;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -58,34 +57,77 @@ public class Tunnel extends GameObject {
         int x2 = end.getX();
         int y2 = end.getY();
 
-        // Check if straight line is possible (horizontal, vertical or perfect diagonal)
-        if (isStraightLinePossible(x1, y1, x2, y2)) {
-            pathPoint = new PathPoint((x1 + x2) / 2, (y1 + y2) / 2);
-            addStraightPath(x1, y1, x2, y2);
-        } else {
-            // Find optimal bend point that creates angle >= 90 degrees
-            if (pathPoint == null) {
-                // Try possible bend points that create valid angles
-                PathPoint bend1 = new PathPoint(x1, y2);
-                PathPoint bend2 = new PathPoint(x2, y1);
 
-                // Choose the one that creates a valid angle (>= 90 degrees)
-                if (isValidAngle(x1, y1, bend1.getX(), bend1.getY(), x2, y2)) {
-                    pathPoint = bend1;
-                } else if (isValidAngle(x1, y1, bend2.getX(), bend2.getY(), x2, y2)) {
-                    pathPoint = bend2;
-                } else {
-                    // If neither standard bend works, find an intermediate point that creates >=90 angle
-                    pathPoint = findValidBendPoint(x1, y1, x2, y2);
-                }
-            }
-            addBendPath(x1, y1, pathPoint.getX(), pathPoint.getY(), x2, y2);
+        // Если нет точки изгиба, выбираем оптимальную
+        if (pathPoint == null) {
+            pathPoint = findOptimalBendPoint(x1, y1, x2, y2);
+        }
+
+        // Строим путь через точку изгиба
+        addBendPath(x1, y1, pathPoint.getX(), pathPoint.getY(), x2, y2);
+    }
+
+    /**
+     * Finds optimal bend point considering diagonal paths
+     */
+    private PathPoint findOptimalBendPoint(int x1, int y1, int x2, int y2) {
+        // Вариант 1: Классический L-образный путь (горизонтально-вертикальный)
+        PathPoint bend1 = new PathPoint(x1, y2);
+
+        // Вариант 2: Классический L-образный путь (вертикально-горизонтальный)
+        PathPoint bend2 = new PathPoint(x2, y1);
+
+        // Вариант 3: Диагональный путь с одним изгибом
+        PathPoint bend3 = findDiagonalBendPoint(x1, y1, x2, y2);
+
+        // Выбираем вариант с наименьшей общей длиной пути
+        double length1 = calculatePathLength(x1, y1, bend1.getX(), bend1.getY(), x2, y2);
+        double length2 = calculatePathLength(x1, y1, bend2.getX(), bend2.getY(), x2, y2);
+        double length3 = bend3 != null ?
+                calculatePathLength(x1, y1, bend3.getX(), bend3.getY(), x2, y2) : Double.MAX_VALUE;
+
+        // Возвращаем вариант с минимальной длиной
+        if (length3 <= length1 && length3 <= length2 && bend3 != null) {
+            return bend3;
+        } else if (length1 <= length2) {
+            return bend1;
+        } else {
+            return bend2;
         }
     }
 
-    private boolean isStraightLinePossible(int x1, int y1, int x2, int y2) {
-        return x1 == x2 || y1 == y2 || Math.abs(x1 - x2) == Math.abs(y1 - y2);
+    /**
+     * Calculates total path length through bend point
+     */
+    private double calculatePathLength(int x1, int y1, int bx, int by, int x2, int y2) {
+        double firstSegment = Math.sqrt(Math.pow(bx - x1, 2) + Math.pow(by - y1, 2));
+        double secondSegment = Math.sqrt(Math.pow(x2 - bx, 2) + Math.pow(y2 - by, 2));
+        return firstSegment + secondSegment;
     }
+
+    /**
+     * Finds a diagonal bend point
+     */
+    private PathPoint findDiagonalBendPoint(int x1, int y1, int x2, int y2) {
+        int dx = x2 - x1;
+        int dy = y2 - y1;
+
+        // Пробуем несколько вариантов диагональных точек
+        PathPoint[] diagonalOptions = {
+                new PathPoint(x1 + dx/2, y1 + dy/2),  // Середина
+                new PathPoint(x1 + dx/3, y1 + dy*2/3), // 1/3 по X, 2/3 по Y
+                new PathPoint(x1 + dx*2/3, y1 + dy/3)  // 2/3 по X, 1/3 по Y
+        };
+
+        // Ищем первую точку, которая дает допустимый угол
+        for (PathPoint point : diagonalOptions) {
+            if (isValidAngle(x1, y1, point.getX(), point.getY(), x2, y2)) {
+                return point;
+            }
+        }
+        return null;
+    }
+
 
     /**
      * Checks if the angle formed by three points is >= 90 degrees
@@ -219,7 +261,7 @@ public class Tunnel extends GameObject {
         }
 
         g2d.draw(tunnelPath);
-        if(WorldScreen.getInstance().debugMode) {
+        if(WorldSandboxScreen.getInstance().debugMode) {
             // Отрисовка контрольных точек
             if (selected || pathPoint != null) {
                 g2d.setColor(Color.LIGHT_GRAY);

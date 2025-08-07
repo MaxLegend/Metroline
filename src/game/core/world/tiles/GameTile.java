@@ -7,6 +7,7 @@ import java.io.Serializable;
 
 /**
  * Game tile that can contain game objects
+ * @author Tesmio
  */
 public class GameTile extends Tile {
 
