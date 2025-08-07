@@ -3,23 +3,22 @@ package util;
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicSliderUI;
 import java.awt.*;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 
 public class StyleUtil {
-    // Цвета для темной темы
+
     public static final Color BACKGROUND_COLOR = new Color(30, 30, 30);
     public static final Color FOREGROUND_COLOR = new Color(220, 220, 220);
 
-    public static JLabel createMetrolineLabel(String text) {
-        JLabel label = new JLabel(text);
+    public static JLabel createMetrolineLabel(String text, int swing) {
+        JLabel label = new JLabel(text, swing);
         label.setForeground(StyleUtil.FOREGROUND_COLOR);
         label.setFont(new Font("Arial", Font.PLAIN, 14));
         return label;
     }
 
-    public static JSlider createMetrolineSlider(int min, int max, int value, String label) {
+
+    public static JSlider createMetrolineSlider(int min, int max, int value, String label, JLabel valueLabel) {
         JSlider slider = new JSlider(min, max, value) {
             @Override
             public void updateUI() {
@@ -37,28 +36,39 @@ public class StyleUtil {
         }
         };
 
-        // Настройка внешнего вида слайдера
         slider.setBackground(StyleUtil.BACKGROUND_COLOR);
         slider.setForeground(StyleUtil.FOREGROUND_COLOR);
         slider.setMajorTickSpacing(50);
         slider.setMinorTickSpacing(10);
-        slider.setPaintTicks(false);
-        slider.setPaintLabels(false);
         slider.setFont(new Font("Arial", Font.PLAIN, 20));
         slider.setFocusable(false);
-        // Стилизация ползунка
+        slider.setSnapToTicks(true);
+        slider.addChangeListener(e -> {
+            JSlider source = (JSlider)e.getSource();
+            if (!source.getValueIsAdjusting()) {
+                int value2 = source.getValue();
+                int step = 10;
+                int adjustedValue = (value2 / step) * step;
+                if (adjustedValue != value2) {
+                    source.setValue(adjustedValue);
+                }
+            }
+        });
+        slider.setModel(new DefaultBoundedRangeModel(value, 0, min, max) {
+            @Override
+            public void setValue(int n) {
+                super.setValue((n / 10) * 10); // Округляем до ближайшего шага 10
+            }
+        });
         slider.setUI(new StyleUtil.MetrolineSlider(slider));
 
-        // Label для отображения значения
-        JLabel valueLabel = new JLabel(label + slider.getValue());
-        valueLabel.setForeground(StyleUtil.FOREGROUND_COLOR);
-        valueLabel.setFont(new Font("Arial", Font.PLAIN, 12));
-        slider.addChangeListener(e -> valueLabel.setText(label + slider.getValue()));
-
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(StyleUtil.BACKGROUND_COLOR);
-        panel.add(valueLabel, BorderLayout.NORTH);
-        panel.add(slider, BorderLayout.CENTER);
+        valueLabel.setText(slider.getValue() + label);
+        slider.addChangeListener(e -> {
+            JSlider source = (JSlider)e.getSource();
+            if (!source.getValueIsAdjusting()) {
+                valueLabel.setText( source.getValue() + label);
+            }
+        });
 
         return slider;
     }
@@ -76,6 +86,41 @@ public class StyleUtil {
 
         return checkBox;
     }
+    public static Color changeColorShade(Color changedColor, int value) {
+        return new Color(changedColor.getRed() + value, changedColor.getGreen() + value, changedColor.getBlue() + value);
+    }
+
+    public static JButton createMetrolineInGameButton(String text, ActionListener action) {
+        JButton button = new JButton(text);
+        button.setContentAreaFilled(false);
+        button.setOpaque(true);
+        button.setBackground(new Color(60, 60, 60));
+        button.setForeground(Color.WHITE);
+        button.setBorder(BorderFactory.createEmptyBorder(5, 15, 5, 15));
+        button.setFocusPainted(false);
+        button.addActionListener(action);
+
+        button.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {button.setBackground(new Color(79, 155, 155));}
+            public void mouseEntered(MouseEvent e) { button.setBackground(new Color(80, 80, 80)); }
+            public void mouseExited(MouseEvent e) { button.setBackground(new Color(60, 60, 60)); }
+        });
+
+        return button;
+    }
+    public static JButton createSimpleMetrolineButton(String text, ActionListener action) {
+        JButton button = new JButton(text);
+        button.setPreferredSize(new Dimension(200, 40));
+        button.setForeground(Color.WHITE);
+        button.setBorder(BorderFactory.createEmptyBorder(5, 15, 5, 15));
+        button.setFocusPainted(false);
+        button.setHorizontalAlignment(SwingConstants.CENTER);
+        button.setContentAreaFilled(false);
+        button.setOpaque(true);
+        button.addActionListener(action);
+        return button;
+    }
     public static JButton createMetrolineButton(String text, ActionListener action) {
         JButton button = new JButton(text);
         button.setPreferredSize(new Dimension(200, 40));
@@ -89,11 +134,7 @@ public class StyleUtil {
         button.addActionListener(action);
         button.addMouseListener(new MouseAdapter() {
             @Override
-            public void mouseEntered(MouseEvent e) {
-                button.setBackground(new Color(80, 80, 80));
-
-            }
-
+            public void mouseEntered(MouseEvent e) {button.setBackground(new Color(80, 80, 80));}
             @Override
             public void mouseExited(MouseEvent e) {
                 button.setBackground(new Color(60, 60, 60));
@@ -101,7 +142,23 @@ public class StyleUtil {
         });
         return button;
     }
-
+    public static JButton createMetrolineColorableButton(String text, ActionListener action, Color color) {
+        JButton button = new JButton(text);
+        button.setPreferredSize(new Dimension(200, 40));
+        button.setBackground(color);
+        button.setForeground(Color.WHITE);
+        button.setBorder(BorderFactory.createEmptyBorder(5, 15, 5, 15));
+        button.setFocusPainted(false);
+        button.setHorizontalAlignment(SwingConstants.CENTER);
+        button.setContentAreaFilled(false);
+        button.setOpaque(true);
+        button.addActionListener(action);
+        button.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent e) {button.setBackground(StyleUtil.changeColorShade(color, 20));}
+            public void mouseExited(MouseEvent e) {button.setBackground(color);}
+        });
+        return button;
+    }
     public static class MetrolineSlider extends BasicSliderUI {
         private static final int TRACK_HEIGHT = 4;
         private static final int THUMB_WIDTH = 12;
@@ -115,7 +172,17 @@ public class StyleUtil {
         protected Dimension getThumbSize() {
             return new Dimension(THUMB_WIDTH, THUMB_HEIGHT);
         }
+        protected void scrollDueToClickInTrack(int direction) {
 
+            int value = slider.getValue();
+
+            if (slider.getOrientation() == JSlider.HORIZONTAL) {
+                value = this.valueForXPosition(slider.getMousePosition().x);
+            } else if (slider.getOrientation() == JSlider.VERTICAL) {
+                value = this.valueForYPosition(slider.getMousePosition().y);
+            }
+            slider.setValue(value);
+        }
         @Override
         public void paintTrack(Graphics g) {
             Graphics2D g2d = (Graphics2D) g;
@@ -151,19 +218,12 @@ public class StyleUtil {
 
         @Override
         public void paintLabels(Graphics g) {
-            // Убираем цифровые метки для минимализма
-        }
-        @Override
-        public void paintFocus(Graphics g) {}
-        @Override
-        protected void paintHorizontalLabel(Graphics g, int value, Component label) {
-            // Отключаем рисование горизонтальных меток
+            super.paintLabels(g);
         }
 
         @Override
-        protected void paintVerticalLabel(Graphics g, int value, Component label) {
-            // Отключаем рисование вертикальных меток
-        }
+        public void paintFocus(Graphics g) {}
+
 
     }
 
@@ -201,6 +261,8 @@ public class StyleUtil {
             }
             g2.dispose();
         }
+
+
 
         @Override
         public int getIconWidth() {

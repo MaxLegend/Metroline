@@ -2,40 +2,30 @@ package game.core.world;
 
 import game.core.GameObject;
 import game.core.GameTime;
+import game.core.world.tiles.GameTile;
+import game.core.world.tiles.GameTileBig;
+import game.core.world.tiles.WorldTile;
 import game.objects.Label;
 import game.objects.PathPoint;
 import game.objects.Station;
 import game.objects.Tunnel;
 import game.objects.enums.Direction;
-import game.core.world.tiles.GameTile;
-
-import game.core.world.tiles.GameTileBig;
-import game.core.world.tiles.WorldTile;
 import screens.WorldSandboxScreen;
 import util.MessageUtil;
 import util.MetroLogger;
 
-import javax.imageio.ImageIO;
-import javax.swing.*;
-import javax.swing.Timer;
 import java.awt.*;
-import java.awt.image.BufferedImage;
 import java.io.*;
-import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
-/**
- * World class containing game logic and state
- * @author Tesmio
- */
-public class SandboxWorld implements Serializable {
+public class GameWorld implements Serializable {
     protected GameTime gameTime;
     private static final long serialVersionUID = 1L;
 
-    public static final String SAVE_FOLDER = "metroline_saves";
-    private static final String SAVE_FILE = "sandbox_save.metro";
-
+    private static final String SAVE_FILE = "game_save.metro";
     protected WorldTile[][] worldGrid;
     protected GameTile[][] gameGrid;
     protected GameTileBig[][] bigWorldGrid;
@@ -44,15 +34,15 @@ public class SandboxWorld implements Serializable {
     protected List<Tunnel> tunnels = new ArrayList<>();
     protected List<Label> labels = new ArrayList<>();
     protected int width, height;
-    public SandboxWorld() {
+
+    public GameWorld() {
         super();
     }
-    
-    public SandboxWorld(int width, int height, boolean hasOrganicPatches, boolean hasRivers, Color worldColor) {
+
+    public GameWorld(int width, int height, boolean hasOrganicPatches, boolean hasRivers, Color worldColor) {
         this.width = width;
         this.height = height;
         this.gameTime = new GameTime();
-
         generateWorld(hasOrganicPatches, hasRivers,worldColor);
     }
 
@@ -89,7 +79,6 @@ public class SandboxWorld implements Serializable {
 
         applyGradient();
     }
-
     public void updateWorldTime() {
         gameTime.update();
     }
@@ -203,7 +192,7 @@ public class SandboxWorld implements Serializable {
         Random rand = new Random();
 
         for (int i = 0; i < riverCount; i++) {
-            // Выбираем случайные точки на краях карты
+
             WorldEdge startEdge = WorldEdge.values()[rand.nextInt(WorldEdge.values().length)];
             WorldEdge endEdge;
             do {
@@ -217,6 +206,7 @@ public class SandboxWorld implements Serializable {
             generateRiverPath(startPos[0], startPos[1], endPos[0], endPos[1]);
         }
     }
+
 
 
     private int[] getRandomEdgePosition(WorldEdge edge) {
@@ -240,29 +230,21 @@ public class SandboxWorld implements Serializable {
         int currentY = startY;
         Random rand = new Random();
         while (true) {
-            // Устанавливаем значение perm для текущей позиции и соседей (толщина 3 клетки)
             setRiverTile(currentX, currentY);
-
-            // Проверяем, достигли ли мы конечной точки
             if (Math.abs(currentX - endX) <= 1 && Math.abs(currentY - endY) <= 1) {
                 setRiverTile(endX, endY);
                 break;
             }
-
-            // Определяем направление движения
             int dx = Integer.compare(endX, currentX);
             int dy = Integer.compare(endY, currentY);
 
-            // Случайно решаем, двигаться по оси X или Y (или по диагонали)
             if (rand.nextBoolean()) {
-                // Движение по одной оси
                 if (rand.nextBoolean() && currentX + dx >= 0 && currentX + dx < width) {
                     currentX += dx;
                 } else if (currentY + dy >= 0 && currentY + dy < height) {
                     currentY += dy;
                 }
             } else {
-                // Диагональное движение (если возможно)
                 if (currentX + dx >= 0 && currentX + dx < width &&
                         currentY + dy >= 0 && currentY + dy < height) {
                     currentX += dx;
@@ -273,10 +255,7 @@ public class SandboxWorld implements Serializable {
     }
 
     private void setRiverTile(int x, int y) {
-        // Устанавливаем значение perm для центральной клетки
         worldGrid[x][y].setPerm(0.4f);
-
-        // Устанавливаем значение perm для соседних клеток (толщина реки 3 клетки)
         for (int ny = Math.max(0, y - 1); ny <= Math.min(height - 1, y + 1); ny++) {
             for (int nx = Math.max(0, x - 1); nx <= Math.min(width - 1, x + 1); nx++) {
                 if (nx != x || ny != y) {
@@ -331,7 +310,6 @@ public class SandboxWorld implements Serializable {
             }
         }
     }
-
     /**
      * Gets the world grid
      * @return 2D array of world tiles
@@ -540,12 +518,12 @@ public class SandboxWorld implements Serializable {
 
 
     public void saveWorld() {
-        File saveDir = new File(SAVE_FOLDER);
+        File saveDir = new File(SandboxWorld.SAVE_FOLDER);
         if (!saveDir.exists()) {
             saveDir.mkdir();
         }
 
-        File saveFile = new File(SAVE_FOLDER + File.separator + SAVE_FILE);
+        File saveFile = new File(SandboxWorld.SAVE_FOLDER + File.separator + SAVE_FILE);
 
         try (ObjectOutputStream oos = new ObjectOutputStream(
                 new FileOutputStream(saveFile))) {
@@ -570,7 +548,7 @@ public class SandboxWorld implements Serializable {
         return stationLabels;
     }
     public boolean loadWorld() {
-        File saveFile = new File(SAVE_FOLDER + File.separator + SAVE_FILE);
+        File saveFile = new File(SandboxWorld.SAVE_FOLDER + File.separator + SAVE_FILE);
 
         if (!saveFile.exists()) {
             return false;
@@ -587,11 +565,8 @@ public class SandboxWorld implements Serializable {
         } catch (Exception ex) {
             ex.printStackTrace();
             MetroLogger.logError("Failed to load world", ex);
-            MessageUtil.showTimedMessage("Loaded Error: " + ex.getMessage(), true, 2000);
+            MessageUtil. showTimedMessage("Loaded Error: " + ex.getMessage(), true, 2000);
         }
         return false;
     }
-
-
 }
-

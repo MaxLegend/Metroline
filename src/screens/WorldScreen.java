@@ -1,7 +1,7 @@
 package screens;
 
-import game.core.world.SandboxWorld;
-import game.input.ClickHandler;
+import game.input.GameClickHandler;
+import game.input.SandboxClickHandler;
 import game.objects.PathPoint;
 
 import java.awt.*;
@@ -12,12 +12,16 @@ import java.awt.*;
 public class WorldScreen extends GameScreen{
     public static WorldScreen INSTANCE;
 
+    //Debug
+    public boolean debugMode = false;
+    public Font debugFont = new Font("Monospaced", Font.PLAIN, 12);
+
     public float zoom = 1.0f;
     public  int offsetX = 0;
     public  int offsetY = 0;
     //Central click handler
-    public ClickHandler clickHandler;
-    public SandboxWorld sandboxWorld;
+
+
     // Service keys
     public boolean isEscPressed = false;
     public boolean isAltPressed = false;
@@ -27,34 +31,11 @@ public class WorldScreen extends GameScreen{
 
     public WorldScreen(MainFrame parent) {
         super(parent);
-        this.clickHandler = new ClickHandler();
+
     }
 
 
-    /**
-     * Handles mouse click on the world
-     * @param x X coordinate in world space
-     * @param y Y coordinate in world space
-     */
-    public void handleClick(int x, int y) {
-        if (x < 0 || x >= sandboxWorld.getWidth() || y < 0 || y >= sandboxWorld.getHeight()) {
-            return;
-        }
-        if (isShiftPressed && isCPressed) {
-            clickHandler.showColorSelectionPopup(x, y);
-        }
-        else if (isShiftPressed) {
-            clickHandler.handleStationClick(x, y);
-        }
-        else if (isCtrlPressed) {
-            clickHandler.handleTunnelClick(x, y);
-        }
-        else {
-            clickHandler.handleDefaultClick(x, y);
-        }
 
-        repaint();
-    }
     public static WorldScreen getInstance() {
         return INSTANCE;
     }
@@ -76,7 +57,10 @@ public class WorldScreen extends GameScreen{
         this.zoom = Math.max(0.1f, Math.min(3.0f, zoom));
         repaint();
     }
-
+    public void toggleDebugMode() {
+        debugMode = !debugMode;
+        repaint();
+    }
     /**
      * Gets the horizontal offset
      * @return X offset

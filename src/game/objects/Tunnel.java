@@ -71,22 +71,15 @@ public class Tunnel extends GameObject {
      * Finds optimal bend point considering diagonal paths
      */
     private PathPoint findOptimalBendPoint(int x1, int y1, int x2, int y2) {
-        // Вариант 1: Классический L-образный путь (горизонтально-вертикальный)
         PathPoint bend1 = new PathPoint(x1, y2);
-
-        // Вариант 2: Классический L-образный путь (вертикально-горизонтальный)
         PathPoint bend2 = new PathPoint(x2, y1);
-
-        // Вариант 3: Диагональный путь с одним изгибом
         PathPoint bend3 = findDiagonalBendPoint(x1, y1, x2, y2);
 
-        // Выбираем вариант с наименьшей общей длиной пути
         double length1 = calculatePathLength(x1, y1, bend1.getX(), bend1.getY(), x2, y2);
         double length2 = calculatePathLength(x1, y1, bend2.getX(), bend2.getY(), x2, y2);
         double length3 = bend3 != null ?
                 calculatePathLength(x1, y1, bend3.getX(), bend3.getY(), x2, y2) : Double.MAX_VALUE;
 
-        // Возвращаем вариант с минимальной длиной
         if (length3 <= length1 && length3 <= length2 && bend3 != null) {
             return bend3;
         } else if (length1 <= length2) {

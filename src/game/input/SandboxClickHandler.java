@@ -15,13 +15,14 @@ import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
+
 import static screens.WorldSandboxScreen.*;
 
 /**
  * Main world click handler
  * @author Tesmio
  */
-public class ClickHandler {
+public class SandboxClickHandler {
     public static Station selectedStation = null;
     public GameObject selectedObject = null;
     private static int dragStartX;
@@ -125,6 +126,20 @@ public class ClickHandler {
         selectedObject = null;
         WorldSandboxScreen.getInstance().repaint();
     }
+    public void handleRemoveTunnel(int worldX, int worldY) {
+        Tunnel tunnel = WorldSandboxScreen.getInstance().sandboxWorld.getTunnelAt(worldX, worldY);
+        if (tunnel != null) {
+            WorldSandboxScreen.getInstance().sandboxWorld.removeTunnel(tunnel);
+            WorldSandboxScreen.getInstance().repaint();
+        }
+    }
+    public void handleEditStationName(int x, int y) {
+        Station station = WorldSandboxScreen.getInstance().sandboxWorld.getStationAt(x, y);
+        Tunnel t = getInstance().sandboxWorld.getTunnelAt(x, y);
+        if (station != null) {
+            editStationName(station);
+        }
+    }
     /**
      * Handles tunnel creation
      * @param x X coordinate
@@ -185,7 +200,7 @@ public class ClickHandler {
             colorBtn.setFocusPainted(false); // Убираем эффект фокуса
 
             colorBtn.addActionListener(e -> {
-                ClickHandler.currentStationColor = color;
+                SandboxClickHandler.currentStationColor = color;
                 Station newStation = new Station(x, y, color, StationType.REGULAR);
                 WorldSandboxScreen.getInstance().sandboxWorld.addStation(newStation);
                 WorldSandboxScreen.getInstance().repaint();
@@ -277,7 +292,7 @@ public class ClickHandler {
         if (WorldSandboxScreen.getInstance().isShiftPressed) {
             // Дополнительная проверка (хотя предыдущие проверки уже гарантируют пустую клетку)
             if (WorldSandboxScreen.getInstance().sandboxWorld.getStationAt(x, y) == null) {
-                Station newStation = new Station(x, y, ClickHandler.currentStationColor, StationType.REGULAR);
+                Station newStation = new Station(x, y, SandboxClickHandler.currentStationColor, StationType.REGULAR);
                 WorldSandboxScreen.getInstance().sandboxWorld.addStation(newStation);
                 checkForTransferStation(newStation);
                 WorldSandboxScreen.getInstance().repaint();

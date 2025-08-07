@@ -1,7 +1,11 @@
 package game.input;
 
 import screens.GameScreen;
+import screens.WorldGameScreen;
 import screens.WorldSandboxScreen;
+import screens.WorldScreen;
+import util.SaveToImageUtil;
+
 
 import java.awt.*;
 import java.awt.event.KeyAdapter;
@@ -35,70 +39,75 @@ public class KeyboardController extends KeyAdapter {
         return false;
     }
     private void updateKeyStates() {
-        WorldSandboxScreen.getInstance().isCtrlPressed = pressedKeys.contains(KeyEvent.VK_CONTROL);
-        WorldSandboxScreen.getInstance().isShiftPressed = pressedKeys.contains(KeyEvent.VK_SHIFT);
-        WorldSandboxScreen.getInstance().isCPressed = pressedKeys.contains(KeyEvent.VK_C);
+        if(screen instanceof WorldScreen sbScreen) {
+            sbScreen.isCtrlPressed = pressedKeys.contains(KeyEvent.VK_CONTROL);
+            sbScreen.isShiftPressed = pressedKeys.contains(KeyEvent.VK_SHIFT);
+            sbScreen.isCPressed = pressedKeys.contains(KeyEvent.VK_C);
+        }
     }
     @Override
     public void keyPressed(KeyEvent e) {
-
-        if (e.isControlDown() && e.getKeyCode() == KeyEvent.VK_S) {
-            if(screen instanceof WorldSandboxScreen gamescreen) {
-                WorldSandboxScreen.getInstance().sandboxWorld.saveWorldToPNG();
+        if(screen instanceof WorldScreen worldScreen) {
+            if (e.isControlDown() && e.getKeyCode() == KeyEvent.VK_S) {
+                SaveToImageUtil.saveWorldToPNG();
                 e.consume();
             }
-        }
-        if (e.isControlDown() && e.getKeyCode() == KeyEvent.VK_D) {
-
-                WorldSandboxScreen.getInstance().toggleDebugMode();
+            if (e.isControlDown() && e.getKeyCode() == KeyEvent.VK_D) {
+                worldScreen.toggleDebugMode();
                 e.consume();
-        }
-        if (e.getKeyCode() == KeyEvent.VK_DELETE) {
-            if(screen instanceof WorldSandboxScreen gamescreen) {
-                gamescreen.clickHandler.deleteSelectedObject();
             }
-
+            if (e.getKeyCode() == KeyEvent.VK_DELETE) {
+                if (screen instanceof WorldSandboxScreen gamescreen) {
+                    gamescreen.sandboxClickHandler.deleteSelectedObject();
+                }
+                if (screen instanceof WorldGameScreen gamescreen) {
+                    gamescreen.gameClickHandler.deleteSelectedObject();
+                }
+            }
         }
+        if(screen instanceof WorldScreen sbScreen) {
         switch (e.getKeyCode()) {
             case KeyEvent.VK_CONTROL:
-                WorldSandboxScreen.getInstance().isCtrlPressed = true;
+                sbScreen.isCtrlPressed = true;
                 break;
             case KeyEvent.VK_SHIFT:
-                WorldSandboxScreen.getInstance().isShiftPressed = true;
+                sbScreen.isShiftPressed = true;
                 break;
             case KeyEvent.VK_C:
-                WorldSandboxScreen.getInstance().isCPressed = true;
+                sbScreen.isCPressed = true;
                 break;
             case KeyEvent.VK_ESCAPE:
-                WorldSandboxScreen.getInstance().isEscPressed = true;
+                sbScreen.isEscPressed = true;
                 break;
             case KeyEvent.VK_ALT:
-                WorldSandboxScreen.getInstance().isAltPressed = true;
+                sbScreen.isAltPressed = true;
                 break;
-
+        }
 
         }
     }
     @Override
     public void keyReleased(KeyEvent e) {
-        switch (e.getKeyCode()) {
-            case KeyEvent.VK_CONTROL:
-                WorldSandboxScreen.getInstance().isCtrlPressed = false;
-                break;
-            case KeyEvent.VK_SHIFT:
-                WorldSandboxScreen.getInstance().isShiftPressed = false;
-                break;
-            case KeyEvent.VK_C:
+        if(screen instanceof WorldScreen worldScreen) {
 
-                WorldSandboxScreen.getInstance().isCPressed = false;
 
-                break;
-            case KeyEvent.VK_ESCAPE:
-                WorldSandboxScreen.getInstance().isEscPressed = false;
-                break;
-            case KeyEvent.VK_ALT:
-                WorldSandboxScreen.getInstance().isAltPressed = false;
-                break;
+            switch (e.getKeyCode()) {
+                case KeyEvent.VK_CONTROL:
+                    worldScreen.isCtrlPressed = false;
+                    break;
+                case KeyEvent.VK_SHIFT:
+                    worldScreen.isShiftPressed = false;
+                    break;
+                case KeyEvent.VK_C:
+                    worldScreen.isCPressed = false;
+                    break;
+                case KeyEvent.VK_ESCAPE:
+                    worldScreen.isEscPressed = false;
+                    break;
+                case KeyEvent.VK_ALT:
+                    worldScreen.isAltPressed = false;
+                    break;
+            }
         }
     }
 }

@@ -24,7 +24,7 @@ public class MenuScreen extends GameScreen {
         // Title
         JLabel title = new JLabel("METROLINE");
         title.setForeground(Color.WHITE);
-        title.setFont(new Font("Arial", Font.BOLD, 52));
+        title.setFont(new Font("Arial", Font.BOLD, 42));
         gbc.insets = new Insets(0, 30, 50, 0);
         add(title, gbc);
 
@@ -32,34 +32,31 @@ public class MenuScreen extends GameScreen {
         gbc.insets = new Insets(10, 50, 10, 0);
 
         // Minimalist buttons aligned to left
-        JButton startButton = StyleUtil.createMetrolineButton("New Game",e -> parent.switchScreen("world_settings"));
-        JButton loadButton = StyleUtil.createMetrolineButton("Load Game",e -> loadGame(parent));
+        JButton startButton = StyleUtil.createMetrolineButton("New Game",e -> parent.switchScreen(MainFrame.WORLD_SETTINGS_SCREEN_NAME));
+        JButton loadSBButton = StyleUtil.createMetrolineButton("Load Sandbox Game",e -> loadGame(parent, true));
+        JButton loadButton = StyleUtil.createMetrolineButton("Load Game",e -> loadGame(parent, false));
+
         JButton exitButton = StyleUtil.createMetrolineButton("Exit", e -> System.exit(0));
 
         add(startButton, gbc);
+        add(loadSBButton, gbc);
         add(loadButton, gbc);
         add(exitButton, gbc);
 
     }
 
 
-    private void loadGame(MainFrame parent) {
-        // Сначала переключаемся на игровой экран
-        parent.switchScreen("game");
+    private void loadGame(MainFrame parent, boolean isSandbox) {
+        if(isSandbox)
+        parent.switchScreen(MainFrame.SANDBOX_SCREEN_NAME);
+        else parent.switchScreen(MainFrame.GAME_SCREEN_NAME);
 
-        // Затем загружаем мир
-        WorldSandboxScreen gameScreen = (WorldSandboxScreen) parent.getCurrentScreen();
-        gameScreen.sandboxWorld.loadWorld();
-
-        // Если загрузка не удалась, предлагаем создать новый мир
-        if (gameScreen.getWorld() == null) {
-            int choice = JOptionPane.showConfirmDialog(parent,
-                    "Failed to load game. Create new world?",
-                    "Load Error", JOptionPane.YES_NO_OPTION);
-
-            if (choice == JOptionPane.YES_OPTION) {
-            //    gameScreen.resetWorld();
-            }
+        if(isSandbox) {
+            WorldSandboxScreen gameScreen = (WorldSandboxScreen) parent.getCurrentScreen();
+            gameScreen.sandboxWorld.loadWorld();
+        } else {
+            WorldGameScreen gameScreen = (WorldGameScreen) parent.getCurrentScreen();
+            gameScreen.gameWorld.loadWorld();
         }
     }
 

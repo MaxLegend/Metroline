@@ -4,6 +4,7 @@ import util.StyleUtil;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.*;
 
 public class WorldSettingsScreen extends GameScreen {
     private JSlider widthSlider;
@@ -11,8 +12,11 @@ public class WorldSettingsScreen extends GameScreen {
     private JCheckBox organicPatchesCheck;
     private JCheckBox riversCheck;
     private MainFrame parent;
+    private JButton colorButton; // Кнопка для выбора цвета
+    private Color worldColor = new Color(110, 110, 110); // Цвет по умолчанию
 
-
+    //just gebug only!
+    public static final boolean innerDebugUI = false;
 
     public WorldSettingsScreen(MainFrame parent) {
         super(parent);
@@ -26,13 +30,21 @@ public class WorldSettingsScreen extends GameScreen {
         // Основной контейнер для центрирования
         JPanel centerPanel = new JPanel(new GridBagLayout());
         centerPanel.setBackground(StyleUtil.BACKGROUND_COLOR);
-        centerPanel.setBorder(BorderFactory.createEmptyBorder(50, 50, 50, 50));
+        if(innerDebugUI) {
+            centerPanel.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(Color.RED, 2),
+                    BorderFactory.createEmptyBorder(50, 50, 50, 50)
+            ));
+        } else {
+            centerPanel.setBorder(BorderFactory.createEmptyBorder(50, 50, 50, 50));
+        }
+
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridwidth = GridBagConstraints.REMAINDER;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(10, 30, 10, 30);
-        gbc.weightx = 1;
+        gbc.weightx = 0;
 
         // Title
         JLabel title = new JLabel("CREATE NEW WORLD", SwingConstants.CENTER);
@@ -45,48 +57,98 @@ public class WorldSettingsScreen extends GameScreen {
         gbc.insets = new Insets(10, 30, 10, 30);
 
         // World Size
-        JPanel sizePanel = new JPanel(new GridLayout(2, 2, 10, 15));
+        JPanel sizePanel = new JPanel(new GridLayout(2, 3, 10, 15));
+
         sizePanel.setBackground(StyleUtil.BACKGROUND_COLOR);
-        sizePanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
+        if(innerDebugUI) {
+            sizePanel.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(Color.BLUE, 2),
+                    BorderFactory.createEmptyBorder(0, 0, 20, 0)
+            ));
+        } else {
+            sizePanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
+        }
 
-        widthSlider = StyleUtil.createMetrolineSlider(50, 200, 100, "Width: ");
-        heightSlider = StyleUtil.createMetrolineSlider(50, 200, 100, "Height: ");
 
-        JLabel widthLabel = StyleUtil.createMetrolineLabel("World Width:");
-        JLabel heightLabel = StyleUtil.createMetrolineLabel("World Height:");
+
+        // Метки для значений
+        JLabel widthValueLabel = new JLabel("wwl");
+        if(innerDebugUI) widthValueLabel.setBorder(BorderFactory.createLineBorder(Color.GREEN, 1));
+        widthValueLabel.setForeground(StyleUtil.FOREGROUND_COLOR);
+        widthValueLabel.setFont(new Font("Arial", Font.PLAIN, 15));
+
+        JLabel heightValueLabel = new JLabel("hwl");
+        if(innerDebugUI) heightValueLabel.setBorder(BorderFactory.createLineBorder(Color.GREEN, 1));
+        heightValueLabel.setForeground(StyleUtil.FOREGROUND_COLOR);
+        heightValueLabel.setFont(new Font("Arial", Font.PLAIN, 15));
+
+        widthSlider = StyleUtil.createMetrolineSlider(20, 200, 40, " cells", widthValueLabel);
+        if(innerDebugUI)  widthSlider.setBorder(BorderFactory.createLineBorder(Color.YELLOW, 1)); // Желтая граница
+
+        heightSlider = StyleUtil.createMetrolineSlider(20, 200, 40, " cells", heightValueLabel);
+        if(innerDebugUI) heightSlider.setBorder(BorderFactory.createLineBorder(Color.YELLOW, 1)); // Желтая граница
+
+        JLabel widthLabel = StyleUtil.createMetrolineLabel("World Width:", SwingConstants.RIGHT);
+        if(innerDebugUI) widthLabel.setBorder(BorderFactory.createLineBorder(Color.CYAN, 1));
+
+        JLabel heightLabel = StyleUtil.createMetrolineLabel("World Height:", SwingConstants.RIGHT);
+        if(innerDebugUI) heightLabel.setBorder(BorderFactory.createLineBorder(Color.CYAN, 1));
 
         sizePanel.add(widthLabel);
         sizePanel.add(widthSlider);
+        sizePanel.add(widthValueLabel);
         sizePanel.add(heightLabel);
         sizePanel.add(heightSlider);
+        sizePanel.add(heightValueLabel);
 
         centerPanel.add(sizePanel, gbc);
 
         // World Features
-        JPanel featuresPanel = new JPanel(new GridLayout(2, 1, 5, 10));
+        JPanel featuresPanel = new JPanel(new GridLayout(3, 1, 5, 10));
+        featuresPanel.setSize(100, 100);
         featuresPanel.setBackground(StyleUtil.BACKGROUND_COLOR);
-        featuresPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
+      if(innerDebugUI) {
+          featuresPanel.setBorder(BorderFactory.createCompoundBorder(
+                  BorderFactory.createLineBorder(new Color(128, 0, 128), 2), // Фиолетовый
+                  BorderFactory.createEmptyBorder(0, 100, 20, 100)
+          ));
+      }
+        else {
+          featuresPanel.setBorder(BorderFactory.createEmptyBorder(0, 100, 20, 100));
+      }
+        // Кнопка выбора цвета
+        colorButton = StyleUtil.createMetrolineColorableButton("World Color", e -> showWindowColorSelection(), worldColor);
 
-        organicPatchesCheck = StyleUtil.createMetrolineCheckBox("Generate Organic Patches", true);
+        organicPatchesCheck = StyleUtil.createMetrolineCheckBox("Generate Hard Rocks", true);
+
         riversCheck = StyleUtil.createMetrolineCheckBox("Generate Rivers", true);
-
         featuresPanel.add(organicPatchesCheck);
         featuresPanel.add(riversCheck);
+        featuresPanel.add(colorButton);
 
         centerPanel.add(featuresPanel, gbc);
 
         // Buttons
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
         buttonPanel.setBackground(StyleUtil.BACKGROUND_COLOR);
-        buttonPanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
+        if(innerDebugUI) {
+            buttonPanel.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(Color.ORANGE, 2),
+                    BorderFactory.createEmptyBorder(20, 0, 0, 0)
+            ));
+        } else {
+            buttonPanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
+        }
 
-        JButton createButton = StyleUtil.createMetrolineButton("Create World",e -> createWorld());
 
+        JButton createSBButton = StyleUtil.createMetrolineButton("Create Sandbox World",e -> createWorld(true));
+        JButton createGameButton = StyleUtil.createMetrolineButton("Create World",e -> createWorld(false));
 
         JButton backButton = StyleUtil.createMetrolineButton("Back",e -> parent.switchScreen("menu"));
 
         buttonPanel.add(backButton);
-        buttonPanel.add(createButton);
+        buttonPanel.add(createSBButton);
+        buttonPanel.add(createGameButton);
 
         centerPanel.add(buttonPanel, gbc);
 
@@ -94,19 +156,97 @@ public class WorldSettingsScreen extends GameScreen {
         add(centerPanel);
     }
 
+    private void showWindowColorSelection() {
+        // Создаем диалоговое окно
+        JDialog colorDialog = new JDialog(SwingUtilities.getWindowAncestor(this));
+        colorDialog.setUndecorated(true);
+        colorDialog.setBackground(new Color(0, 0, 0, 0));
+
+        // Панель с цветами
+        JPanel colorPanel = new JPanel(new GridLayout(1, WORLD_COLORS.length, 5, 0));
+        colorPanel.setBorder(BorderFactory.createLineBorder(StyleUtil.FOREGROUND_COLOR, 2));
+        colorPanel.setBackground(StyleUtil.BACKGROUND_COLOR);
+        colorPanel.setOpaque(true);
+
+        // Создаем кнопки для каждого цвета
+        for (Color color : WORLD_COLORS) {
+            JButton colorBtn = new JButton();
+            colorBtn.setBackground(color);
+            colorBtn.setPreferredSize(new Dimension(40, 40));
+            colorBtn.setBorder(BorderFactory.createEmptyBorder());
+            colorBtn.setContentAreaFilled(false);
+            colorBtn.setOpaque(true);
+            colorBtn.setFocusPainted(false);
+
+            colorBtn.addActionListener(e -> {
+                worldColor = color;
+               updateColorButtonAppearance();
+                colorDialog.dispose();
+            });
+
+            // Эффект при наведении
+            colorBtn.addMouseListener(new MouseAdapter() {
+                public void mouseEntered(MouseEvent e) {
+                    colorBtn.setBackground(StyleUtil.changeColorShade(color, -40));
+                }
+                public void mouseExited(MouseEvent e) {
+                    colorBtn.setBackground(color);
+                }
+            });
+
+            colorPanel.add(colorBtn);
+        }
+
+        colorDialog.add(colorPanel);
+        colorDialog.pack();
+
+        // Позиционируем окно рядом с кнопкой
+        Point buttonLoc = colorButton.getLocationOnScreen();
+        colorDialog.setLocation(
+                buttonLoc.x + colorButton.getWidth()/2 - colorDialog.getWidth()/2,
+                buttonLoc.y + colorButton.getHeight() + 5
+        );
+
+        // Закрытие при клике вне окна
+        colorDialog.addWindowFocusListener(new WindowAdapter() {
+            public void windowLostFocus(WindowEvent e) {
+                colorDialog.dispose();
+            }
+        });
+
+        colorDialog.setVisible(true);
+    }
+    private void updateColorButtonAppearance() {
+        colorButton.setBackground(worldColor);
 
 
+        // Добавляем новые обработчики с текущим цветом
+        colorButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                colorButton.setBackground(StyleUtil.changeColorShade(worldColor, 20));
+            }
 
-
-    private void createWorld() {
+            @Override
+            public void mouseExited(MouseEvent e) {
+                colorButton.setBackground(worldColor);
+            }
+        });
+    }
+    private void createWorld(boolean isSandbox) {
         int width = widthSlider.getValue();
         int height = heightSlider.getValue();
         boolean hasOrganicPatches = organicPatchesCheck.isSelected();
         boolean hasRivers = riversCheck.isSelected();
-
-        parent.switchScreen("game");
-        WorldSandboxScreen gameScreen = (WorldSandboxScreen) parent.getCurrentScreen();
-        gameScreen.createNewWorld(width, height, hasOrganicPatches, hasRivers);
+        if(isSandbox) {
+            parent.switchScreen(MainFrame.SANDBOX_SCREEN_NAME);
+            WorldSandboxScreen gameScreen = (WorldSandboxScreen) parent.getCurrentScreen();
+            gameScreen.createNewWorld(width, height, hasOrganicPatches, hasRivers, worldColor);
+        } else {
+            parent.switchScreen(MainFrame.GAME_SCREEN_NAME);
+            WorldGameScreen gameScreen = (WorldGameScreen) parent.getCurrentScreen();
+            gameScreen.createNewWorld(width, height, hasOrganicPatches, hasRivers, worldColor);
+        }
     }
 
     @Override
@@ -117,6 +257,11 @@ public class WorldSettingsScreen extends GameScreen {
         riversCheck.setSelected(true);
     }
 
-    // Кастомный UI для слайдера
-
+    public static final Color[] WORLD_COLORS = {
+            new Color(203, 202, 202), // Светло-серый
+            new Color(110, 110, 110), // Серый (по умолчанию)
+            new Color(70, 70, 70),    // Темно-серый
+            new Color(150, 100, 80),  // Коричневый
+            new Color(80, 100, 150)   // Голубоватый
+    };
 }

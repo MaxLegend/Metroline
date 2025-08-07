@@ -1,7 +1,7 @@
 package game.input;
 
 import game.objects.PathPoint;
-import game.objects.Station;
+import screens.WorldGameScreen;
 import screens.WorldSandboxScreen;
 import screens.WorldScreen;
 
@@ -11,7 +11,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 
-import static game.input.ClickHandler.editStationName;
+import static screens.WorldSandboxScreen.getInstance;
 
 
 /**
@@ -30,31 +30,36 @@ public class MouseController extends MouseAdapter {
         this.dragVelocity = new Point(0, 0);
 
     }
+    //Double click
     @Override
     public void mouseClicked(MouseEvent e) {
-            if (!screen.isShiftPressed && e.getClickCount() == 2 && SwingUtilities.isLeftMouseButton(e)) {
-                // Обработка двойного клика
+            if (!screen.isCtrlPressed && !screen.isShiftPressed && e.getClickCount() == 2 && SwingUtilities.isLeftMouseButton(e)) {
                 PathPoint worldPos = screen.screenToWorld(e.getX(), e.getY());
-                handleDoubleClick(worldPos.x, worldPos.y);
+                if(screen instanceof WorldSandboxScreen sbScreen) {
+                    sbScreen.sandboxClickHandler.handleEditStationName(worldPos.x, worldPos.y);
+                    sbScreen.sandboxClickHandler.handleRemoveTunnel(worldPos.x, worldPos.y);
+                }
+                if(screen instanceof WorldGameScreen gScreen) {
+                    gScreen.gameClickHandler.handleEditStationName(worldPos.x, worldPos.y);
+                    gScreen.gameClickHandler.handleRemoveTunnel(worldPos.x, worldPos.y);
+                }
             }
 
+
+
     }
 
-    private void handleDoubleClick(int x, int y) {
-        Station station = WorldSandboxScreen.getInstance().sandboxWorld.getStationAt(x, y);
-        if (station != null) {
-            editStationName(station);
-        }
-    }
+
     @Override
     public void mousePressed(MouseEvent e) {
             if (SwingUtilities.isRightMouseButton(e)) {
                 lastDragPoint = e.getPoint();
                 dragVelocity.setLocation(0, 0);
-                ClickHandler.startDrag(e.getX(), e.getY());
+                SandboxClickHandler.startDrag(e.getX(), e.getY());
             } else if (SwingUtilities.isLeftMouseButton(e)) {
                 PathPoint worldPos = screen.screenToWorld(e.getX(), e.getY());
-                screen.handleClick(worldPos.x, worldPos.y);
+                if(screen instanceof WorldSandboxScreen sbScreen) sbScreen.handleClick(worldPos.x, worldPos.y);
+                if(screen instanceof WorldGameScreen gsScreen) gsScreen.handleClick(worldPos.x, worldPos.y);
             }
 
     }
@@ -75,8 +80,11 @@ public class MouseController extends MouseAdapter {
         } else if (SwingUtilities.isLeftMouseButton(e)) {
             PathPoint worldPos = screen.screenToWorld(e.getX(), e.getY());
             if (worldPos != null) {
-                if(screen instanceof WorldSandboxScreen gamescreen) {
-                    gamescreen.clickHandler.handleEditDrag(worldPos.x, worldPos.y);
+                if(screen instanceof WorldSandboxScreen sbscreen) {
+                    sbscreen.sandboxClickHandler.handleEditDrag(worldPos.x, worldPos.y);
+                }
+                if(screen instanceof WorldGameScreen gamescreen) {
+                    gamescreen.gameClickHandler.handleEditDrag(worldPos.x, worldPos.y);
                 }
             }
         }
@@ -84,14 +92,26 @@ public class MouseController extends MouseAdapter {
 
     @Override
     public void mouseReleased(MouseEvent e) {
+        if(screen instanceof WorldSandboxScreen sbscreen) {
             if (SwingUtilities.isLeftMouseButton(e)) {
-                screen.clickHandler.selectedObject = null;
-                ClickHandler.dragOffset = null;
-            }
-            if (SwingUtilities.isRightMouseButton(e) ) {
-                ClickHandler.stopDrag();
-            }
+                sbscreen.sandboxClickHandler.selectedObject = null;
+                SandboxClickHandler.dragOffset = null;
 
+            }
+            if (SwingUtilities.isRightMouseButton(e)) {
+                SandboxClickHandler.stopDrag();
+            }
+        }
+        if(screen instanceof WorldGameScreen gScreen) {
+            if (SwingUtilities.isLeftMouseButton(e)) {
+                gScreen.gameClickHandler.selectedObject = null;
+                GameClickHandler.dragOffset = null;
+
+            }
+            if (SwingUtilities.isRightMouseButton(e)) {
+                GameClickHandler.stopDrag();
+            }
+        }
     }
 
     @Override

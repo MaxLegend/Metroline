@@ -16,6 +16,12 @@ import util.StyleUtil;
  * @author Tesmio
  */
 public class MainFrame extends JFrame {
+
+    public static final String SANDBOX_SCREEN_NAME = "sandbox_gamescreen";
+    public static final String MAIN_MENU_SCREEN_NAME = "menu";
+    public static final String GAME_SCREEN_NAME = "gamescreen";
+    public static final String WORLD_SETTINGS_SCREEN_NAME = "world_settings";
+
     private GameScreen currentScreen;
     private JToolBar toolBar;
     private Map<String, GameScreen> screens = new HashMap<>();
@@ -43,9 +49,10 @@ public class MainFrame extends JFrame {
     public MainFrame() {
         super("Metroline");
         if (screens.isEmpty()) {
-            screens.put("menu", new MenuScreen(this));
-            screens.put("game", new WorldSandboxScreen(this));
-            screens.put("world_settings", new WorldSettingsScreen(this));
+            screens.put(MAIN_MENU_SCREEN_NAME, new MenuScreen(this));
+            screens.put(SANDBOX_SCREEN_NAME, new WorldSandboxScreen(this));
+            screens.put(GAME_SCREEN_NAME, new WorldGameScreen(this));
+            screens.put(WORLD_SETTINGS_SCREEN_NAME, new WorldSettingsScreen(this));
         }
         initializeWindow(false);
         setupKeyBindings();
@@ -70,7 +77,7 @@ public class MainFrame extends JFrame {
                screens.put(activeScreenName, previousScreen);
                switchScreen(activeScreenName);
            } else {
-               switchScreen("menu");
+               switchScreen(MAIN_MENU_SCREEN_NAME);
            }
 
            setVisible(true);
@@ -85,7 +92,7 @@ public class MainFrame extends JFrame {
                 return entry.getKey();
             }
         }
-        return "menu";
+        return MAIN_MENU_SCREEN_NAME;
     }
     private void setupKeyBindings() {
         InputMap inputMap = getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
@@ -128,6 +135,9 @@ public class MainFrame extends JFrame {
     /**
      * UI Initialization
      */
+
+    private JWindow currentPopup;
+    private AWTEventListener outsideClickListener;
     private void initUI() {
 
         // Timebar (bottom panel)
@@ -137,7 +147,7 @@ public class MainFrame extends JFrame {
             timeLabel.setForeground(Color.WHITE);
             timeLabel.setFont(new Font("Arial", Font.PLAIN, 14));
             timePanel.add(timeLabel);
-            timePanel.add(StyleUtil.createMetrolineButton("Pause", e -> timeControl()));
+            timePanel.add(StyleUtil.createMetrolineInGameButton("Pause", e -> timeControl()));
             add(timePanel, BorderLayout.SOUTH); // Размещаем внизу окна
 
         // Toolbar (upper panel)
@@ -146,14 +156,71 @@ public class MainFrame extends JFrame {
         toolBar.setVisible(false);
         toolBar.setBackground(new Color(45, 45, 45));
 
-        toolBar.add(StyleUtil.createMetrolineButton("Save Game", e -> saveGame()));
-        toolBar.add(StyleUtil.createMetrolineButton("Load Game", e -> loadGame()));
-        toolBar.add(StyleUtil.createMetrolineButton("Back to Menu", e -> backToMenu()));
-        toolBar.add(StyleUtil.createMetrolineButton("Exit Game", e -> exitGame()));
+        toolBar.add(StyleUtil.createMetrolineInGameButton("Save Game", e -> saveGame()));
+        toolBar.add(StyleUtil.createMetrolineInGameButton("Load Game", e -> loadGame()));
+        toolBar.add(StyleUtil.createMetrolineInGameButton("Back to Menu", e -> backToMenu()));
+        JButton menuButton = StyleUtil.createMetrolineInGameButton("Options", e -> showPopupMenu((JButton)e.getSource()));
+        toolBar.add(menuButton);
+        toolBar.add(StyleUtil.createMetrolineInGameButton("Exit Game", e -> exitGame()));
+
+
+
+
         add(toolBar, BorderLayout.NORTH);
 
     }
 
+    private void showPopupMenu(JButton sourceButton) {
+
+        closePopupMenu();
+        JPanel menuPanel = new JPanel(new GridLayout(0, 1));
+        menuPanel.setBackground(StyleUtil.BACKGROUND_COLOR);
+        menuPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+
+        JButton option1 = StyleUtil.createMetrolineInGameButton("Option 1", e -> {});
+        JButton option2 = StyleUtil.createMetrolineInGameButton("Option 2", e -> {});
+        option2.setSize(100, 100);
+        menuPanel.add(option1);
+        menuPanel.add(option2);
+
+        // Создаем и настраиваем popup-окно
+        currentPopup = new JWindow(this);
+        currentPopup.getContentPane().add(menuPanel);
+        currentPopup.pack();
+
+        // Позиционируем под кнопкой
+        Point location = sourceButton.getLocationOnScreen();
+        currentPopup.setLocation(location.x, location.y + sourceButton.getHeight());
+        currentPopup.setVisible(true);
+
+        // Добавляем глобальный слушатель кликов
+        outsideClickListener = new AWTEventListener() {
+            @Override
+            public void eventDispatched(AWTEvent event) {
+                if (event.getID() == MouseEvent.MOUSE_PRESSED && currentPopup != null) {
+                    MouseEvent mouseEvent = (MouseEvent)event;
+
+                    // Проверяем, был ли клик вне popup-меню
+                    if (!currentPopup.getBounds().contains(mouseEvent.getLocationOnScreen()) &&
+                            !sourceButton.getBounds().contains(mouseEvent.getPoint())) {
+                        closePopupMenu();
+                    }
+                }
+            }
+        };
+        Toolkit.getDefaultToolkit().addAWTEventListener(outsideClickListener, AWTEvent.MOUSE_EVENT_MASK);
+    }
+
+    private void closePopupMenu() {
+        if (currentPopup != null) {
+            currentPopup.dispose();
+            currentPopup = null;
+        }
+        if (outsideClickListener != null) {
+            Toolkit.getDefaultToolkit().removeAWTEventListener(outsideClickListener);
+            outsideClickListener = null;
+        }
+    }
     /**
      * Time controller
      */
@@ -169,7 +236,7 @@ public class MainFrame extends JFrame {
      * Back to Main menu
      */
     public void backToMenu() {
-        switchScreen("menu");
+        switchScreen(MAIN_MENU_SCREEN_NAME);
     }
     /**
      * Exit from game
@@ -197,12 +264,16 @@ public class MainFrame extends JFrame {
 
 
 
+
     /**
      * Save game
      */
     private void saveGame() {
         if (currentScreen instanceof WorldSandboxScreen) {
             ((WorldSandboxScreen)currentScreen).sandboxWorld.saveWorld();
+        }
+        if (currentScreen instanceof WorldGameScreen) {
+            ((WorldGameScreen)currentScreen).gameWorld.saveWorld();
         }
     }
 
@@ -213,6 +284,9 @@ public class MainFrame extends JFrame {
         if (currentScreen instanceof WorldSandboxScreen) {
             ((WorldSandboxScreen)currentScreen).sandboxWorld.loadWorld();
         }
+        if (currentScreen instanceof WorldGameScreen) {
+            ((WorldGameScreen)currentScreen).gameWorld.loadWorld();
+        }
     }
 
     /**
@@ -222,15 +296,14 @@ public class MainFrame extends JFrame {
         if (currentScreen != null) {
             remove(currentScreen);
         }
-        if(currentScreen instanceof WorldSandboxScreen wgs) {
-            wgs.sandboxWorld.getGameTime().reset();
-        }
-        boolean isGameScreen = "game".equals(screenName);
+
+
+        boolean isSandboxGameScreen = SANDBOX_SCREEN_NAME.equals(screenName);
+        boolean isGameScreen = GAME_SCREEN_NAME.equals(screenName);
         currentScreen = screens.get(screenName);
         add(currentScreen, BorderLayout.CENTER);
-        toolBar.setVisible("game".equals(screenName));
-        timePanel.setVisible(isGameScreen);
-
+        toolBar.setVisible(isGameScreen || isSandboxGameScreen);
+        timePanel.setVisible(isGameScreen|| isSandboxGameScreen);
         revalidate();
         repaint();
         currentScreen.requestFocusInWindow();

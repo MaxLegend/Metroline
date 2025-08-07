@@ -4,19 +4,24 @@ import game.core.Tile;
 import screens.WorldSandboxScreen;
 
 import java.awt.*;
+import java.io.Serializable;
 
 /**
  * World tile that represents terrain with building permissions
  * @author Tesmio
  */
-public class WorldTile extends Tile {
+public class WorldTile extends Tile implements Serializable {
     private float perm; // 0 = can build, 1 = cannot build
+    private static final long serialVersionUID = 1L;
+    private Color baseTileColor = new Color(110, 110, 110);
+
     public WorldTile() {
         super(0, 0, 16);
     }
     public WorldTile(int x, int y, float perm) {
         super(x, y, 16);
         this.perm = perm;
+        this.baseTileColor = new Color(110, 110, 110);
     }
 
     /**
@@ -31,6 +36,12 @@ public class WorldTile extends Tile {
      */
     public void setPerm(float perm) { this.perm = perm; }
 
+    public void setBaseTileColor(Color color) {
+        baseTileColor = color;
+    }
+    public Color getBaseTileColor() {
+        return baseTileColor;
+    }
     @Override
     public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
         super.draw(g, offsetX, offsetY, zoom);
@@ -39,16 +50,14 @@ public class WorldTile extends Tile {
         int drawX = (int)((x * size + offsetX) * zoom);
         int drawY = (int)((y * size + offsetY) * zoom);
 
-        // Темная цветовая схема на основе уровня разрешения (perm)
-        int baseDark = 110; // Базовый темный цвет
         int range = 50;    // Диапазон вариаций
 
-        // Инвертируем значение perm для темной темы (0 = светлее, 1 = темнее)
-        int darkValue = baseDark - (int)(perm * range);
-        darkValue = Math.max(baseDark - range, Math.min(baseDark + range, darkValue));
+        int red = Math.max(0, Math.min(255, baseTileColor.getRed() - (int)(perm * range)));
+        int green = Math.max(0, Math.min(255, baseTileColor.getGreen() - (int)(perm * range)));
+        int blue = Math.max(0, Math.min(255, baseTileColor.getBlue() - (int)(perm * range)));
 
         // Создаем основной цвет плитки
-        Color tileColor = new Color(darkValue, darkValue, darkValue);
+        Color tileColor = new Color(red, green, blue);
         g.setColor(tileColor);
 
         // Рисуем плитку с небольшим перекрытием

@@ -2,9 +2,11 @@ package screens;
 
 import game.core.world.SandboxWorld;
 
+import game.input.GameClickHandler;
 import game.input.KeyboardController;
 import game.input.MouseController;
 
+import game.input.SandboxClickHandler;
 import game.objects.Label;
 import game.objects.PathPoint;
 import game.objects.Station;
@@ -23,16 +25,14 @@ import java.util.Map;
  */
 public class WorldSandboxScreen extends WorldScreen {
     public static WorldSandboxScreen INSTANCE;
-
+    public SandboxClickHandler sandboxClickHandler;
     public static int widthWorld = 100, heightWorld = 100;
-
+    public SandboxWorld sandboxWorld;
     // Input controllers
     private MouseController mouseController;
     private KeyboardController keyboardController;
 
-    //Debug
-    public boolean debugMode = false;
-    private Font debugFont = new Font("Monospaced", Font.PLAIN, 12);
+
 
 
 
@@ -43,7 +43,7 @@ public class WorldSandboxScreen extends WorldScreen {
     public WorldSandboxScreen(MainFrame parent) {
         super(parent);
 
-        sandboxWorld = new SandboxWorld(widthWorld, heightWorld, false, false);
+        sandboxWorld = new SandboxWorld(widthWorld, heightWorld, false, false, Color.WHITE);
         INSTANCE = this;
 
         // Initialize controllers
@@ -58,10 +58,37 @@ public class WorldSandboxScreen extends WorldScreen {
         sandboxWorld.getGameTime().start();
 
     }
-    public void createNewWorld(int width, int height, boolean hasOrganicPatches, boolean hasRivers) {
+    /**
+     * Handles mouse click on the world
+     * @param x X coordinate in world space
+     * @param y Y coordinate in world space
+     */
+    public void handleClick(int x, int y) {
+        if (x < 0 || x >= sandboxWorld.getWidth() || y < 0 || y >= sandboxWorld.getHeight()) {
+            return;
+        }
+        if (isShiftPressed && isCPressed) {
+            sandboxClickHandler.showColorSelectionPopup(x, y);
+        }
+        else if (isShiftPressed) {
+            sandboxClickHandler.handleStationClick(x, y);
+        }
+        else if (isCtrlPressed) {
+
+            sandboxClickHandler.handleTunnelClick(x, y);
+        }
+        else {
+            sandboxClickHandler.handleDefaultClick(x, y);
+        }
+
+        repaint();
+    }
+    public void createNewWorld(int width, int height, boolean hasOrganicPatches, boolean hasRivers, Color worldColor) {
+
         widthWorld = width;
         heightWorld = height;
-        sandboxWorld = new SandboxWorld(width, height, hasOrganicPatches, hasRivers);
+        sandboxWorld = new SandboxWorld(width, height, hasOrganicPatches, hasRivers,worldColor);
+        this.sandboxClickHandler = new SandboxClickHandler();
         invalidateCache();
         repaint();
     }
@@ -77,7 +104,7 @@ public class WorldSandboxScreen extends WorldScreen {
     public void invalidateCache() {
         cacheValid = false;
     }
-    public SandboxWorld getWorld() {
+    public SandboxWorld getSandboxWorld() {
         return sandboxWorld;
     }
     @Override
@@ -179,8 +206,8 @@ public class WorldSandboxScreen extends WorldScreen {
         yPos += 15;
 
         // Информация о выбранной станции
-        if (clickHandler.getSelectedObject() instanceof Station) {
-            Station station = (Station)clickHandler.getSelectedObject();
+        if (sandboxClickHandler.getSelectedObject() instanceof Station) {
+            Station station = (Station) sandboxClickHandler.getSelectedObject();
             yPos += 15;
             g.drawString("=== SELECTED STATION ===", 10, yPos);
             yPos += 15;
@@ -216,8 +243,8 @@ public class WorldSandboxScreen extends WorldScreen {
                 }
             }
         }
-        else if (clickHandler.getSelectedObject() instanceof Label) {
-            Label label = (Label)clickHandler.getSelectedObject();
+        else if (sandboxClickHandler.getSelectedObject() instanceof Label) {
+            Label label = (Label) sandboxClickHandler.getSelectedObject();
             yPos += 15;
             g.drawString("=== SELECTED LABEL ===", 10, yPos);
             yPos += 15;
@@ -233,8 +260,8 @@ public class WorldSandboxScreen extends WorldScreen {
             yPos += 15;
         }
         // Информация о выбранном туннеле
-        else if (clickHandler.getSelectedObject() instanceof Tunnel) {
-            Tunnel tunnel = (Tunnel)clickHandler.getSelectedObject();
+        else if (sandboxClickHandler.getSelectedObject() instanceof Tunnel) {
+            Tunnel tunnel = (Tunnel) sandboxClickHandler.getSelectedObject();
             yPos += 15;
             g.drawString("=== SELECTED TUNNEL ===", 10, yPos);
             yPos += 15;
@@ -263,12 +290,6 @@ public class WorldSandboxScreen extends WorldScreen {
 
         // Убираем старые методы drawTunnelDebugInfo и drawStationDebugInfo
         // так как вся информация теперь выводится в одном месте
-    }
-
-    // Добавляем метод для переключения режима отладки
-    public void toggleDebugMode() {
-        debugMode = !debugMode;
-        repaint();
     }
 
 
