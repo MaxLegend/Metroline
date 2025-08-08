@@ -87,12 +87,12 @@ public class WorldSettingsScreen extends GameScreen {
         JLabel widthValueLabel = new JLabel("wwl");
         if(innerDebugUI) widthValueLabel.setBorder(BorderFactory.createLineBorder(Color.GREEN, 1));
         widthValueLabel.setForeground(StyleUtil.FOREGROUND_COLOR);
-        widthValueLabel.setFont(new Font("Arial", Font.PLAIN, 15));
+        widthValueLabel.setFont(new Font("Sans Serif", Font.BOLD, 13));
 
         JLabel heightValueLabel = new JLabel("hwl");
         if(innerDebugUI) heightValueLabel.setBorder(BorderFactory.createLineBorder(Color.GREEN, 1));
         heightValueLabel.setForeground(StyleUtil.FOREGROUND_COLOR);
-        heightValueLabel.setFont(new Font("Arial", Font.PLAIN, 15));
+        heightValueLabel.setFont(new Font("Sans Serif", Font.BOLD, 13));
 
         widthSlider = StyleUtil.createMetrolineSlider(20, 200, 40, " " + LngUtil.translatable("world.cells"), widthValueLabel);
         if(innerDebugUI)  widthSlider.setBorder(BorderFactory.createLineBorder(Color.YELLOW, 1)); // Желтая граница
@@ -101,9 +101,11 @@ public class WorldSettingsScreen extends GameScreen {
         if(innerDebugUI) heightSlider.setBorder(BorderFactory.createLineBorder(Color.YELLOW, 1)); // Желтая граница
 
         JLabel widthLabel = StyleUtil.createMetrolineLabel(LngUtil.translatable("world.width"), SwingConstants.RIGHT);
+        widthLabel.setFont(new Font("Sans Serif", Font.BOLD, 13));
         if(innerDebugUI) widthLabel.setBorder(BorderFactory.createLineBorder(Color.CYAN, 1));
 
         JLabel heightLabel = StyleUtil.createMetrolineLabel(LngUtil.translatable("world.height"), SwingConstants.RIGHT);
+        heightLabel.setFont(new Font("Sans Serif", Font.BOLD, 13));
         if(innerDebugUI) heightLabel.setBorder(BorderFactory.createLineBorder(Color.CYAN, 1));
 
         sizePanel.add(widthLabel);
@@ -143,7 +145,7 @@ public class WorldSettingsScreen extends GameScreen {
         }
         moneyValueLabel = new JLabel("10000000");
         moneyValueLabel.setForeground(StyleUtil.FOREGROUND_COLOR);
-        moneyValueLabel.setFont(new Font("Arial", Font.PLAIN, 15));
+        moneyValueLabel.setFont(new Font("Sans Serif", Font.BOLD, 13));
         moneySlider = StyleUtil.createMetrolineSlider(
                 100000,      // мин значение (100 тыс)
                 100000000,   // макс значение (100 млн)
@@ -155,6 +157,7 @@ public class WorldSettingsScreen extends GameScreen {
                 LngUtil.translatable("world.start_money"),
                 SwingConstants.RIGHT
         );
+        moneyTextLabel.setFont(new Font("Sans Serif", Font.BOLD, 13));
         moneyPanel.add(moneyTextLabel);
         moneyPanel.add(moneySlider);
         moneyPanel.add(moneyValueLabel);
@@ -188,7 +191,7 @@ public class WorldSettingsScreen extends GameScreen {
 
 
         JButton createSBButton = StyleUtil.createMetrolineButton(LngUtil.translatable("world.create_sandbox"),e -> createWorld(true));
-        JButton createGameButton = StyleUtil.createMetrolineButton(LngUtil.translatable("world.create_standart"),e -> createWorld(false));
+        JButton createGameButton = StyleUtil.createMetrolineButton(LngUtil.translatable("world.create_standart"),e -> createWorld(false)); //createWorld(false)
 
         JButton backButton = StyleUtil.createMetrolineButton(LngUtil.translatable("world.back"),e -> parent.switchScreen("menu"));
 
@@ -298,7 +301,8 @@ public class WorldSettingsScreen extends GameScreen {
             WorldGameScreen gameScreen = (WorldGameScreen) parent.getCurrentScreen();
             gameScreen.createNewWorld(width, height, hasOrganicPatches, hasRivers, worldColor, startMoney);
             gameScreen.getWorld().setRoundStationsEnabled(roundStations);
-            gameScreen.addMoney(startMoney);
+            ((GameWorld)gameScreen.getWorld()).setMoney(startMoney); // Устанавливаем начальные деньги
+            gameScreen.updateMoneyDisplay(); // Обновляем отображение
         }
     }
 

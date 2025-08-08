@@ -31,7 +31,9 @@ public class MainFrame extends JFrame {
     private Map<String, GameScreen> screens = new HashMap<>();
     private boolean isFullscreen = false;
     private JLabel timeLabel = new JLabel("00:00 01.01.0000");
-    private JLabel moneyLabel = new JLabel("1000000");
+
+    JLabel moneyLabel = new JLabel("100");
+
     private JPanel timePanel = new JPanel();
     private Timer timeUpdateTimer;
     private String lastDisplayedTime = "00:00 01.01.0000";
@@ -150,18 +152,53 @@ public class MainFrame extends JFrame {
     private void initUI() {
         timePanel.removeAll();
 
-        if (timeLabel == null) {
-            timeLabel = new JLabel(lastDisplayedTime);
-            timeLabel.setFont(new Font("Arial", Font.PLAIN, 14));
-        } else {
-            timeLabel.setForeground(Color.WHITE);
-            timeLabel.setText(lastDisplayedTime);
-        }
-
+        timePanel.setLayout(new BorderLayout());
         timePanel.setBackground(new Color(60, 60, 60));
-        timePanel.add(timeLabel);
-        timePanel.add(StyleUtil.createMetrolineInGameButton(LngUtil.translatable("timebar.pause"), e -> timeControl()));
+
+        // Левая часть - время
+
+        JPanel timeLeftPanel = new JPanel();
+        timeLeftPanel.setBackground(new Color(60, 60, 60));
+        timeLabel = new JLabel(lastDisplayedTime);
+        timeLabel.setForeground(Color.WHITE);
+        timeLabel.setFont(new Font("Sans Serif", Font.BOLD, 13));
+        timeLeftPanel.add(timeLabel);
+        timeLeftPanel.add(StyleUtil.createMetrolineInGameButton(LngUtil.translatable("timebar.pause"), e -> timeControl()));
+
+        // Правая часть - деньги
+        JPanel moneyPanel = new JPanel();
+        moneyPanel.setBackground(new Color(60, 60, 60));
+        moneyLabel.setForeground(Color.WHITE);
+        moneyLabel.setFont(new Font("Sans Serif", Font.BOLD, 14));
+        moneyPanel.add(moneyLabel);
+
+
+        timePanel.add(timeLeftPanel, BorderLayout.WEST);
+        timePanel.add(moneyPanel, BorderLayout.EAST);
+
         add(timePanel, BorderLayout.SOUTH);
+//        timePanel.removeAll();
+//
+//        if (timeLabel == null) {
+//            timeLabel = new JLabel(lastDisplayedTime);
+//            timeLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+//        } else {
+//            timeLabel.setForeground(Color.WHITE);
+//            timeLabel.setText(lastDisplayedTime);
+//        }
+//
+//        timePanel.setBackground(new Color(60, 60, 60));
+//        JPanel moneyPanel = new JPanel();
+//        moneyPanel.setBackground(new Color(60, 60, 60));
+//        moneyLabel = new JLabel("0 ₽");
+//        moneyLabel.setFont(new Font("Arial", Font.BOLD, 14));
+//        moneyLabel.setForeground(new Color(255, 215, 0)); // золотой цвет
+//        moneyPanel.add(moneyLabel);
+//        timePanel.add(moneyPanel);
+//
+//        timePanel.add(timeLabel);
+//        timePanel.add(StyleUtil.createMetrolineInGameButton(LngUtil.translatable("timebar.pause"), e -> timeControl()));
+//        add(timePanel, BorderLayout.SOUTH);
 
         // Toolbar (upper panel)
         toolBar = new JToolBar();

@@ -52,25 +52,19 @@ public class WorldGameScreen extends WorldScreen {
      *
      * MONEY MONEY MONEY!
      */
-    public int getMoney() {
-        return money;
-    }
-
-    public boolean canAfford(int amount) {
-        return money >= amount;
+    public void updateMoneyDisplay() {
+        if(getWorld() instanceof GameWorld) {
+            int money = ((GameWorld) getWorld()).getMoney();
+            String formatted = String.format("%,d ₽", money);
+            parent.moneyLabel.setText(formatted);
+        }
     }
 
     public void addMoney(int amount) {
-        money += amount;
-        // Можно добавить события/уведомления об изменении баланса
-    }
-
-    public boolean spendMoney(int amount) {
-        if (canAfford(amount)) {
-            money -= amount;
-            return true;
+        if(getWorld() instanceof GameWorld) {
+            ((GameWorld) getWorld()).addMoney(amount);
+            updateMoneyDisplay();
         }
-        return false;
     }
     /**
      * Handles mouse click on the world

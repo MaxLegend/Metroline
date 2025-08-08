@@ -77,7 +77,7 @@ public class StyleUtil {
         JCheckBox checkBox = new JCheckBox(text, selected);
         checkBox.setBackground(StyleUtil.BACKGROUND_COLOR);
         checkBox.setForeground(StyleUtil.FOREGROUND_COLOR);
-        checkBox.setFont(new Font("Arial", Font.PLAIN, 14));
+        checkBox.setFont(new Font("Sans Serif", Font.BOLD, 13));
         checkBox.setFocusPainted(false);
         checkBox.setIcon(new StyleUtil.MetrolineCheckbox());
         checkBox.setSelectedIcon(new StyleUtil.MetrolineCheckbox(true));
@@ -93,6 +93,7 @@ public class StyleUtil {
         button.setOpaque(true);
         button.setBackground(new Color(60, 60, 60));
         button.setForeground(Color.WHITE);
+        button.setFont(new Font("Sans Serif", Font.BOLD, 13));
         button.setBorder(BorderFactory.createEmptyBorder(5, 15, 5, 15));
         button.setFocusPainted(false);
         button.addActionListener(action);
@@ -110,6 +111,7 @@ public class StyleUtil {
         JButton button = new JButton(text);
         button.setPreferredSize(new Dimension(200, 40));
         button.setForeground(Color.WHITE);
+        button.setFont(new Font("Sans Serif", Font.BOLD, 14));
         button.setBorder(BorderFactory.createEmptyBorder(5, 15, 5, 15));
         button.setFocusPainted(false);
         button.setHorizontalAlignment(SwingConstants.CENTER);
@@ -123,6 +125,7 @@ public class StyleUtil {
         button.setPreferredSize(new Dimension(200, 40));
         button.setBackground(new Color(50, 50, 50));
         button.setForeground(Color.WHITE);
+        button.setFont(new Font("Sans Serif", Font.BOLD, 13));
         button.setBorder(BorderFactory.createEmptyBorder(5, 15, 5, 15));
         button.setFocusPainted(false);
         button.setHorizontalAlignment(SwingConstants.CENTER);
@@ -144,6 +147,7 @@ public class StyleUtil {
         button.setPreferredSize(new Dimension(200, 40));
         button.setBackground(color);
         button.setForeground(Color.WHITE);
+        button.setFont(new Font("Sans Serif", Font.BOLD, 13));
         button.setBorder(BorderFactory.createEmptyBorder(5, 15, 5, 15));
         button.setFocusPainted(false);
         button.setHorizontalAlignment(SwingConstants.CENTER);

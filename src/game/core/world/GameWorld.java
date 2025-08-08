@@ -46,22 +46,16 @@ public class GameWorld extends World {
         return money >= amount;
     }
 
-    public void addMoney(int amount) {
-        money += amount;
-        // Можно добавить события/уведомления об изменении баланса
-    }
-
-    public boolean spendMoney(int amount) {
-        if (canAfford(amount)) {
-            money -= amount;
-            return true;
+    public boolean addMoney(int amount) {
+        if (amount < 0 && !canAfford(-amount)) {
+            return false;
         }
-        return false;
+        money += amount;
+        return true;
     }
 
-//    private void updateMoneyDisplay() {
-//        if (mainFrame != null) {
-//            mainFrame.updateMoneyDisplay(money);
-//        }
-//    }
+    public void setMoney(int amount) {
+        this.money = amount;
+    }
+
 }
