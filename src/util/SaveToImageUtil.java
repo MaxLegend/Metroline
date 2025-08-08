@@ -1,9 +1,12 @@
 package util;
 
+import game.core.world.World;
 import game.objects.Label;
 import game.objects.Station;
 import game.objects.Tunnel;
+import screens.WorldGameScreen;
 import screens.WorldSandboxScreen;
+import screens.WorldScreen;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -14,7 +17,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class SaveToImageUtil {
-    public static void saveWorldToPNG() {
+
+    public static void saveWorldToPNG(boolean isSandbox) {
         // Создаем папку screenshots, если ее нет
         File screenshotsDir = new File("screenshots");
         if (!screenshotsDir.exists()) {
@@ -28,7 +32,11 @@ public class SaveToImageUtil {
 
         try {
             // Вызываем ваш метод сохранения
-            saveToPNG(file);
+            if(isSandbox) {
+                saveToPNG(file, WorldSandboxScreen.getInstance());
+            } else {
+                saveToPNG(file, WorldGameScreen.getInstance());
+            }
 
             // Показываем сообщение с путем к файлу
             String message = "Save: " + file.getAbsolutePath();
@@ -45,10 +53,10 @@ public class SaveToImageUtil {
      * @param file Файл для сохранения
      * @throws IOException Если произошла ошибка сохранения
      */
-    public static void saveToPNG(File file) throws IOException {
+    public static void saveToPNG(File file, WorldScreen screen) throws IOException {
         // Создаем изображение размером с мир
-        int width =  WorldSandboxScreen.getInstance().widthWorld * 32;  // 32 пикселя на клетку
-        int height =  WorldSandboxScreen.getInstance().heightWorld * 32;
+        int width =  screen.widthWorld * 32;  // 32 пикселя на клетку
+        int height =  screen.heightWorld * 32;
         BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2d = image.createGraphics();
 
@@ -62,17 +70,17 @@ public class SaveToImageUtil {
             WorldSandboxScreen.getInstance().drawStaticWorld(g2d);  // Сетка и статические объекты
 
             // Рисуем туннели
-            for (Tunnel tunnel :  WorldSandboxScreen.getInstance().sandboxWorld.getTunnels()) {
+            for (Tunnel tunnel :  screen.getWorld().getTunnels()) {
                 tunnel.draw(g2d, 0, 0, 1);
             }
 
             // Рисуем станции
-            for (Station station : WorldSandboxScreen.getInstance().sandboxWorld.getStations()) {
+            for (Station station : screen.getWorld().getStations()) {
                 station.draw(g2d, 0, 0, 1);
             }
 
             // Рисуем метки
-            for (Label label :  WorldSandboxScreen.getInstance().sandboxWorld.getLabels()) {
+            for (Label label :  screen.getWorld().getLabels()) {
                 label.draw(g2d, 0, 0, 1);
             }
         } finally {

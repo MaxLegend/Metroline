@@ -1,5 +1,8 @@
 package game.core;
 
+import game.core.world.World;
+import screens.WorldScreen;
+
 import java.awt.*;
 import java.io.Serializable;
 
@@ -12,6 +15,7 @@ public abstract class GameObject implements Serializable {
     public int x;
     public int y;
     public boolean selected = false;
+    private World world;
     public GameObject() {
         super();
     }
@@ -19,6 +23,20 @@ public abstract class GameObject implements Serializable {
         this.x = x;
         this.y = y;
     }
+    public GameObject(World world, int x, int y) {
+        this.world = world;
+        this.x = x;
+        this.y = y;
+    }
+
+    public World getWorld() {
+        return world;
+    }
+
+    public void setWorld(World world) {
+        this.world = world;
+    }
+
     /**
      * Gets the Tile of this coord
      * @return Tile

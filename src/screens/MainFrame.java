@@ -6,6 +6,9 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.HashMap;
 import java.util.Map;
+
+import game.core.GameTime;
+import game.core.world.GameWorld;
 import game.core.world.SandboxWorld;
 import util.MetroLogger;
 import util.StyleUtil;
@@ -28,8 +31,8 @@ public class MainFrame extends JFrame {
     private boolean isFullscreen = false;
     private JLabel timeLabel = new JLabel("00:00 01.01.0000");
     private JPanel timePanel = new JPanel();
-
-    private String currentTimeString = "00:00 01.01.0000";
+    private Timer timeUpdateTimer;
+    private String lastDisplayedTime = "00:00 01.01.0000";
     // Настройки стиля
     static {
         try {
@@ -128,7 +131,7 @@ public class MainFrame extends JFrame {
         setUndecorated(false); // Стандартная рамка окна
         setLayout(new BorderLayout());
         getContentPane().setBackground(new Color(30, 30, 30));
-        setSize(800, 600);
+        setSize(1100, 600);
         setLocationRelativeTo(null); // Центрируем окно
         isFullscreen = false;
     }
@@ -139,16 +142,20 @@ public class MainFrame extends JFrame {
     private JWindow currentPopup;
     private AWTEventListener outsideClickListener;
     private void initUI() {
-
-        // Timebar (bottom panel)
         timePanel.removeAll();
-            timePanel.setBackground(new Color(60, 60, 60));
-            timeLabel = new JLabel(currentTimeString);
-            timeLabel.setForeground(Color.WHITE);
+
+        if (timeLabel == null) {
+            timeLabel = new JLabel(lastDisplayedTime);
             timeLabel.setFont(new Font("Arial", Font.PLAIN, 14));
-            timePanel.add(timeLabel);
-            timePanel.add(StyleUtil.createMetrolineInGameButton("Pause", e -> timeControl()));
-            add(timePanel, BorderLayout.SOUTH); // Размещаем внизу окна
+        } else {
+            timeLabel.setForeground(Color.WHITE);
+            timeLabel.setText(lastDisplayedTime);
+        }
+
+        timePanel.setBackground(new Color(60, 60, 60));
+        timePanel.add(timeLabel);
+        timePanel.add(StyleUtil.createMetrolineInGameButton("Pause", e -> timeControl()));
+        add(timePanel, BorderLayout.SOUTH);
 
         // Toolbar (upper panel)
         toolBar = new JToolBar();
@@ -224,11 +231,20 @@ public class MainFrame extends JFrame {
     /**
      * Time controller
      */
+    /**
+     * Управление временем (паузой)
+     */
     public void timeControl() {
         if (currentScreen instanceof WorldSandboxScreen) {
-            SandboxWorld sandboxWorld = ((WorldSandboxScreen)currentScreen).sandboxWorld;
-            if (sandboxWorld != null) {
+            SandboxWorld sandboxWorld = (SandboxWorld) ((WorldSandboxScreen) currentScreen).getWorld();
+            if (sandboxWorld != null && sandboxWorld.getGameTime() != null) {
                 sandboxWorld.getGameTime().togglePause();
+            }
+        }
+        if (currentScreen instanceof WorldGameScreen) {
+            GameWorld gameWorld = (GameWorld) ((WorldGameScreen) currentScreen).getWorld();
+            if (gameWorld != null && gameWorld.getGameTime() != null) {
+                gameWorld.getGameTime().togglePause();
             }
         }
     }
@@ -245,23 +261,29 @@ public class MainFrame extends JFrame {
         System.exit(0);
     }
 
-    /**
-     * Reset timer
-     */
-    private void updateTime() {
-        if (currentScreen instanceof WorldSandboxScreen) {
-            SandboxWorld sandboxWorld = ((WorldSandboxScreen)currentScreen).sandboxWorld;
-            if (sandboxWorld != null && sandboxWorld.getGameTime() != null) {
-                currentTimeString = sandboxWorld.getGameTime().getDateTimeString();
-                timeLabel.setText(currentTimeString);
-            }
-        }
-    }
     private void initTimeUpdater() {
-        Timer timer = new Timer(1000, e -> updateTime()); // Обновление каждую секунду
-        timer.start();
+    timeUpdateTimer = new Timer(33, e -> updateTimeDisplay());
+    timeUpdateTimer.start();
     }
 
+    private void updateTimeDisplay() {
+        SwingUtilities.invokeLater(() -> {
+            String newTime = null;
+            if (currentScreen instanceof WorldSandboxScreen) {
+                SandboxWorld world = (SandboxWorld) ((WorldSandboxScreen) currentScreen).getWorld();
+                if (world != null && world.getGameTime() != null) newTime = world.getGameTime().getDateTimeString();
+            } else if (currentScreen instanceof WorldGameScreen) {
+                GameWorld world =  ((GameWorld)((WorldGameScreen)currentScreen).getWorld());
+                if (world != null && world.getGameTime() != null) newTime = world.getGameTime().getDateTimeString();
+            }
+
+            if (newTime != null && !newTime.equals(lastDisplayedTime)) {
+                timeLabel.setText(newTime);
+                lastDisplayedTime = newTime;
+                timePanel.repaint();
+            }
+        });
+    }
 
 
 
@@ -270,10 +292,10 @@ public class MainFrame extends JFrame {
      */
     private void saveGame() {
         if (currentScreen instanceof WorldSandboxScreen) {
-            ((WorldSandboxScreen)currentScreen).sandboxWorld.saveWorld();
+            ((WorldSandboxScreen)currentScreen).getWorld().saveWorld();
         }
         if (currentScreen instanceof WorldGameScreen) {
-            ((WorldGameScreen)currentScreen).gameWorld.saveWorld();
+           ((WorldGameScreen)currentScreen).getWorld().saveWorld();
         }
     }
 
@@ -282,10 +304,10 @@ public class MainFrame extends JFrame {
      */
     private void loadGame() {
         if (currentScreen instanceof WorldSandboxScreen) {
-            ((WorldSandboxScreen)currentScreen).sandboxWorld.loadWorld();
+            ((WorldSandboxScreen)currentScreen).getWorld().loadWorld();
         }
         if (currentScreen instanceof WorldGameScreen) {
-            ((WorldGameScreen)currentScreen).gameWorld.loadWorld();
+            ((WorldGameScreen)currentScreen).getWorld().loadWorld();
         }
     }
 

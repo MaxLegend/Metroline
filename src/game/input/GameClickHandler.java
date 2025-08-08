@@ -7,6 +7,7 @@ import game.objects.Station;
 import game.objects.Tunnel;
 import game.objects.enums.StationType;
 import screens.WorldGameScreen;
+import screens.WorldSandboxScreen;
 
 import javax.swing.*;
 import java.awt.*;
@@ -36,7 +37,7 @@ public class GameClickHandler {
     public  void handleEditDrag(int x, int y) {
         if ( selectedObject != null && dragOffset != null) {
             // Проверяем границы
-            if (x < 0 || x >= WorldGameScreen.getInstance().gameWorld.getWidth() || y < 0 || y >= WorldGameScreen.getInstance().gameWorld.getHeight()) {
+            if (x < 0 || x >= WorldGameScreen.getInstance().getWorld().getWidth() || y < 0 || y >= WorldGameScreen.getInstance().getWorld().getHeight()) {
                 return;
             }
 
@@ -59,29 +60,29 @@ public class GameClickHandler {
                 int newY = y - dragOffset.y;
 
                 // Check if new position is valid
-                if (newX >= 0 && newX < WorldGameScreen.getInstance().gameWorld.getWidth() &&
-                        newY >= 0 && newY < WorldGameScreen.getInstance().gameWorld.getHeight() &&
-                        WorldGameScreen.getInstance().gameWorld.getStationAt(newX, newY) == null) {
-                    game.objects.Label label = WorldGameScreen.getInstance().gameWorld.getLabelForStation(station);
+                if (newX >= 0 && newX < WorldGameScreen.getInstance().getWorld().getWidth() &&
+                        newY >= 0 && newY < WorldGameScreen.getInstance().getWorld().getHeight() &&
+                        WorldGameScreen.getInstance().getWorld().getStationAt(newX, newY) == null) {
+                    game.objects.Label label = WorldGameScreen.getInstance().getWorld().getLabelForStation(station);
                     // Remove from old position
-                    WorldGameScreen.getInstance().gameWorld.getGameGrid()[station.getX()][station.getY()].setContent(null);
+                    WorldGameScreen.getInstance().getWorld().getGameGrid()[station.getX()][station.getY()].setContent(null);
 
                     // Update position
                     station.x = newX;
                     station.y = newY;
 
                     // Add to new position
-                    WorldGameScreen.getInstance().gameWorld.getGameGrid()[newX][newY].setContent(station);
+                    WorldGameScreen.getInstance().getWorld().getGameGrid()[newX][newY].setContent(station);
 
                     // Recalculate all connected tunnels
-                    for (Tunnel t : WorldGameScreen.getInstance().gameWorld.getTunnels()) {
+                    for (Tunnel t : WorldGameScreen.getInstance().getWorld().getTunnels()) {
                         if (t.getStart() == station || t.getEnd() == station) {
                             t.calculatePath();
                         }
                     }
                     if (label != null) {
                         // Находим новую позицию для метки (рядом со станцией)
-                        PathPoint newLabelPos = WorldGameScreen.getInstance().gameWorld.findFreePositionNear(station.getX(), station.getY(), station.getName());
+                        PathPoint newLabelPos = WorldGameScreen.getInstance().getWorld().findFreePositionNear(station.getX(), station.getY(), station.getName());
                         if (newLabelPos != null) {
                             label.tryMoveTo(newLabelPos.x, newLabelPos.y);
                         }
@@ -94,7 +95,7 @@ public class GameClickHandler {
                 Tunnel tunnel = (Tunnel)selectedObject;
 
                 // Проверяем, что новая позиция не совпадает со станцией
-                Station stationAtPos = WorldGameScreen.getInstance().gameWorld.getStationAt(x, y);
+                Station stationAtPos = WorldGameScreen.getInstance().getWorld().getStationAt(x, y);
                 if (stationAtPos == null) {
                     tunnel.moveControlPoint(x, y);
                     WorldGameScreen.getInstance().repaint();
@@ -109,28 +110,28 @@ public class GameClickHandler {
         if (selectedObject == null) return;
 
         if (selectedObject instanceof Station) {
-            WorldGameScreen.getInstance().gameWorld.removeStation((Station)selectedObject);
+            WorldGameScreen.getInstance().getWorld().removeStation((Station)selectedObject);
         }
         else if (selectedObject instanceof Tunnel) {
-            WorldGameScreen.getInstance().gameWorld.removeTunnel((Tunnel)selectedObject);
+            WorldGameScreen.getInstance().getWorld().removeTunnel((Tunnel)selectedObject);
         }
         else if (selectedObject instanceof game.objects.Label) {
-            WorldGameScreen.getInstance().gameWorld.removeLabel((game.objects.Label)selectedObject);
+            WorldGameScreen.getInstance().getWorld().removeLabel((game.objects.Label)selectedObject);
         }
 
         selectedObject = null;
         WorldGameScreen.getInstance().repaint();
     }
     public void handleRemoveTunnel(int worldX, int worldY) {
-        Tunnel tunnel = WorldGameScreen.getInstance().gameWorld.getTunnelAt(worldX, worldY);
+        Tunnel tunnel = WorldGameScreen.getInstance().getWorld().getTunnelAt(worldX, worldY);
         if (tunnel != null) {
-            WorldGameScreen.getInstance().gameWorld.removeTunnel(tunnel);
+            WorldGameScreen.getInstance().getWorld().removeTunnel(tunnel);
             WorldGameScreen.getInstance().repaint();
         }
     }
     public void handleEditStationName(int x, int y) {
-        Station station = WorldGameScreen.getInstance().gameWorld.getStationAt(x, y);
-        Tunnel t = getInstance().gameWorld.getTunnelAt(x, y);
+        Station station = WorldGameScreen.getInstance().getWorld().getStationAt(x, y);
+        Tunnel t = WorldGameScreen.getInstance().getWorld().getTunnelAt(x, y);
         if (station != null) {
             editStationName(station);
         }
@@ -142,15 +143,15 @@ public class GameClickHandler {
      */
     public void handleTunnelClick(int x, int y) {
 
-        Station station = WorldGameScreen.getInstance().gameWorld.getStationAt(x, y);
+        Station station = WorldGameScreen.getInstance().getWorld().getStationAt(x, y);
         if (station == null) return;
 
         // Если есть уже выбранная станция и это не та же самая
 
         if (selectedStation != null && selectedStation != station) {
             // Создаём туннель
-            Tunnel tunnel = new Tunnel(selectedStation, station);
-            WorldGameScreen.getInstance().gameWorld.addTunnel(tunnel);
+            Tunnel tunnel = new Tunnel(WorldGameScreen.getInstance().getWorld(),selectedStation, station);
+            WorldGameScreen.getInstance().getWorld().addTunnel(tunnel);
 
             // Снимаем выделение
             selectedStation.setSelected(false);
@@ -196,8 +197,8 @@ public class GameClickHandler {
 
             colorBtn.addActionListener(e -> {
                 GameClickHandler.currentStationColor = color;
-                Station newStation = new Station(x, y, color, StationType.REGULAR);
-                WorldGameScreen.getInstance().gameWorld.addStation(newStation);
+                Station newStation = new Station(WorldGameScreen.getInstance().getWorld(),x, y, color, StationType.REGULAR);
+                WorldGameScreen.getInstance().getWorld().addStation(newStation);
                 WorldGameScreen.getInstance().repaint();
                 colorDialog.dispose();
                 colorSelectionEnabled = false;
@@ -249,7 +250,7 @@ public class GameClickHandler {
         // Сначала снимаем выделение со всех объектов
         deselectAll();
 
-        game.objects.Label label = WorldGameScreen.getInstance().gameWorld.getLabelAt(x, y);
+        game.objects.Label label = WorldGameScreen.getInstance().getWorld().getLabelAt(x, y);
         if (label != null) {
             label.setSelected(true);
             selectedObject = label;
@@ -259,7 +260,7 @@ public class GameClickHandler {
         }
 
         // Проверяем станции
-        Station station = WorldGameScreen.getInstance().gameWorld.getStationAt(x, y);
+        Station station = WorldGameScreen.getInstance().getWorld().getStationAt(x, y);
         if (station != null) {
             station.setSelected(true);
             selectedObject = station;
@@ -269,7 +270,7 @@ public class GameClickHandler {
         }
 
         // Проверяем туннели
-        Tunnel tunnel = WorldGameScreen.getInstance().gameWorld.getTunnelAt(x, y);
+        Tunnel tunnel = WorldGameScreen.getInstance().getWorld().getTunnelAt(x, y);
         if (tunnel != null) {
             // Ищем конкретную точку туннеля
             for (PathPoint p : tunnel.getPath()) {
@@ -286,9 +287,9 @@ public class GameClickHandler {
 
         if (WorldGameScreen.getInstance().isShiftPressed) {
             // Дополнительная проверка (хотя предыдущие проверки уже гарантируют пустую клетку)
-            if (WorldGameScreen.getInstance().gameWorld.getStationAt(x, y) == null) {
-                Station newStation = new Station(x, y, GameClickHandler.currentStationColor, StationType.REGULAR);
-                WorldGameScreen.getInstance().gameWorld.addStation(newStation);
+            if (WorldGameScreen.getInstance().getWorld().getStationAt(x, y) == null) {
+                Station newStation = new Station(WorldGameScreen.getInstance().getWorld(), x, y, GameClickHandler.currentStationColor, StationType.REGULAR);
+                WorldGameScreen.getInstance().getWorld().addStation(newStation);
                 checkForTransferStation(newStation);
                 WorldGameScreen.getInstance().repaint();
             }
@@ -303,17 +304,17 @@ public class GameClickHandler {
      */
     private void deselectAll() {
         // Снимаем выделение со всех станций
-        for (Station station : WorldGameScreen.getInstance().gameWorld.getStations()) {
+        for (Station station : WorldGameScreen.getInstance().getWorld().getStations()) {
             station.setSelected(false);
         }
 
         // Снимаем выделение со всех меток
-        for (Label label : WorldGameScreen.getInstance().gameWorld.getLabels()) {
+        for (Label label : WorldGameScreen.getInstance().getWorld().getLabels()) {
             label.setSelected(false);
         }
 
         // Снимаем выделение со всех туннелей
-        for (Tunnel tunnel : WorldGameScreen.getInstance().gameWorld.getTunnels()) {
+        for (Tunnel tunnel : WorldGameScreen.getInstance().getWorld().getTunnels()) {
             tunnel.setSelected(false);
         }
 
@@ -355,12 +356,12 @@ public class GameClickHandler {
      * @param y Y coordinate
      */
     public void handleStationClick(int x, int y) {
-        Station existing = WorldGameScreen.getInstance().gameWorld.getStationAt(x, y);
+        Station existing = WorldGameScreen.getInstance().getWorld().getStationAt(x, y);
         if (existing != null) {
             if (!existing.selected && !getInstance().isShiftPressed) {
                 existing.setSelected(true);
             } else if(getInstance().isShiftPressed) {
-                WorldGameScreen.getInstance().gameWorld.removeStation(existing);
+                WorldGameScreen.getInstance().getWorld().removeStation(existing);
             }
             return; // Выходим, если станция уже существует
         }
@@ -370,8 +371,8 @@ public class GameClickHandler {
         }
 
         // Создаем новую станцию с текущим цветом
-        Station station = new Station(x, y, currentStationColor, StationType.REGULAR);
-        WorldGameScreen.getInstance().gameWorld.addStation(station);
+        Station station = new Station(WorldGameScreen.getInstance().getWorld(),x, y, currentStationColor, StationType.REGULAR);
+        WorldGameScreen.getInstance().getWorld().addStation(station);
         checkForTransferStation(station);
     }
 
@@ -384,11 +385,11 @@ public class GameClickHandler {
         int y = station.getY();
 
         // Check all 8 directions
-        for (int ny = Math.max(0, y-1); ny < Math.min(WorldGameScreen.getInstance().gameWorld.getHeight(), y+2); ny++) {
-            for (int nx = Math.max(0, x-1); nx < Math.min(WorldGameScreen.getInstance().gameWorld.getWidth(), x+2); nx++) {
+        for (int ny = Math.max(0, y-1); ny < Math.min(WorldGameScreen.getInstance().getWorld().getHeight(), y+2); ny++) {
+            for (int nx = Math.max(0, x-1); nx < Math.min(WorldGameScreen.getInstance().getWorld().getWidth(), x+2); nx++) {
                 if (nx == x && ny == y) continue;
 
-                Station neighbor = WorldGameScreen.getInstance().gameWorld.getStationAt(nx, ny);
+                Station neighbor = WorldGameScreen.getInstance().getWorld().getStationAt(nx, ny);
                 if (neighbor != null && !neighbor.getColor().equals(station.getColor())) {
                     station.setType(StationType.TRANSFER);
                     neighbor.setType(StationType.TRANSFER);

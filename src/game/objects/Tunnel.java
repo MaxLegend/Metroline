@@ -1,6 +1,7 @@
 package game.objects;
 
 import game.core.GameObject;
+import game.core.world.World;
 import screens.WorldSandboxScreen;
 
 import java.awt.*;
@@ -21,8 +22,9 @@ public class Tunnel extends GameObject {
     public Tunnel() {
         super(0, 0);
     }
-    public Tunnel(Station start, Station end) {
+    public Tunnel(World world, Station start, Station end) {
         super(start.getX(), start.getY());
+        this.setWorld(world);
         this.start = start;
         this.end = end;
         calculatePath();

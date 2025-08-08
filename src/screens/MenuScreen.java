@@ -1,5 +1,6 @@
 package screens;
 
+import game.core.world.GameWorld;
 import util.StyleUtil;
 
 import javax.swing.*;
@@ -53,10 +54,10 @@ public class MenuScreen extends GameScreen {
 
         if(isSandbox) {
             WorldSandboxScreen gameScreen = (WorldSandboxScreen) parent.getCurrentScreen();
-            gameScreen.sandboxWorld.loadWorld();
+            gameScreen.getWorld().loadWorld();
         } else {
             WorldGameScreen gameScreen = (WorldGameScreen) parent.getCurrentScreen();
-            gameScreen.gameWorld.loadWorld();
+            gameScreen.getWorld().loadWorld();
         }
     }
 

@@ -23,7 +23,9 @@ public enum Direction {
 
     public int getDx() { return dx; }
     public int getDy() { return dy; }
-
+    public static Direction[] getOrthogonalDirections() {
+        return new Direction[]{NORTH, EAST, SOUTH, WEST};
+    }
     public Direction getOpposite() {
         switch (this) {
             case NORTH: return SOUTH;

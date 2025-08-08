@@ -1,5 +1,7 @@
 package screens;
 
+import game.core.world.GameWorld;
+import game.core.world.World;
 import game.input.GameClickHandler;
 import game.input.SandboxClickHandler;
 import game.objects.PathPoint;
@@ -9,13 +11,12 @@ import java.awt.*;
 /**
  * The main class for summarizing all game mechanics for the basics of the world.
  */
-public class WorldScreen extends GameScreen{
-    public static WorldScreen INSTANCE;
-
+public class WorldScreen extends GameScreen {
+    public static int widthWorld = 100, heightWorld = 100;
+    public static World world;
     //Debug
     public boolean debugMode = false;
     public Font debugFont = new Font("Monospaced", Font.PLAIN, 12);
-
     public float zoom = 1.0f;
     public  int offsetX = 0;
     public  int offsetY = 0;
@@ -28,17 +29,21 @@ public class WorldScreen extends GameScreen{
     public boolean isCtrlPressed = false;
     public boolean isShiftPressed = false;
     public boolean isCPressed = false;
-
     public WorldScreen(MainFrame parent) {
         super(parent);
-
+    }
+    public WorldScreen(MainFrame parent, World worldIn) {
+        super(parent);
+        this.world = worldIn;
     }
 
-
-
-    public static WorldScreen getInstance() {
-        return INSTANCE;
+    public World getWorld() {
+        return world;
     }
+    public void setWorld(World worldIn) {
+        this.world = worldIn;
+    }
+
     @Override
     public void onActivate() {
         requestFocusInWindow();

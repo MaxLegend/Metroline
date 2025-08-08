@@ -1,7 +1,9 @@
 package game.objects;
 
 import game.core.GameObject;
+import game.core.world.World;
 import screens.WorldSandboxScreen;
+import screens.WorldScreen;
 
 import java.awt.*;
 
@@ -9,12 +11,16 @@ import java.awt.*;
 public class Label extends GameObject {
     private String text;
     private Station parentStation;
+
+
+
     public Label() {
         super(0, 0);
     }
 
-    public Label(int x, int y, String text, Station parentStation) {
+    public Label(World world, int x, int y, String text, Station parentStation) {
         super(x, y);
+        this.setWorld(world);
         this.text = text;
         this.parentStation = parentStation;
     }
@@ -33,14 +39,13 @@ public class Label extends GameObject {
 
     public boolean tryMoveTo(int newX, int newY) {
         Station parent = getParentStation();
-        if (WorldSandboxScreen.getInstance().sandboxWorld.isLabelPositionValid(newX, newY, parent)) {
-            // Освобождаем старую позицию
-            WorldSandboxScreen.getInstance().sandboxWorld.getGameGrid()[getX()][getY()].setContent(null);
+        World world = getWorld(); // Используем сохраненную ссылку
 
-            // Занимаем новую позицию
+        if (world.isLabelPositionValid(newX, newY, parent)) {
+            world.getGameGrid()[getX()][getY()].setContent(null);
             this.x = newX;
             this.y = newY;
-            WorldSandboxScreen.getInstance().sandboxWorld.getGameGrid()[newX][newY].setContent(this);
+            world.getGameGrid()[newX][newY].setContent(this);
             return true;
         }
         return false;

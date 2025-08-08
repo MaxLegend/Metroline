@@ -1,6 +1,7 @@
 package screens;
 
 import game.core.world.GameWorld;
+import game.core.world.SandboxWorld;
 import game.input.GameClickHandler;
 import game.input.KeyboardController;
 import game.input.MouseController;
@@ -16,57 +17,51 @@ import java.awt.image.BufferedImage;
 import java.util.Map;
 
 public class WorldGameScreen extends WorldScreen {
-        public static WorldGameScreen INSTANCE;
-        public GameWorld gameWorld;
-        public static int widthWorld = 100, heightWorld = 100;
+    public static WorldGameScreen INSTANCE;
+
+
     public GameClickHandler gameClickHandler;
-        // Input controllers
-        private MouseController mouseController;
-        private KeyboardController keyboardController;
+    // Input controllers
+    private  MouseController mouseController;
+    private  KeyboardController keyboardController;
 
-        //Debug
-        public boolean debugMode = false;
-        private Font debugFont = new Font("Monospaced", Font.PLAIN, 12);
+    //Debug
+    public boolean debugMode = false;
+    private Font debugFont = new Font("Monospaced", Font.PLAIN, 12);
 
-
-
-        private BufferedImage worldCache; // Кешированное изображение мира
-        private boolean cacheValid = false; // Флаг валидности кеша
+    private BufferedImage worldCache; // Кешированное изображение мира
+    private boolean cacheValid = false; // Флаг валидности кеша
 
 
     public WorldGameScreen(MainFrame parent) {
-            super(parent);
+        super(parent, new GameWorld(widthWorld, heightWorld, false, false, Color.WHITE));
 
-        gameWorld = new GameWorld(widthWorld, heightWorld, false, false, Color.WHITE);
-            INSTANCE = this;
-
-            // Initialize controllers
-            mouseController = new MouseController(this);
-            keyboardController = new KeyboardController(this);
-            
-            addMouseListener(mouseController);
-            addMouseMotionListener(mouseController);
-            addMouseWheelListener(mouseController);
-            addKeyListener(keyboardController);
+        INSTANCE = this;
+        // Initialize controllers
+        mouseController = new MouseController(this);
+        keyboardController = new KeyboardController(this);
+        addMouseListener(mouseController);
+        addMouseMotionListener(mouseController);
+        addMouseWheelListener(mouseController);
+        addKeyListener(keyboardController);
         this.gameClickHandler = new GameClickHandler();
-            initWorldCache();
-        gameWorld.getGameTime().start();
+        initWorldCache();
+    }
 
-        }
-        public void createNewWorld(int width, int height, boolean hasOrganicPatches, boolean hasRivers, Color worldColor) {
-            widthWorld = width;
-            heightWorld = height;
-            gameWorld = new GameWorld(width, height, hasOrganicPatches, hasRivers,worldColor);
-            invalidateCache();
-            repaint();
-        }
+    public void createNewWorld(int width, int height, boolean hasOrganicPatches, boolean hasRivers, Color worldColor) {
+        widthWorld = width;
+        heightWorld = height;
+        this.setWorld(new GameWorld(width, height, hasOrganicPatches, hasRivers,worldColor));
+        invalidateCache();
+        repaint();
+    }
     /**
      * Handles mouse click on the world
      * @param x X coordinate in world space
      * @param y Y coordinate in world space
      */
     public void handleClick(int x, int y) {
-        if (x < 0 || x >= gameWorld.getWidth() || y < 0 || y >= gameWorld.getHeight()) {
+        if (x < 0 || x >= getWorld().getWidth() || y < 0 || y >= getWorld().getHeight()) {
             return;
         }
         if (isShiftPressed && isCPressed) {
@@ -85,9 +80,9 @@ public class WorldGameScreen extends WorldScreen {
 
         repaint();
     }
-        public static WorldGameScreen getInstance() {
-            return INSTANCE;
-        }
+    public static WorldGameScreen getInstance() {
+        return INSTANCE;
+    }
         private void initWorldCache() {
             // Создаем кеш достаточного размера
             int cacheWidth = widthWorld * 32;
@@ -97,9 +92,7 @@ public class WorldGameScreen extends WorldScreen {
         public void invalidateCache() {
             cacheValid = false;
         }
-        public GameWorld getGameWorld() {
-            return gameWorld;
-        }
+
         @Override
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
@@ -118,16 +111,16 @@ public class WorldGameScreen extends WorldScreen {
             // Рисуем кешированный мир
             g2d.drawImage(worldCache, 0, 0, null);
 
-            for (Tunnel tunnel : gameWorld.getTunnels()) {
+            for (Tunnel tunnel : getWorld().getTunnels()) {
                 tunnel.draw(g, 0, 0, 1);
             }
 
 
-            for (Station station : gameWorld.getStations()) {
+            for (Station station : getWorld().getStations()) {
                 station.draw(g, 0, 0, 1);
             }
 
-            for (game.objects.Label label : gameWorld.getLabels()) {
+            for (game.objects.Label label : getWorld().getLabels()) {
                 label.draw(g2d, 0, 0, 1);
             }
 
@@ -163,9 +156,9 @@ public class WorldGameScreen extends WorldScreen {
             // Рисуем сетку
             AffineTransform originalTransform = g.getTransform();
             g.scale(2, 2);
-            for (int y = 0; y < gameWorld.getHeight(); y++) {
-                for (int x = 0; x < gameWorld.getWidth(); x++) {
-                    gameWorld.getWorldGrid()[x][y].draw(g, 0, 0, 1);
+            for (int y = 0; y < getWorld().getHeight(); y++) {
+                for (int x = 0; x < getWorld().getWidth(); x++) {
+                    getWorld().getWorldGrid()[x][y].draw(g, 0, 0, 1);
                 }
             }
 
@@ -187,11 +180,11 @@ public class WorldGameScreen extends WorldScreen {
             // Глобальная информация
             g.drawString("=== GLOBAL DEBUG INFO ===", 10, yPos);
             yPos += 15;
-            g.drawString("Stations: " + gameWorld.getStations().size(), 10, yPos);
+            g.drawString("Stations: " + getWorld().getStations().size(), 10, yPos);
             yPos += 15;
-            g.drawString("Tunnels: " + gameWorld.getTunnels().size(), 10, yPos);
+            g.drawString("Tunnels: " + getWorld().getTunnels().size(), 10, yPos);
             yPos += 15;
-            g.drawString("Labels: " + gameWorld.getLabels().size(), 10, yPos);
+            g.drawString("Labels: " + getWorld().getLabels().size(), 10, yPos);
             yPos += 15;
             g.drawString("Zoom: " + String.format("%.2f", zoom), 10, yPos);
             yPos += 15;
@@ -215,11 +208,11 @@ public class WorldGameScreen extends WorldScreen {
                 g.drawString("Color: " + String.format("#%06X", (0xFFFFFF & station.getColor().getRGB())), 10, yPos);
                 yPos += 15;
 
-                if (!gameWorld.getLabelsForStation(station).isEmpty()) {
-                    g.drawString("Labels (" + gameWorld.getLabelsForStation(station).size() + "):", 10, yPos);
+                if (!getWorld().getLabelsForStation(station).isEmpty()) {
+                    g.drawString("Labels (" + getWorld().getLabelsForStation(station).size() + "):", 10, yPos);
                     yPos += 15;
 
-                    for (game.objects.Label label : gameWorld.getLabelsForStation(station)) {
+                    for (game.objects.Label label : getWorld().getLabelsForStation(station)) {
                         g.drawString("- '" + label.getText() + "' at (" +
                                 label.getX() + "," + label.getY() + ")", 20, yPos);
                         yPos += 15;

@@ -17,7 +17,6 @@ public class StyleUtil {
         return label;
     }
 
-
     public static JSlider createMetrolineSlider(int min, int max, int value, String label, JLabel valueLabel) {
         JSlider slider = new JSlider(min, max, value) {
             @Override
@@ -79,11 +78,8 @@ public class StyleUtil {
         checkBox.setForeground(StyleUtil.FOREGROUND_COLOR);
         checkBox.setFont(new Font("Arial", Font.PLAIN, 14));
         checkBox.setFocusPainted(false);
-
-        // Стилизация чекбокса
         checkBox.setIcon(new StyleUtil.MetrolineCheckbox());
         checkBox.setSelectedIcon(new StyleUtil.MetrolineCheckbox(true));
-
         return checkBox;
     }
     public static Color changeColorShade(Color changedColor, int value) {

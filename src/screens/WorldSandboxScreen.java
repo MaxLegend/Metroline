@@ -1,8 +1,9 @@
 package screens;
 
+
 import game.core.world.SandboxWorld;
 
-import game.input.GameClickHandler;
+
 import game.input.KeyboardController;
 import game.input.MouseController;
 
@@ -27,14 +28,10 @@ public class WorldSandboxScreen extends WorldScreen {
     public static WorldSandboxScreen INSTANCE;
     public SandboxClickHandler sandboxClickHandler;
     public static int widthWorld = 100, heightWorld = 100;
-    public SandboxWorld sandboxWorld;
+
     // Input controllers
     private MouseController mouseController;
     private KeyboardController keyboardController;
-
-
-
-
 
     private BufferedImage worldCache; // Кешированное изображение мира
     private boolean cacheValid = false; // Флаг валидности кеша
@@ -43,9 +40,8 @@ public class WorldSandboxScreen extends WorldScreen {
     public WorldSandboxScreen(MainFrame parent) {
         super(parent);
 
-        sandboxWorld = new SandboxWorld(widthWorld, heightWorld, false, false, Color.WHITE);
         INSTANCE = this;
-
+        
         // Initialize controllers
         mouseController = new MouseController(this);
         keyboardController = new KeyboardController(this);
@@ -54,8 +50,9 @@ public class WorldSandboxScreen extends WorldScreen {
         addMouseMotionListener(mouseController);
         addMouseWheelListener(mouseController);
         addKeyListener(keyboardController);
+
         initWorldCache();
-        sandboxWorld.getGameTime().start();
+
 
     }
     /**
@@ -64,7 +61,7 @@ public class WorldSandboxScreen extends WorldScreen {
      * @param y Y coordinate in world space
      */
     public void handleClick(int x, int y) {
-        if (x < 0 || x >= sandboxWorld.getWidth() || y < 0 || y >= sandboxWorld.getHeight()) {
+        if (x < 0 || x >= getWorld().getWidth() || y < 0 || y >= getWorld().getHeight()) {
             return;
         }
         if (isShiftPressed && isCPressed) {
@@ -87,7 +84,7 @@ public class WorldSandboxScreen extends WorldScreen {
 
         widthWorld = width;
         heightWorld = height;
-        sandboxWorld = new SandboxWorld(width, height, hasOrganicPatches, hasRivers,worldColor);
+        this.setWorld(new SandboxWorld(width, height, hasOrganicPatches, hasRivers,worldColor));
         this.sandboxClickHandler = new SandboxClickHandler();
         invalidateCache();
         repaint();
@@ -104,9 +101,7 @@ public class WorldSandboxScreen extends WorldScreen {
     public void invalidateCache() {
         cacheValid = false;
     }
-    public SandboxWorld getSandboxWorld() {
-        return sandboxWorld;
-    }
+
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -125,16 +120,16 @@ public class WorldSandboxScreen extends WorldScreen {
         // Рисуем кешированный мир
         g2d.drawImage(worldCache, 0, 0, null);
 
-        for (Tunnel tunnel : sandboxWorld.getTunnels()) {
+        for (Tunnel tunnel : getWorld().getTunnels()) {
             tunnel.draw(g, 0, 0, 1);
         }
 
 
-        for (Station station : sandboxWorld.getStations()) {
+        for (Station station : getWorld().getStations()) {
             station.draw(g, 0, 0, 1);
         }
 
-        for (Label label : sandboxWorld.getLabels()) {
+        for (Label label : getWorld().getLabels()) {
             label.draw(g2d, 0, 0, 1);
         }
 
@@ -170,9 +165,9 @@ public class WorldSandboxScreen extends WorldScreen {
         // Рисуем сетку
         AffineTransform originalTransform = g.getTransform();
         g.scale(2, 2);
-            for (int y = 0; y < sandboxWorld.getHeight(); y++) {
-                for (int x = 0; x < sandboxWorld.getWidth(); x++) {
-                    sandboxWorld.getWorldGrid()[x][y].draw(g, 0, 0, 1);
+            for (int y = 0; y < getWorld().getHeight(); y++) {
+                for (int x = 0; x < getWorld().getWidth(); x++) {
+                    getWorld().getWorldGrid()[x][y].draw(g, 0, 0, 1);
                 }
             }
 
@@ -194,11 +189,11 @@ public class WorldSandboxScreen extends WorldScreen {
         // Глобальная информация
         g.drawString("=== GLOBAL DEBUG INFO ===", 10, yPos);
         yPos += 15;
-        g.drawString("Stations: " + sandboxWorld.getStations().size(), 10, yPos);
+        g.drawString("Stations: " + getWorld().getStations().size(), 10, yPos);
         yPos += 15;
-        g.drawString("Tunnels: " + sandboxWorld.getTunnels().size(), 10, yPos);
+        g.drawString("Tunnels: " + getWorld().getTunnels().size(), 10, yPos);
         yPos += 15;
-        g.drawString("Labels: " + sandboxWorld.getLabels().size(), 10, yPos);
+        g.drawString("Labels: " + getWorld().getLabels().size(), 10, yPos);
         yPos += 15;
         g.drawString("Zoom: " + String.format("%.2f", zoom), 10, yPos);
         yPos += 15;
@@ -222,11 +217,11 @@ public class WorldSandboxScreen extends WorldScreen {
             g.drawString("Color: " + String.format("#%06X", (0xFFFFFF & station.getColor().getRGB())), 10, yPos);
             yPos += 15;
 
-            if (!sandboxWorld.getLabelsForStation(station).isEmpty()) {
-                g.drawString("Labels (" + sandboxWorld.getLabelsForStation(station).size() + "):", 10, yPos);
+            if (!getWorld().getLabelsForStation(station).isEmpty()) {
+                g.drawString("Labels (" + getWorld().getLabelsForStation(station).size() + "):", 10, yPos);
                 yPos += 15;
 
-                for (Label label : sandboxWorld.getLabelsForStation(station)) {
+                for (Label label : getWorld().getLabelsForStation(station)) {
                     g.drawString("- '" + label.getText() + "' at (" +
                             label.getX() + "," + label.getY() + ")", 20, yPos);
                     yPos += 15;

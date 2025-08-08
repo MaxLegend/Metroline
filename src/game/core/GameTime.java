@@ -1,116 +1,159 @@
 package game.core;
 
 import javax.swing.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 
 /**
  * Class for controllin game time
  * @author Tesmio
  */
+/**
+ * Управление внутриигровым временем.
+ *
+ * - Хранит игровое время (epochMillis).
+ * - Поддерживает ускорение времени (timeScale).
+ * - Поддерживает паузу (paused).
+ * - Использует один Swing Timer (transient) для регулярного обновления.
+ * - При десериализации таймер восстанавливается в readObject(...).
+ *
+ * Формат отображения: "HH:mm dd.MM.yyyy"
+ */
 public class GameTime implements Serializable {
-    public static final GameTime INSTANCE = new GameTime();
     private static final long serialVersionUID = 1L;
 
-    // Текущая дата и время в игре
-    private Calendar currentTime;
-    private transient Timer timer;
-    // Коэффициент ускорения времени (1.0 - реальное время)
-    private float timeScale;
+    // Сериализуемые поля (сохраняются в файл)
+    private long epochMillis;        // текущее игровое время (мс с эпохи)
+    private double timeScale = 12.0; // ускорение (1.0 = реальное время)
+    private boolean paused = true;   // флаг паузы
 
-    // Время последнего обновления (в мс реального времени)
-    private transient long lastUpdateTime;
+    // transient — не сериализуются
+    private transient Timer timer;         // Swing таймер
+    private transient long lastRealMillis; // момент последнего обновления (мс), для корректных дельт
 
-    // Флаг паузы
-    private boolean paused;
+    private static final int TICK_MS = 50; // частота тиков (мс) — ~20 тиков/сек
+    private static final DateTimeFormatter DISPLAY_FMT = DateTimeFormatter.ofPattern("HH:mm dd.MM.yyyy");
 
+    /**
+     * Конструктор: ставим игровую дату по умолчанию — 1 января 1930 00:00 (локальная зона).
+     * Таймер не стартует автоматически — стартует SandboxWorld при создании мира (gameTime.start()).
+     */
     public GameTime() {
-        // Начинаем с текущей даты или можно задать конкретную начальную дату
-        currentTime = Calendar.getInstance();
-        currentTime.set(1930, Calendar.JANUARY, 1, 0, 0, 0);
-        timeScale = 24.0f; // По умолчанию время идет в 24 раза быстрее
-        lastUpdateTime = System.currentTimeMillis();
+        ZonedDateTime zdt = LocalDateTime.of(1930, 1, 1, 0, 0)
+                                         .atZone(ZoneId.systemDefault());
+        this.epochMillis = zdt.toInstant().toEpochMilli();
+        this.paused = true;
+        // timer не создаём здесь, чтобы не запускать таймер вне контекста UI/мода.
+    }
+
+    /**
+     * Запускает игровой таймер и снимает паузу.
+     * Если таймер не создан — создаётся.
+     */
+    public synchronized void start() {
+        lastRealMillis = System.currentTimeMillis();
         paused = false;
-    }
-    public void start() {
-        if (timer != null) timer.stop();
-
-        timer = new Timer(1000, e -> update()); // Обновление каждую секунду
-        timer.start();
+        ensureTimer();
     }
 
-    public void stop() {
-        if (timer != null) timer.stop();
-    }
-    public void reset() {
-        currentTime.set(1930, Calendar.JANUARY, 1, 0, 0, 0);
-      timer.restart();
-
-    }
-    public void update() {
-        if (!paused) {
-            // Добавляем 1 игровую минуту при каждом обновлении
-            currentTime.add(Calendar.MINUTE, 1);
+    /**
+     * Останавливает таймер и ставит на паузу.
+     */
+    public synchronized void stop() {
+        paused = true;
+        if (timer != null) {
+            timer.stop();
+            timer = null;
         }
     }
 
-
+    /**
+     * Переключает паузу.
+     */
+    public synchronized void togglePause() {
+        paused = !paused;
+        if (!paused) {
+            // Сбрасываем базовый момент, чтобы избежать скачка времени
+            lastRealMillis = System.currentTimeMillis();
+        }
+        ensureTimer();
+    }
 
     /**
-     * Устанавливает коэффициент ускорения времени
-     * @param scale новый коэффициент (1.0 - реальное время)
+     * Устанавливает множитель ускорения времени (>0).
      */
-    public void setTimeScale(float scale) {
+    public synchronized void setTimeScale(double scale) {
+        if (scale <= 0) throw new IllegalArgumentException("timeScale must be > 0");
         this.timeScale = scale;
     }
 
-    public float getTimeScale() {
-        return timeScale;
+    public synchronized double getTimeScale() { return timeScale; }
+    public synchronized boolean isPaused() { return paused; }
+
+    /**
+     * Возвращает текущее игровое время в миллисекундах (epoch).
+     */
+    public synchronized long getCurrentTimeMillis() { return epochMillis; }
+
+    /**
+     * Возвращает Instant текущего игрового времени.
+     */
+    public synchronized Instant getCurrentInstant() { return Instant.ofEpochMilli(epochMillis); }
+
+    /**
+     * Форматированная строка времени для HUD.
+     */
+    public synchronized String getDateTimeString() {
+        Instant inst = Instant.ofEpochMilli(epochMillis);
+        return LocalDateTime.ofInstant(inst, ZoneId.systemDefault()).format(DISPLAY_FMT);
     }
 
     /**
-     * Пауза/продолжение игрового времени
+     * Создаёт (если нужно) и запускает Swing Timer.
+     * Timer сам ничего не прибавляет при paused == true.
      */
-    public void togglePause() {
-        paused = !paused;
-        if (!paused) {
-            lastUpdateTime = System.currentTimeMillis();
+    private synchronized void ensureTimer() {
+        if (timer != null) return;
+
+        lastRealMillis = System.currentTimeMillis();
+        timer = new Timer(TICK_MS, e -> tick());
+        timer.setRepeats(true);
+        timer.start();
+    }
+
+    /**
+     * Шаг обновления, вызывается на EDT (Timer).
+     * Добавляем в epochMillis (realDelta * timeScale).
+     */
+    private synchronized void tick() {
+        long now = System.currentTimeMillis();
+        long realDelta = now - lastRealMillis;
+        lastRealMillis = now;
+
+        if (paused) {
+            // при паузе ничего не добавляем, но базовую отметку уже обновили
+            return;
         }
-    }
 
-    public boolean isPaused() {
-        return paused;
-    }
-
-
-    /**
-     * Возвращает полную строку даты и времени
-     */
-    public String getDateTimeString() {
-        return String.format("%02d:%02d %02d.%02d.%d",
-                currentTime.get(Calendar.HOUR_OF_DAY),
-                currentTime.get(Calendar.MINUTE),
-                currentTime.get(Calendar.DAY_OF_MONTH),
-                currentTime.get(Calendar.MONTH) + 1,
-                currentTime.get(Calendar.YEAR));
+        long gameDelta = (long) Math.round(realDelta * timeScale);
+        epochMillis += gameDelta;
     }
 
     /**
-     * Возвращает timestamp текущего игрового времени
+     * При десериализации — восстанавливаем transient-поля (таймер).
+     * Если мир был в паузе, paused останется true, но таймер создадим —
+     * это безопасно: tick() не будет прибавлять время пока paused == true.
      */
-    public long getCurrentTimeMillis() {
-        return currentTime.getTimeInMillis();
-    }
-    public Calendar getCurrentTime() {
-        return currentTime;
-    }
-    /**
-     * Проверяет, прошло ли указанное время с момента startTime
-     * @param startTime начальный момент времени (в мс игрового времени)
-     * @param duration продолжительность для проверки (в мс игрового времени)
-     * @return true если duration прошло с startTime
-     */
-    public boolean hasTimePassed(long startTime, long duration) {
-        return (getCurrentTimeMillis() - startTime) >= duration;
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        // Восстанавливаем таймер, чтобы время продолжило тикать или корректно реагировать на togglePause().
+        ensureTimer();
     }
 }
