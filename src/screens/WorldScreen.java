@@ -3,6 +3,8 @@ package screens;
 import game.core.world.GameWorld;
 import game.core.world.World;
 import game.input.GameClickHandler;
+import game.input.KeyboardController;
+import game.input.MouseController;
 import game.input.SandboxClickHandler;
 import game.objects.PathPoint;
 
@@ -20,7 +22,10 @@ public class WorldScreen extends GameScreen {
     public float zoom = 1.0f;
     public  int offsetX = 0;
     public  int offsetY = 0;
+
     //Central click handler
+    public MouseController mouseController;
+    public KeyboardController keyboardController;
 
 
     // Service keys
@@ -31,12 +36,35 @@ public class WorldScreen extends GameScreen {
     public boolean isCPressed = false;
     public WorldScreen(MainFrame parent) {
         super(parent);
+
     }
     public WorldScreen(MainFrame parent, World worldIn) {
         super(parent);
         this.world = worldIn;
+        // Initialize controllers
+        mouseController = new MouseController(this);
+        keyboardController = new KeyboardController(this);
+        addMouseListener(mouseController);
+        addMouseMotionListener(mouseController);
+        addMouseWheelListener(mouseController);
+        addKeyListener(keyboardController);
     }
+    public void reinitializeControllers() {
+        // Удаляем старые слушатели
+        this.removeMouseListener(mouseController);
+        this.removeMouseMotionListener(mouseController);
+        this.removeKeyListener(keyboardController);
 
+        // Создаем новые контроллеры
+        this.mouseController = new MouseController(this);
+        this.keyboardController = new KeyboardController(this);
+
+        // Добавляем слушатели
+        this.addMouseListener(mouseController);
+        this.addMouseMotionListener(mouseController);
+        this.addKeyListener(keyboardController);
+        requestFocusInWindow();
+    }
     public World getWorld() {
         return world;
     }
@@ -109,5 +137,12 @@ public class WorldScreen extends GameScreen {
         int screenX = (int)((worldX * 32 + offsetX) * zoom);
         int screenY = (int)((worldY * 32 + offsetY) * zoom);
         return new Point(screenX, screenY);
+    }
+    @Override
+    public void setVisible(boolean visible) {
+        super.setVisible(visible);
+        if (visible) {
+            requestFocusInWindow();
+        }
     }
 }

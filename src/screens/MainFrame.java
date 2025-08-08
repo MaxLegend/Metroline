@@ -10,6 +10,7 @@ import java.util.Map;
 import game.core.GameTime;
 import game.core.world.GameWorld;
 import game.core.world.SandboxWorld;
+import util.LngUtil;
 import util.MetroLogger;
 import util.StyleUtil;
 
@@ -154,7 +155,7 @@ public class MainFrame extends JFrame {
 
         timePanel.setBackground(new Color(60, 60, 60));
         timePanel.add(timeLabel);
-        timePanel.add(StyleUtil.createMetrolineInGameButton("Pause", e -> timeControl()));
+        timePanel.add(StyleUtil.createMetrolineInGameButton(LngUtil.translatable("timebar.pause"), e -> timeControl()));
         add(timePanel, BorderLayout.SOUTH);
 
         // Toolbar (upper panel)
@@ -163,12 +164,12 @@ public class MainFrame extends JFrame {
         toolBar.setVisible(false);
         toolBar.setBackground(new Color(45, 45, 45));
 
-        toolBar.add(StyleUtil.createMetrolineInGameButton("Save Game", e -> saveGame()));
-        toolBar.add(StyleUtil.createMetrolineInGameButton("Load Game", e -> loadGame()));
-        toolBar.add(StyleUtil.createMetrolineInGameButton("Back to Menu", e -> backToMenu()));
-        JButton menuButton = StyleUtil.createMetrolineInGameButton("Options", e -> showPopupMenu((JButton)e.getSource()));
+        toolBar.add(StyleUtil.createMetrolineInGameButton(LngUtil.translatable("toolbar.save_game"), e -> saveGame()));
+        toolBar.add(StyleUtil.createMetrolineInGameButton(LngUtil.translatable("toolbar.load_game"), e -> loadGame()));
+        toolBar.add(StyleUtil.createMetrolineInGameButton(LngUtil.translatable("toolbar.back_menu"), e -> backToMenu()));
+        JButton menuButton = StyleUtil.createMetrolineInGameButton(LngUtil.translatable("toolbar.options"), e -> showPopupMenu((JButton)e.getSource()));
         toolBar.add(menuButton);
-        toolBar.add(StyleUtil.createMetrolineInGameButton("Exit Game", e -> exitGame()));
+        toolBar.add(StyleUtil.createMetrolineInGameButton(LngUtil.translatable("toolbar.exit"), e -> exitGame()));
 
 
 
@@ -184,8 +185,8 @@ public class MainFrame extends JFrame {
         menuPanel.setBackground(StyleUtil.BACKGROUND_COLOR);
         menuPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
 
-        JButton option1 = StyleUtil.createMetrolineInGameButton("Option 1", e -> {});
-        JButton option2 = StyleUtil.createMetrolineInGameButton("Option 2", e -> {});
+        JButton option1 = StyleUtil.createMetrolineInGameButton(LngUtil.translatable("options.1"), e -> {});
+        JButton option2 = StyleUtil.createMetrolineInGameButton(LngUtil.translatable("options.2"), e -> {});
         option2.setSize(100, 100);
         menuPanel.add(option1);
         menuPanel.add(option2);
@@ -297,6 +298,7 @@ public class MainFrame extends JFrame {
         if (currentScreen instanceof WorldGameScreen) {
            ((WorldGameScreen)currentScreen).getWorld().saveWorld();
         }
+        currentScreen.requestFocusInWindow();
     }
 
     /**

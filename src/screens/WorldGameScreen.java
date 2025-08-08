@@ -22,8 +22,6 @@ public class WorldGameScreen extends WorldScreen {
 
     public GameClickHandler gameClickHandler;
     // Input controllers
-    private  MouseController mouseController;
-    private  KeyboardController keyboardController;
 
     //Debug
     public boolean debugMode = false;
@@ -37,13 +35,7 @@ public class WorldGameScreen extends WorldScreen {
         super(parent, new GameWorld(widthWorld, heightWorld, false, false, Color.WHITE));
 
         INSTANCE = this;
-        // Initialize controllers
-        mouseController = new MouseController(this);
-        keyboardController = new KeyboardController(this);
-        addMouseListener(mouseController);
-        addMouseMotionListener(mouseController);
-        addMouseWheelListener(mouseController);
-        addKeyListener(keyboardController);
+
         this.gameClickHandler = new GameClickHandler();
         initWorldCache();
     }

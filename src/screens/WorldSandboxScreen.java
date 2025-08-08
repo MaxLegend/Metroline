@@ -33,6 +33,10 @@ public class WorldSandboxScreen extends WorldScreen {
     private MouseController mouseController;
     private KeyboardController keyboardController;
 
+
+
+
+
     private BufferedImage worldCache; // Кешированное изображение мира
     private boolean cacheValid = false; // Флаг валидности кеша
 

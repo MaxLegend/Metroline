@@ -13,6 +13,7 @@ import game.objects.enums.Direction;
 import screens.WorldGameScreen;
 import screens.WorldSandboxScreen;
 import screens.WorldScreen;
+import util.LngUtil;
 import util.MessageUtil;
 import util.MetroLogger;
 
@@ -576,14 +577,21 @@ public class World implements Serializable {
         saveData.tunnels = this.tunnels;
         saveData.labels = this.labels;
         saveData.gameTime = this.gameTime;
-
+        try {
+            // Проверка сериализуемости перед сохранением
+            new ObjectOutputStream(new ByteArrayOutputStream()).writeObject(this);
+        } catch (IOException e) {
+            MetroLogger.logError("World is not serializable", e);
+            return;
+        }
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(saveFile))) {
             oos.writeObject(saveData);
+
             MetroLogger.logInfo("World successfully saved");
-            MessageUtil.showTimedMessage("World successfully saved", false, 2000);
+            MessageUtil.showTimedMessage(LngUtil.translatable("world.saved"), false, 2000);
         } catch (IOException ex) {
             MetroLogger.logError("Failed to save world", ex);
-            MessageUtil.showTimedMessage("Saved Error: " + ex.getMessage(), true, 2000);
+            MessageUtil.showTimedMessage(LngUtil.translatable("world.not_saved") + ex.getMessage(), true, 2000);
         }
     }
 
@@ -614,13 +622,17 @@ public class World implements Serializable {
                 loaded.gameTime = new GameTime();
                 loaded.gameTime.start();
             }
+
+            if (this.screen != null) {
+                this.screen.reinitializeControllers();
+            }
             MetroLogger.logInfo("World successfully loaded");
-            MessageUtil.showTimedMessage("World successfully loaded", false, 2000);
+            MessageUtil.showTimedMessage(LngUtil.translatable("world.loaded"), false, 2000);
             return true;
         } catch (Exception ex) {
             ex.printStackTrace();
             MetroLogger.logError("Failed to load world", ex);
-            MessageUtil. showTimedMessage("Loaded Error: " + ex.getMessage(), true, 2000);
+            MessageUtil. showTimedMessage(LngUtil.translatable("world.not_loaded") + ex.getMessage(), true, 2000);
         }
         return false;
     }

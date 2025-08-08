@@ -47,9 +47,16 @@ public class KeyboardController extends KeyAdapter {
     }
     @Override
     public void keyPressed(KeyEvent e) {
+        if (screen == null || !screen.hasFocus()) {
+            if (screen != null) {
+                screen.requestFocusInWindow();
+            }
+            return;
+        }
         if(screen instanceof WorldScreen worldScreen) {
+
             if (e.isControlDown() && e.getKeyCode() == KeyEvent.VK_S) {
-                SaveToImageUtil.saveWorldToPNG();
+                SaveToImageUtil.saveWorldToPNG(screen instanceof WorldSandboxScreen);
                 e.consume();
             }
             if (e.isControlDown() && e.getKeyCode() == KeyEvent.VK_D) {

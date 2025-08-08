@@ -1,5 +1,6 @@
 package screens;
 
+import util.LngUtil;
 import util.StyleUtil;
 
 import javax.swing.*;
@@ -47,7 +48,7 @@ public class WorldSettingsScreen extends GameScreen {
         gbc.weightx = 0;
 
         // Title
-        JLabel title = new JLabel("CREATE NEW WORLD", SwingConstants.CENTER);
+        JLabel title = new JLabel(LngUtil.translatable("create_world_title"), SwingConstants.CENTER);
         title.setFont(new Font("Arial", Font.BOLD, 24));
         title.setForeground(StyleUtil.FOREGROUND_COLOR);
         gbc.insets = new Insets(0, 30, 30, 30);
@@ -82,16 +83,16 @@ public class WorldSettingsScreen extends GameScreen {
         heightValueLabel.setForeground(StyleUtil.FOREGROUND_COLOR);
         heightValueLabel.setFont(new Font("Arial", Font.PLAIN, 15));
 
-        widthSlider = StyleUtil.createMetrolineSlider(20, 200, 40, " cells", widthValueLabel);
+        widthSlider = StyleUtil.createMetrolineSlider(20, 200, 40, " " + LngUtil.translatable("world.cells"), widthValueLabel);
         if(innerDebugUI)  widthSlider.setBorder(BorderFactory.createLineBorder(Color.YELLOW, 1)); // Желтая граница
 
-        heightSlider = StyleUtil.createMetrolineSlider(20, 200, 40, " cells", heightValueLabel);
+        heightSlider = StyleUtil.createMetrolineSlider(20, 200, 40, " " + LngUtil.translatable("world.cells"), heightValueLabel);
         if(innerDebugUI) heightSlider.setBorder(BorderFactory.createLineBorder(Color.YELLOW, 1)); // Желтая граница
 
-        JLabel widthLabel = StyleUtil.createMetrolineLabel("World Width:", SwingConstants.RIGHT);
+        JLabel widthLabel = StyleUtil.createMetrolineLabel(LngUtil.translatable("world.width"), SwingConstants.RIGHT);
         if(innerDebugUI) widthLabel.setBorder(BorderFactory.createLineBorder(Color.CYAN, 1));
 
-        JLabel heightLabel = StyleUtil.createMetrolineLabel("World Height:", SwingConstants.RIGHT);
+        JLabel heightLabel = StyleUtil.createMetrolineLabel(LngUtil.translatable("world.height"), SwingConstants.RIGHT);
         if(innerDebugUI) heightLabel.setBorder(BorderFactory.createLineBorder(Color.CYAN, 1));
 
         sizePanel.add(widthLabel);
@@ -117,11 +118,11 @@ public class WorldSettingsScreen extends GameScreen {
           featuresPanel.setBorder(BorderFactory.createEmptyBorder(0, 100, 20, 100));
       }
         // Кнопка выбора цвета
-        colorButton = StyleUtil.createMetrolineColorableButton("World Color", e -> showWindowColorSelection(), worldColor);
+        colorButton = StyleUtil.createMetrolineColorableButton(LngUtil.translatable("world.color"), e -> showWindowColorSelection(), worldColor);
 
-        organicPatchesCheck = StyleUtil.createMetrolineCheckBox("Generate Hard Rocks", true);
+        organicPatchesCheck = StyleUtil.createMetrolineCheckBox(LngUtil.translatable("world.gen_hard_rocks"), true);
 
-        riversCheck = StyleUtil.createMetrolineCheckBox("Generate Rivers", true);
+        riversCheck = StyleUtil.createMetrolineCheckBox(LngUtil.translatable("world.gen_river"), true);
         featuresPanel.add(organicPatchesCheck);
         featuresPanel.add(riversCheck);
         featuresPanel.add(colorButton);
@@ -141,10 +142,10 @@ public class WorldSettingsScreen extends GameScreen {
         }
 
 
-        JButton createSBButton = StyleUtil.createMetrolineButton("Create Sandbox World",e -> createWorld(true));
-        JButton createGameButton = StyleUtil.createMetrolineButton("Create World",e -> createWorld(false));
+        JButton createSBButton = StyleUtil.createMetrolineButton(LngUtil.translatable("world.create_sandbox"),e -> createWorld(true));
+        JButton createGameButton = StyleUtil.createMetrolineButton(LngUtil.translatable("world.create_standart"),e -> createWorld(false));
 
-        JButton backButton = StyleUtil.createMetrolineButton("Back",e -> parent.switchScreen("menu"));
+        JButton backButton = StyleUtil.createMetrolineButton(LngUtil.translatable("world.back"),e -> parent.switchScreen("menu"));
 
         buttonPanel.add(backButton);
         buttonPanel.add(createSBButton);
