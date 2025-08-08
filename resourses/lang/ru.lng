@@ -24,3 +24,5 @@ timebar.pause=Пауза
 world.width=Ширина мира
 world.height=Высота мира
 world.cells=клеток
+world.round_stations=Круглые станции
+world.start_money=Начальный капитал

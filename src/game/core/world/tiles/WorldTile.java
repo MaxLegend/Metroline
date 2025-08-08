@@ -18,12 +18,25 @@ public class WorldTile extends Tile implements Serializable {
     public WorldTile() {
         super(0, 0, 16);
     }
+    public WorldTile(int x, int y) {
+        super(x, y, 16);
+    }
     public WorldTile(int x, int y, float perm) {
         super(x, y, 16);
         this.perm = perm;
         this.baseTileColor = new Color(110, 110, 110);
     }
 
+    public WorldTile getWorldTile() {
+        return new WorldTile(getX(), getY());
+    }
+    public Color getCurrentColor() {
+        int range = 50; // Должно совпадать с тем, что используется в draw()
+        int red = Math.max(0, Math.min(255, baseTileColor.getRed() - (int)(perm * range)));
+        int green = Math.max(0, Math.min(255, baseTileColor.getGreen() - (int)(perm * range)));
+        int blue = Math.max(0, Math.min(255, baseTileColor.getBlue() - (int)(perm * range)));
+        return new Color(red, green, blue);
+    }
     /**
      * Gets the building permission value
      * @return Permission value (0-1)

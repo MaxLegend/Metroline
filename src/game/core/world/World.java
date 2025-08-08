@@ -35,13 +35,16 @@ public class World implements Serializable {
 
     protected WorldTile[][] worldGrid;
     protected GameTile[][] gameGrid;
-    protected GameTileBig[][] bigWorldGrid;
+  //  protected GameTileBig[][] bigWorldGrid;
 
     public java.util.List<Station> stations = new ArrayList<>();
     public java.util.List<Tunnel> tunnels = new ArrayList<>();
     public List<Label> labels = new ArrayList<>();
 
     public transient WorldScreen screen;
+
+    public boolean roundStationsEnabled = false;
+
     public World() {
         super();
     }
@@ -60,7 +63,7 @@ public class World implements Serializable {
         // Create world grid
         worldGrid = new WorldTile[width][height];
         gameGrid = new GameTile[width][height];
-        bigWorldGrid = new GameTileBig[width*4][height*4];
+     //   bigWorldGrid = new GameTileBig[width*4][height*4];
 
         // Initialize with all perm=0
         for (int y = 0; y < height; y++) {
@@ -71,13 +74,7 @@ public class World implements Serializable {
             }
         }
 
-        for (int y = 0; y < height*4; y++) {
-            for (int x = 0; x < width*4; x++) {
-                bigWorldGrid[x][y] = new GameTileBig(x, y);
-            }
-        }
 
-        // Generate features based on parameters
         if (hasRivers) {
             addRivers(1);
         }
@@ -90,7 +87,13 @@ public class World implements Serializable {
         applyGradient();
     }
 
+    public boolean isRoundStationsEnabled() {
+        return roundStationsEnabled;
+    }
 
+    public void setRoundStationsEnabled(boolean enabled) {
+        this.roundStationsEnabled = enabled;
+    }
     public GameTime getGameTime() {
         if (gameTime == null) {
             gameTime = new GameTime();
@@ -157,7 +160,7 @@ public class World implements Serializable {
                 Math.abs(labelY - station.getY()) <= 1 &&
                 getStationAt(labelX, labelY) == null; // И клетка свободна
     }
-    public GameTileBig[][] getBigWorldGrid() { return bigWorldGrid; }
+   // public GameTileBig[][] getBigWorldGrid() { return bigWorldGrid; }
     public Label getLabelForStation(Station station) {
         for (Label label : labels) {
             if (label.getParentStation() == station) {
@@ -520,6 +523,15 @@ public class World implements Serializable {
             }
         }
     }
+
+    public Color getWorldColorAt(int x, int y) {
+        if (x < 0 || x >= width || y < 0 || y >= height) return null;
+        return worldGrid[x][y].getCurrentColor();
+    }
+    public WorldTile getWorldTile(int x, int y) {
+        return worldGrid[x][y];
+    }
+
     /**
      * Gets the world grid
      * @return 2D array of world tiles
@@ -548,13 +560,19 @@ public class World implements Serializable {
      * @return Width in tiles
      */
     public int getWidth() { return width; }
-
+    public void setWidth(int width) {
+        this.width = width;
+    }
     /**
      * Gets the height of the world
      * @return Height in tiles
      */
-    public int getHeight() { return height; }
-
+    public int getHeight() {
+        return height;
+    }
+    public void setHeight(int height) {
+        this.height = height;
+    }
 
     /**************************
      * SAVE AND LOAD SECTIONS
@@ -572,11 +590,11 @@ public class World implements Serializable {
         saveData.height = this.height;
         saveData.worldGrid = this.worldGrid;
         saveData.gameGrid = this.gameGrid;
-        saveData.bigWorldGrid = this.bigWorldGrid;
         saveData.stations = this.stations;
         saveData.tunnels = this.tunnels;
         saveData.labels = this.labels;
         saveData.gameTime = this.gameTime;
+        saveData.SAVE_FILE = this.SAVE_FILE;
         try {
             // Проверка сериализуемости перед сохранением
             new ObjectOutputStream(new ByteArrayOutputStream()).writeObject(this);
@@ -609,12 +627,11 @@ public class World implements Serializable {
             this.height = loaded.height;
             this.worldGrid = loaded.worldGrid;
             this.gameGrid = loaded.gameGrid;
-            this.bigWorldGrid = loaded.bigWorldGrid;
             this.stations = loaded.stations;
             this.tunnels = loaded.tunnels;
             this.labels = loaded.labels;
             this.gameTime = loaded.gameTime;
-          // this.SAVE_FILE = loaded.SAVE_FILE;
+           this.SAVE_FILE = loaded.SAVE_FILE;
 
             if (loaded.getGameTime() != null) {
                 loaded.getGameTime().start();

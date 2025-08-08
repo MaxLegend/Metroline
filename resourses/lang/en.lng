@@ -24,3 +24,5 @@ timebar.pause=Pause
 world.width=World Width
 world.height=World Height
 world.cells=cells
+world.round_stations=Rounded Stations
+world.start_money=Start Money

@@ -8,6 +8,7 @@ import game.objects.PathPoint;
 import game.objects.Station;
 import game.objects.Tunnel;
 import game.objects.enums.Direction;
+import screens.MainFrame;
 import screens.WorldGameScreen;
 import screens.WorldSandboxScreen;
 import util.MessageUtil;
@@ -20,21 +21,47 @@ import java.util.Arrays;
 import java.util.List;
 
 public class GameWorld extends World {
-
+    private transient MainFrame mainFrame;
     private static final String SAVE_FILE = "game_save.metro";
-
+    public int money;
     public GameWorld() {
         super();
     }
 
-    public GameWorld(int width, int height, boolean hasOrganicPatches, boolean hasRivers, Color worldColor) {
+    public GameWorld(int width, int height, boolean hasOrganicPatches, boolean hasRivers, Color worldColor, int money) {
         super(null, width, height, hasOrganicPatches,hasRivers,worldColor, SAVE_FILE);
+        this.mainFrame = MainFrame.getInstance();
+        this.money = money;
     }
 
     @Override
     public World getWorld() {
         return this;
     }
+    public int getMoney() {
+        return money;
+    }
 
+    public boolean canAfford(int amount) {
+        return money >= amount;
+    }
 
+    public void addMoney(int amount) {
+        money += amount;
+        // Можно добавить события/уведомления об изменении баланса
+    }
+
+    public boolean spendMoney(int amount) {
+        if (canAfford(amount)) {
+            money -= amount;
+            return true;
+        }
+        return false;
+    }
+
+//    private void updateMoneyDisplay() {
+//        if (mainFrame != null) {
+//            mainFrame.updateMoneyDisplay(money);
+//        }
+//    }
 }

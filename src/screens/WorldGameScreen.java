@@ -19,7 +19,6 @@ import java.util.Map;
 public class WorldGameScreen extends WorldScreen {
     public static WorldGameScreen INSTANCE;
 
-
     public GameClickHandler gameClickHandler;
     // Input controllers
 
@@ -30,22 +29,48 @@ public class WorldGameScreen extends WorldScreen {
     private BufferedImage worldCache; // Кешированное изображение мира
     private boolean cacheValid = false; // Флаг валидности кеша
 
+    private int money; // Начальный капитал
 
     public WorldGameScreen(MainFrame parent) {
-        super(parent, new GameWorld(widthWorld, heightWorld, false, false, Color.WHITE));
-
+        super(parent, new GameWorld(widthWorld, heightWorld, false, false, Color.WHITE, 1000));
         INSTANCE = this;
-
         this.gameClickHandler = new GameClickHandler();
         initWorldCache();
     }
 
-    public void createNewWorld(int width, int height, boolean hasOrganicPatches, boolean hasRivers, Color worldColor) {
+    public void createNewWorld(int width, int height, boolean hasOrganicPatches, boolean hasRivers, Color worldColor, int money) {
         widthWorld = width;
         heightWorld = height;
-        this.setWorld(new GameWorld(width, height, hasOrganicPatches, hasRivers,worldColor));
+      //  this.money = money;
+        this.setWorld(new GameWorld(width, height, hasOrganicPatches, hasRivers,worldColor, money));
         invalidateCache();
         repaint();
+    }
+
+
+    /**
+     *
+     * MONEY MONEY MONEY!
+     */
+    public int getMoney() {
+        return money;
+    }
+
+    public boolean canAfford(int amount) {
+        return money >= amount;
+    }
+
+    public void addMoney(int amount) {
+        money += amount;
+        // Можно добавить события/уведомления об изменении баланса
+    }
+
+    public boolean spendMoney(int amount) {
+        if (canAfford(amount)) {
+            money -= amount;
+            return true;
+        }
+        return false;
     }
     /**
      * Handles mouse click on the world
@@ -133,11 +158,12 @@ public class WorldGameScreen extends WorldScreen {
 
             Graphics2D cacheGraphics = worldCache.createGraphics();
             try {
-                // Очищаем кеш
-                cacheGraphics.setBackground(new Color(0, 0, 0, 0));
-                cacheGraphics.clearRect(0, 0, worldCache.getWidth(), worldCache.getHeight());
+                cacheGraphics.setComposite(AlphaComposite.Clear);
+                cacheGraphics.fillRect(0, 0, worldCache.getWidth(), worldCache.getHeight());
+                cacheGraphics.setComposite(AlphaComposite.SrcOver);
 
                 // Рисуем статичные элементы в кеш
+                cacheGraphics.scale(2,2);
                 drawStaticWorld(cacheGraphics);
             } finally {
                 cacheGraphics.dispose();
@@ -147,7 +173,7 @@ public class WorldGameScreen extends WorldScreen {
         public void drawStaticWorld(Graphics2D g) {
             // Рисуем сетку
             AffineTransform originalTransform = g.getTransform();
-            g.scale(2, 2);
+
             for (int y = 0; y < getWorld().getHeight(); y++) {
                 for (int x = 0; x < getWorld().getWidth(); x++) {
                     getWorld().getWorldGrid()[x][y].draw(g, 0, 0, 1);

@@ -1,9 +1,11 @@
 package screens;
 
 
+import game.core.world.GameWorld;
 import game.core.world.SandboxWorld;
 
 
+import game.input.GameClickHandler;
 import game.input.KeyboardController;
 import game.input.MouseController;
 
@@ -27,37 +29,21 @@ import java.util.Map;
 public class WorldSandboxScreen extends WorldScreen {
     public static WorldSandboxScreen INSTANCE;
     public SandboxClickHandler sandboxClickHandler;
-    public static int widthWorld = 100, heightWorld = 100;
-
-    // Input controllers
-    private MouseController mouseController;
-    private KeyboardController keyboardController;
-
-
-
-
-
     private BufferedImage worldCache; // Кешированное изображение мира
     private boolean cacheValid = false; // Флаг валидности кеша
 
-
     public WorldSandboxScreen(MainFrame parent) {
-        super(parent);
-
+        super(parent, new SandboxWorld(widthWorld, heightWorld, false, false, Color.WHITE));
         INSTANCE = this;
-        
-        // Initialize controllers
-        mouseController = new MouseController(this);
-        keyboardController = new KeyboardController(this);
-
-        addMouseListener(mouseController);
-        addMouseMotionListener(mouseController);
-        addMouseWheelListener(mouseController);
-        addKeyListener(keyboardController);
-
+        this.sandboxClickHandler = new SandboxClickHandler();
         initWorldCache();
-
-
+    }
+    public void createNewWorld(int width, int height, boolean hasOrganicPatches, boolean hasRivers, Color worldColor) {
+        widthWorld = width;
+        heightWorld = height;
+        this.setWorld(new SandboxWorld(width, height, hasOrganicPatches, hasRivers,worldColor));
+        invalidateCache();
+        repaint();
     }
     /**
      * Handles mouse click on the world
@@ -84,15 +70,7 @@ public class WorldSandboxScreen extends WorldScreen {
 
         repaint();
     }
-    public void createNewWorld(int width, int height, boolean hasOrganicPatches, boolean hasRivers, Color worldColor) {
 
-        widthWorld = width;
-        heightWorld = height;
-        this.setWorld(new SandboxWorld(width, height, hasOrganicPatches, hasRivers,worldColor));
-        this.sandboxClickHandler = new SandboxClickHandler();
-        invalidateCache();
-        repaint();
-    }
     public static WorldSandboxScreen getInstance() {
         return INSTANCE;
     }
@@ -159,6 +137,7 @@ public class WorldSandboxScreen extends WorldScreen {
             cacheGraphics.clearRect(0, 0, worldCache.getWidth(), worldCache.getHeight());
 
             // Рисуем статичные элементы в кеш
+            cacheGraphics.scale(2, 2);
             drawStaticWorld(cacheGraphics);
         } finally {
             cacheGraphics.dispose();
@@ -168,7 +147,7 @@ public class WorldSandboxScreen extends WorldScreen {
     public void drawStaticWorld(Graphics2D g) {
         // Рисуем сетку
         AffineTransform originalTransform = g.getTransform();
-        g.scale(2, 2);
+
             for (int y = 0; y < getWorld().getHeight(); y++) {
                 for (int x = 0; x < getWorld().getWidth(); x++) {
                     getWorld().getWorldGrid()[x][y].draw(g, 0, 0, 1);
@@ -177,9 +156,6 @@ public class WorldSandboxScreen extends WorldScreen {
 
         g.setTransform(originalTransform);
     }
-
-
-
 
     /**
      * Рисует глобальную отладочную информацию

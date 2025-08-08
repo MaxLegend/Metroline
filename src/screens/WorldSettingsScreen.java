@@ -1,5 +1,6 @@
 package screens;
 
+import game.core.world.GameWorld;
 import util.LngUtil;
 import util.StyleUtil;
 
@@ -8,10 +9,22 @@ import java.awt.*;
 import java.awt.event.*;
 
 public class WorldSettingsScreen extends GameScreen {
+    public static final Color[] WORLD_COLORS = {
+            new Color(203, 202, 202), // Светло-серый
+            new Color(110, 110, 110), // Серый (по умолчанию)
+            new Color(70, 70, 70),    // Темно-серый
+            new Color(150, 100, 80),  // Коричневый
+            new Color(80, 100, 150)   // Голубоватый
+    };
+    private JSlider moneySlider;
+    private JLabel moneyValueLabel;
+
     private JSlider widthSlider;
     private JSlider heightSlider;
     private JCheckBox organicPatchesCheck;
     private JCheckBox riversCheck;
+    private JCheckBox roundStationsCheck;
+
     private MainFrame parent;
     private JButton colorButton; // Кнопка для выбора цвета
     private Color worldColor = new Color(110, 110, 110); // Цвет по умолчанию
@@ -70,8 +83,6 @@ public class WorldSettingsScreen extends GameScreen {
             sizePanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
         }
 
-
-
         // Метки для значений
         JLabel widthValueLabel = new JLabel("wwl");
         if(innerDebugUI) widthValueLabel.setBorder(BorderFactory.createLineBorder(Color.GREEN, 1));
@@ -105,17 +116,17 @@ public class WorldSettingsScreen extends GameScreen {
         centerPanel.add(sizePanel, gbc);
 
         // World Features
-        JPanel featuresPanel = new JPanel(new GridLayout(3, 1, 5, 10));
+        JPanel featuresPanel = new JPanel(new GridLayout(4, 1, 5, 0));
         featuresPanel.setSize(100, 100);
         featuresPanel.setBackground(StyleUtil.BACKGROUND_COLOR);
       if(innerDebugUI) {
           featuresPanel.setBorder(BorderFactory.createCompoundBorder(
                   BorderFactory.createLineBorder(new Color(128, 0, 128), 2), // Фиолетовый
-                  BorderFactory.createEmptyBorder(0, 100, 20, 100)
+                  BorderFactory.createEmptyBorder(0, 100, 0, 100)
           ));
       }
         else {
-          featuresPanel.setBorder(BorderFactory.createEmptyBorder(0, 100, 20, 100));
+          featuresPanel.setBorder(BorderFactory.createEmptyBorder(0, 100, 0, 100));
       }
         // Кнопка выбора цвета
         colorButton = StyleUtil.createMetrolineColorableButton(LngUtil.translatable("world.color"), e -> showWindowColorSelection(), worldColor);
@@ -123,10 +134,44 @@ public class WorldSettingsScreen extends GameScreen {
         organicPatchesCheck = StyleUtil.createMetrolineCheckBox(LngUtil.translatable("world.gen_hard_rocks"), true);
 
         riversCheck = StyleUtil.createMetrolineCheckBox(LngUtil.translatable("world.gen_river"), true);
+        roundStationsCheck = StyleUtil.createMetrolineCheckBox(LngUtil.translatable("world.round_stations"), false);
+
+        JPanel moneyPanel = new JPanel(new GridLayout(1, 3, 10, 0));
+        moneyPanel.setBackground(StyleUtil.BACKGROUND_COLOR);
+        if(innerDebugUI) {
+            moneyPanel.setBorder(BorderFactory.createLineBorder(Color.PINK, 2));
+        }
+        moneyValueLabel = new JLabel("10000000");
+        moneyValueLabel.setForeground(StyleUtil.FOREGROUND_COLOR);
+        moneyValueLabel.setFont(new Font("Arial", Font.PLAIN, 15));
+        moneySlider = StyleUtil.createMetrolineSlider(
+                100000,      // мин значение (100 тыс)
+                100000000,   // макс значение (100 млн)
+                10000000,    // начальное значение (10 млн)
+                "",
+                moneyValueLabel
+        );
+        JLabel moneyTextLabel = StyleUtil.createMetrolineLabel(
+                LngUtil.translatable("world.start_money"),
+                SwingConstants.RIGHT
+        );
+        moneyPanel.add(moneyTextLabel);
+        moneyPanel.add(moneySlider);
+        moneyPanel.add(moneyValueLabel);
+
+        moneySlider.addChangeListener(e -> {
+            int value = moneySlider.getValue();
+            // Форматируем число с разделителями тысяч
+            String formatted = String.format("%,d ₽", value);
+            moneyValueLabel.setText(formatted);
+        });
+        featuresPanel.add(organicPatchesCheck);
         featuresPanel.add(organicPatchesCheck);
         featuresPanel.add(riversCheck);
+        featuresPanel.add(roundStationsCheck);
         featuresPanel.add(colorButton);
 
+        centerPanel.add(moneyPanel, gbc);
         centerPanel.add(featuresPanel, gbc);
 
         // Buttons
@@ -234,19 +279,26 @@ public class WorldSettingsScreen extends GameScreen {
             }
         });
     }
+
     private void createWorld(boolean isSandbox) {
         int width = widthSlider.getValue();
         int height = heightSlider.getValue();
         boolean hasOrganicPatches = organicPatchesCheck.isSelected();
         boolean hasRivers = riversCheck.isSelected();
+        boolean roundStations = roundStationsCheck.isSelected();
+        int startMoney = moneySlider.getValue();
+
         if(isSandbox) {
             parent.switchScreen(MainFrame.SANDBOX_SCREEN_NAME);
             WorldSandboxScreen gameScreen = (WorldSandboxScreen) parent.getCurrentScreen();
             gameScreen.createNewWorld(width, height, hasOrganicPatches, hasRivers, worldColor);
+            gameScreen.getWorld().setRoundStationsEnabled(roundStations);
         } else {
             parent.switchScreen(MainFrame.GAME_SCREEN_NAME);
             WorldGameScreen gameScreen = (WorldGameScreen) parent.getCurrentScreen();
-            gameScreen.createNewWorld(width, height, hasOrganicPatches, hasRivers, worldColor);
+            gameScreen.createNewWorld(width, height, hasOrganicPatches, hasRivers, worldColor, startMoney);
+            gameScreen.getWorld().setRoundStationsEnabled(roundStations);
+            gameScreen.addMoney(startMoney);
         }
     }
 
@@ -256,13 +308,11 @@ public class WorldSettingsScreen extends GameScreen {
         heightSlider.setValue(100);
         organicPatchesCheck.setSelected(true);
         riversCheck.setSelected(true);
+        roundStationsCheck.setSelected(false);
+        moneySlider.setValue(10000000);
+        String formatted = String.format("%,d ₽", moneySlider.getValue());
+        moneyValueLabel.setText(formatted);
     }
 
-    public static final Color[] WORLD_COLORS = {
-            new Color(203, 202, 202), // Светло-серый
-            new Color(110, 110, 110), // Серый (по умолчанию)
-            new Color(70, 70, 70),    // Темно-серый
-            new Color(150, 100, 80),  // Коричневый
-            new Color(80, 100, 150)   // Голубоватый
-    };
+
 }

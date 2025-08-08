@@ -18,11 +18,11 @@ import java.util.Random;
  */
 public class Station extends GameObject {
     public static final Color[] COLORS = {
-            new Color(150, 0, 0),
+            new Color(157, 6, 6),
             new Color(0, 100, 0),
             new Color(0, 120, 190),
-            new Color(12, 53, 255),
-            new Color(38, 190, 224),
+            new Color(27, 57, 208),
+            new Color(25, 149, 176),
             new Color(110, 63, 21),
             new Color(200, 100, 0),
             new Color(133, 7, 133),
@@ -32,10 +32,28 @@ public class Station extends GameObject {
             new Color(79, 155, 155),
             new Color(201, 48, 128),
             new Color(3, 121, 95),
-            new Color(172, 23, 83),
+            new Color(148, 21, 73),
             new Color(109, 148, 104),
     };
-
+    public static final Color[] COLORS_DARK = {
+            // Приглушенные, землистые тона
+            new Color(160, 60, 50),    // Терракотовый
+            new Color(80, 110, 60),     // Оливковый
+            new Color(60, 100, 130),    // Приглушенный синий
+            new Color(70, 80, 160),     // Сдержанный синий
+            new Color(80, 140, 160),    // Морской
+            new Color(120, 80, 50),     // Коричневый
+            new Color(170, 100, 50),    // Тыквенный
+            new Color(130, 70, 130),    // Приглушенный фиолетовый
+            new Color(160, 140, 50),    // Горчичный
+            new Color(140, 140, 140),   // Серый
+            new Color(120, 150, 70),    // Оливково-зеленый
+            new Color(70, 120, 120),    // Бирюзовый
+            new Color(150, 80, 110),    // Приглушенный розовый
+            new Color(50, 110, 90),     // Изумрудный
+            new Color(150, 70, 80),     // Вишневый
+            new Color(100, 130, 100)    // Мятный
+    };
     private String name;
 
     private static final String[] NAME_PARTS = {"Pyatorocka", "Magnit", "Nizhni", "Kotova", "Baton", "Butilka",
@@ -178,12 +196,135 @@ public class Station extends GameObject {
             type = StationType.TRANSIT;
         }
     }
-
     @Override
     public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
+        if (getWorld().isRoundStationsEnabled()) {
+            drawRoundStyle(g, offsetX, offsetY, zoom);
+        } else {
+            drawSquareStyle(g, offsetX, offsetY, zoom);
+        }
+    }
+    private void drawRoundStyle(Graphics g, int offsetX, int offsetY, float zoom) {
+        // Размер круга станции (меньше размера клетки)
+        int drawSize = (int)(24 * zoom); // например, 8 пикселей при zoom=1
+
+        int cellCenterX = (int)((getX() * 32 + offsetX +15) * zoom);
+        int cellCenterY = (int)((getY() * 32 + offsetY +15) * zoom);
+        // Позиция для рисования круга (чтобы он был по центру)
+        int drawX = cellCenterX - drawSize/2;
+        int drawY = cellCenterY - drawSize/2;
+        Graphics2D g2d = (Graphics2D)g;
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        // Проверяем соседей
+        Map<Direction, Station> adjacentStations = new EnumMap<>(Direction.class);
+        for (Direction dir : Direction.getOrthogonalDirections()) {
+            int nx = x + dir.getDx();
+            int ny = y + dir.getDy();
+            Station neighbor = getWorld().getStationAt(nx, ny);
+            if (neighbor != null && neighbor != this) {
+                adjacentStations.put(dir, neighbor);
+            }
+        }
+
+        int holeSize = (int)(30 * zoom);
+        int holeX = drawX + (drawSize - holeSize)/2;
+        int holeY = drawY + (drawSize - holeSize)/2;
+
+
+        g2d.setColor(getWorld().getWorldColorAt(getX(), getY()));
+        g2d.fillOval(holeX, holeY, holeSize, holeSize);
+
+        // Затем рисуем основную станцию (цветной круг)
+        g2d.setColor(color);
+        g2d.fillOval(drawX, drawY, drawSize, drawSize);
+
+        // Отрисовываем соединения с соседними станциями
+        if (!adjacentStations.isEmpty()) {
+            int framePadding = (int)(3 * zoom);
+            int frameSize = drawSize + 2 * framePadding;
+            int frameX = drawX - framePadding;
+            int frameY = drawY - framePadding;
+
+            g2d.setStroke(new BasicStroke(2 * zoom));
+            g2d.setColor(Color.WHITE);
+
+            // Рисуем внешнюю рамку
+            g2d.drawOval(frameX, frameY, frameSize, frameSize);
+
+            // Рисуем соединительные "перешейки"
+            for (Map.Entry<Direction, Station> entry : adjacentStations.entrySet()) {
+                Direction dir = entry.getKey();
+                Station neighbor = entry.getValue();
+
+                if (neighbor.getColor().equals(this.color)) {
+                    drawRoundSameColorConnection(g2d, drawX, drawY, drawSize, frameX, frameY, frameSize, dir, zoom);
+                } else {
+                    drawRoundDifferentColorConnection(g2d, drawX, drawY, drawSize, frameX, frameY, frameSize, dir, zoom);
+                }
+            }
+        }
+
+        // Индикатор выделения
+        if (selected) {
+            g2d.setColor(Color.YELLOW);
+            g2d.setStroke(new BasicStroke(2 * zoom));
+            g2d.drawOval(drawX - 2, drawY - 2, drawSize + 4, drawSize + 4);
+        }
+    }
+
+    private void drawRoundSameColorConnection(Graphics2D g, int drawX, int drawY, int drawSize,
+            int frameX, int frameY, int frameSize, Direction dir, float zoom) {
+        int connectorWidth = (int)(4 * zoom);
+        int connectorLength = (int)(6 * zoom);
+
+        switch (dir) {
+            case NORTH:
+                g.fillRect(drawX + drawSize/2 - connectorWidth/2, frameY - connectorLength,
+                        connectorWidth, connectorLength);
+                break;
+            case SOUTH:
+                g.fillRect(drawX + drawSize/2 - connectorWidth/2, frameY + frameSize,
+                        connectorWidth, connectorLength);
+                break;
+            case EAST:
+                g.fillRect(frameX + frameSize, drawY + drawSize/2 - connectorWidth/2,
+                        connectorLength, connectorWidth);
+                break;
+            case WEST:
+                g.fillRect(frameX - connectorLength, drawY + drawSize/2 - connectorWidth/2,
+                        connectorLength, connectorWidth);
+                break;
+        }
+    }
+
+    private void drawRoundDifferentColorConnection(Graphics2D g, int drawX, int drawY, int drawSize,
+            int frameX, int frameY, int frameSize, Direction dir, float zoom) {
+        int connectorSize = (int)(8 * zoom);
+
+        switch (dir) {
+            case NORTH:
+                g.fillOval(drawX + drawSize/2 - connectorSize/2, frameY - connectorSize/2,
+                        connectorSize, connectorSize);
+                break;
+            case SOUTH:
+                g.fillOval(drawX + drawSize/2 - connectorSize/2, frameY + frameSize - connectorSize/2,
+                        connectorSize, connectorSize);
+                break;
+            case EAST:
+                g.fillOval(frameX + frameSize - connectorSize/2, drawY + drawSize/2 - connectorSize/2,
+                        connectorSize, connectorSize);
+                break;
+            case WEST:
+                g.fillOval(frameX - connectorSize/2, drawY + drawSize/2 - connectorSize/2,
+                        connectorSize, connectorSize);
+                break;
+        }
+    }
+    public void drawSquareStyle(Graphics g, int offsetX, int offsetY, float zoom) {
         int drawSize = (int)(20 * zoom);
-        int drawX = (int)((getX() * 32 + offsetX + 6) * zoom);
-        int drawY = (int)((getY() * 32 + offsetY + 6) * zoom);
+        int drawX = (int)((getX() * 32 + offsetX +5) * zoom);
+        int drawY = (int)((getY() * 32 + offsetY +5) * zoom);
         int arcSize = (int)(drawSize * 0.35);
 
         Graphics2D g2d = (Graphics2D)g;

@@ -15,7 +15,7 @@ import java.awt.*;
  */
 public class WorldScreen extends GameScreen {
     public static int widthWorld = 100, heightWorld = 100;
-    public static World world;
+    public  World world;
     //Debug
     public boolean debugMode = false;
     public Font debugFont = new Font("Monospaced", Font.PLAIN, 12);
@@ -49,6 +49,7 @@ public class WorldScreen extends GameScreen {
         addMouseWheelListener(mouseController);
         addKeyListener(keyboardController);
     }
+
     public void reinitializeControllers() {
         // Удаляем старые слушатели
         this.removeMouseListener(mouseController);

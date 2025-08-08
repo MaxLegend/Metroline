@@ -20,7 +20,7 @@ import util.StyleUtil;
  * @author Tesmio
  */
 public class MainFrame extends JFrame {
-
+    public static MainFrame INSTANCE;
     public static final String SANDBOX_SCREEN_NAME = "sandbox_gamescreen";
     public static final String MAIN_MENU_SCREEN_NAME = "menu";
     public static final String GAME_SCREEN_NAME = "gamescreen";
@@ -31,6 +31,7 @@ public class MainFrame extends JFrame {
     private Map<String, GameScreen> screens = new HashMap<>();
     private boolean isFullscreen = false;
     private JLabel timeLabel = new JLabel("00:00 01.01.0000");
+    private JLabel moneyLabel = new JLabel("1000000");
     private JPanel timePanel = new JPanel();
     private Timer timeUpdateTimer;
     private String lastDisplayedTime = "00:00 01.01.0000";
@@ -52,6 +53,7 @@ public class MainFrame extends JFrame {
      */
     public MainFrame() {
         super("Metroline");
+        INSTANCE = this;
         if (screens.isEmpty()) {
             screens.put(MAIN_MENU_SCREEN_NAME, new MenuScreen(this));
             screens.put(SANDBOX_SCREEN_NAME, new WorldSandboxScreen(this));
@@ -61,6 +63,9 @@ public class MainFrame extends JFrame {
         initializeWindow(false);
         setupKeyBindings();
         initTimeUpdater();
+    }
+    public static MainFrame getInstance() {
+        return INSTANCE;
     }
     private void initializeWindow(boolean preserveState) {
        try {

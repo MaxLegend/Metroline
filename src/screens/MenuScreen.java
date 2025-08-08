@@ -48,14 +48,13 @@ public class MenuScreen extends GameScreen {
 
 
     private void loadGame(MainFrame parent, boolean isSandbox) {
-        if(isSandbox)
-        parent.switchScreen(MainFrame.SANDBOX_SCREEN_NAME);
-        else parent.switchScreen(MainFrame.GAME_SCREEN_NAME);
-
         if(isSandbox) {
+            parent.switchScreen(MainFrame.SANDBOX_SCREEN_NAME);
             WorldSandboxScreen gameScreen = (WorldSandboxScreen) parent.getCurrentScreen();
+            System.out.println("screen " + parent.getCurrentScreen());
             gameScreen.getWorld().loadWorld();
         } else {
+            parent.switchScreen(MainFrame.GAME_SCREEN_NAME);
             WorldGameScreen gameScreen = (WorldGameScreen) parent.getCurrentScreen();
             gameScreen.getWorld().loadWorld();
         }

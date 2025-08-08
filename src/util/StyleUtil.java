@@ -4,6 +4,7 @@ import javax.swing.*;
 import javax.swing.plaf.basic.BasicSliderUI;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.Serializable;
 
 public class StyleUtil {
 
@@ -223,7 +224,8 @@ public class StyleUtil {
 
     }
 
-    public static class MetrolineCheckbox implements Icon {
+    public static class MetrolineCheckbox implements Icon, Serializable {
+        private static final long serialVersionUID = 1L;
         private static final int SIZE = 16;
         private static final int INNER_PADDING = 2;
         private final boolean selected;
