@@ -1,6 +1,8 @@
 package game.objects;
 
 import game.core.GameObject;
+import game.core.GameTime;
+import game.core.world.GameWorld;
 import game.core.world.World;
 import game.objects.enums.Direction;
 import game.objects.enums.StationType;
@@ -35,25 +37,11 @@ public class Station extends GameObject {
             new Color(148, 21, 73),
             new Color(109, 148, 104),
     };
-    public static final Color[] COLORS_DARK = {
-            // Приглушенные, землистые тона
-            new Color(160, 60, 50),    // Терракотовый
-            new Color(80, 110, 60),     // Оливковый
-            new Color(60, 100, 130),    // Приглушенный синий
-            new Color(70, 80, 160),     // Сдержанный синий
-            new Color(80, 140, 160),    // Морской
-            new Color(120, 80, 50),     // Коричневый
-            new Color(170, 100, 50),    // Тыквенный
-            new Color(130, 70, 130),    // Приглушенный фиолетовый
-            new Color(160, 140, 50),    // Горчичный
-            new Color(140, 140, 140),   // Серый
-            new Color(120, 150, 70),    // Оливково-зеленый
-            new Color(70, 120, 120),    // Бирюзовый
-            new Color(150, 80, 110),    // Приглушенный розовый
-            new Color(50, 110, 90),     // Изумрудный
-            new Color(150, 70, 80),     // Вишневый
-            new Color(100, 130, 100)    // Мятный
-    };
+
+    private long buildStartTime; // Игровое время начала строительства
+    private long buildDuration = 5 * 60 * 1000; // 5 минут игрового времени
+
+
     private String name;
 
     private static final String[] NAME_PARTS = {"Pyatorocka", "Magnit", "Nizhni", "Kotova", "Baton", "Butilka",
@@ -73,6 +61,24 @@ public class Station extends GameObject {
         this.type = type;
         this.name = generateRandomName();
     }
+    public void setBuildStartTime(long gameTime) {
+        this.buildStartTime = gameTime;
+    }
+
+    public void setBuildDuration(long duration) {
+        this.buildDuration = duration;
+    }
+
+    public boolean isConstructionComplete(long currentGameTime) {
+        if (type != StationType.BUILDING) return false;
+        return currentGameTime - buildStartTime >= buildDuration;
+    }
+
+    public float getConstructionProgress(long currentGameTime) {
+        if (type != StationType.BUILDING) return 1.0f;
+        return Math.min(1.0f, (float)(currentGameTime - buildStartTime) / buildDuration);
+    }
+
     private String generateRandomName() {
         Random rand = new Random();
         return NAME_PARTS[rand.nextInt(NAME_PARTS.length)];
@@ -111,8 +117,22 @@ public class Station extends GameObject {
      * Sets the station type
      * @param type New station type
      */
-    public void setType(StationType type) { this.type = type; }
+    public void setType(StationType type, GameTime gameTime) {
+        if (type == StationType.BUILDING && this.type != StationType.BUILDING) {
+            this.buildStartTime = gameTime.getCurrentTimeMillis();
+        }
+        this.type = type;
+        // Обновляем метку, если она существует
+        Label label = getWorld().getLabelForStation(this);
+        if (label != null) {
+            label.setText(name);
+        }
 
+        // Уведомляем связанные туннели об изменении
+        if (getWorld() instanceof GameWorld) {
+            ((GameWorld)getWorld()).updateConnectedTunnels(this);
+        }
+    }
     /**
      * Gets connected stations with their directions
      * @return Map of directions to connected stations
@@ -135,8 +155,12 @@ public class Station extends GameObject {
         other.connections.put(dir, this);
 
         // Update types for both stations
-        this.updateType();
-        other.updateType();
+        if (this.type != StationType.PLANNED && this.type != StationType.BUILDING) {
+            this.updateType();
+        }
+        if (other.type != StationType.PLANNED && other.type != StationType.BUILDING) {
+            other.updateType();
+        }
 
         return true;
     }
@@ -227,17 +251,28 @@ public class Station extends GameObject {
             }
         }
 
-        int holeSize = (int)(30 * zoom);
-        int holeX = drawX + (drawSize - holeSize)/2;
-        int holeY = drawY + (drawSize - holeSize)/2;
+        if (type == StationType.PLANNED) {
+            g2d.setColor(color);
+            g2d.setStroke(new BasicStroke(2 * zoom));
+            g2d.drawOval(drawX, drawY, drawSize, drawSize);
+        } else if (type == StationType.BUILDING) {
+            g2d.setColor(color);
+            float[] dashPattern = {4 * zoom, 4 * zoom};
+            g2d.setStroke(new BasicStroke(2 * zoom, BasicStroke.CAP_BUTT,
+                    BasicStroke.JOIN_MITER, 10, dashPattern, 0));
+            g2d.drawOval(drawX, drawY, drawSize, drawSize);
+            g2d.setStroke(new BasicStroke(1 * zoom));
+        } else {
+            // Обычная отрисовка
+            int holeSize = (int)(30 * zoom);
+            int holeX = drawX + (drawSize - holeSize)/2;
+            int holeY = drawY + (drawSize - holeSize)/2;
 
-
-        g2d.setColor(getWorld().getWorldColorAt(getX(), getY()));
-        g2d.fillOval(holeX, holeY, holeSize, holeSize);
-
-        // Затем рисуем основную станцию (цветной круг)
-        g2d.setColor(color);
-        g2d.fillOval(drawX, drawY, drawSize, drawSize);
+            g2d.setColor(getWorld().getWorldColorAt(getX(), getY()));
+            g2d.fillOval(holeX, holeY, holeSize, holeSize);
+            g2d.setColor(color);
+            g2d.fillOval(drawX, drawY, drawSize, drawSize);
+        }
 
         // Отрисовываем соединения с соседними станциями
         if (!adjacentStations.isEmpty()) {
@@ -341,9 +376,24 @@ public class Station extends GameObject {
             }
         }
 
-        // Рисуем станцию
-        g2d.setColor(color);
-        g2d.fillRoundRect(drawX, drawY, drawSize, drawSize, arcSize, arcSize);
+        if (type == StationType.PLANNED) {
+            // Планируемая станция - только контур
+            g2d.setColor(color);
+            g2d.setStroke(new BasicStroke(2 * zoom));
+            g2d.drawRoundRect(drawX, drawY, drawSize, drawSize, arcSize, arcSize);
+        } else if (type == StationType.BUILDING) {
+            // Строящаяся станция - пунктирный контур
+            g2d.setColor(color);
+            float[] dashPattern = {4 * zoom, 4 * zoom};
+            g2d.setStroke(new BasicStroke(2 * zoom, BasicStroke.CAP_BUTT,
+                    BasicStroke.JOIN_MITER, 10, dashPattern, 0));
+            g2d.drawRoundRect(drawX, drawY, drawSize, drawSize, arcSize, arcSize);
+            g2d.setStroke(new BasicStroke(1 * zoom));
+        } else {
+            // Обычная отрисовка для других типов
+            g2d.setColor(color);
+            g2d.fillRoundRect(drawX, drawY, drawSize, drawSize, arcSize, arcSize);
+        }
 
         // Отрисовываем соединения между рамками
         if (!adjacentStations.isEmpty()) {
@@ -452,7 +502,25 @@ public class Station extends GameObject {
 
         return Direction.NORTH; // default
     }
-
+    public static final Color[] COLORS_DARK = {
+            // Приглушенные, землистые тона
+            new Color(160, 60, 50),    // Терракотовый
+            new Color(80, 110, 60),     // Оливковый
+            new Color(60, 100, 130),    // Приглушенный синий
+            new Color(70, 80, 160),     // Сдержанный синий
+            new Color(80, 140, 160),    // Морской
+            new Color(120, 80, 50),     // Коричневый
+            new Color(170, 100, 50),    // Тыквенный
+            new Color(130, 70, 130),    // Приглушенный фиолетовый
+            new Color(160, 140, 50),    // Горчичный
+            new Color(140, 140, 140),   // Серый
+            new Color(120, 150, 70),    // Оливково-зеленый
+            new Color(70, 120, 120),    // Бирюзовый
+            new Color(150, 80, 110),    // Приглушенный розовый
+            new Color(50, 110, 90),     // Изумрудный
+            new Color(150, 70, 80),     // Вишневый
+            new Color(100, 130, 100)    // Мятный
+    };
 }
 
 

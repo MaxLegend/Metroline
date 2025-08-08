@@ -8,6 +8,8 @@ import game.objects.PathPoint;
 import game.objects.Station;
 import game.objects.Tunnel;
 import game.objects.enums.Direction;
+import game.objects.enums.StationType;
+import game.objects.enums.TunnelType;
 import screens.MainFrame;
 import screens.WorldGameScreen;
 import screens.WorldSandboxScreen;
@@ -57,5 +59,22 @@ public class GameWorld extends World {
     public void setMoney(int amount) {
         this.money = amount;
     }
+    public void updateConnectedTunnels(Station station) {
+        for (Tunnel tunnel : getTunnels()) {
+            if (tunnel.getStart() == station || tunnel.getEnd() == station) {
+                Station otherEnd = (tunnel.getStart() == station) ? tunnel.getEnd() : tunnel.getStart();
 
+                if (station.getType() == StationType.BUILDING &&
+                        otherEnd.getType() == StationType.BUILDING) {
+                    tunnel.setType(TunnelType.BUILDING, getGameTime());
+                }
+                else if (station.getType() != StationType.PLANNED &&
+                        station.getType() != StationType.BUILDING &&
+                        otherEnd.getType() != StationType.PLANNED &&
+                        otherEnd.getType() != StationType.BUILDING) {
+                    tunnel.setType(TunnelType.ACTIVE,getGameTime());
+                }
+            }
+        }
+    }
 }

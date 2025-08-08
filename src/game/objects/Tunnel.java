@@ -1,11 +1,15 @@
 package game.objects;
 
 import game.core.GameObject;
+import game.core.GameTime;
 import game.core.world.World;
+import game.objects.enums.TunnelType;
 import screens.WorldSandboxScreen;
 
 import java.awt.*;
 import java.awt.geom.GeneralPath;
+import java.awt.geom.Path2D;
+import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,21 +17,52 @@ import java.util.List;
  * Tunnel game object connecting stations
  */
 public class Tunnel extends GameObject {
-
+    private TunnelType type;
     private Station start;
     private Station end;
     private List<PathPoint> path = new ArrayList<>();
     private PathPoint pathPoint; // For single bend tunnels
+    private long buildStartTime;
+    private long buildDuration = 8 * 60 * 1000; // 8 минут игрового времени
 
     public Tunnel() {
         super(0, 0);
     }
-    public Tunnel(World world, Station start, Station end) {
+    public Tunnel(World world, Station start, Station end, TunnelType type) {
         super(start.getX(), start.getY());
         this.setWorld(world);
         this.start = start;
         this.end = end;
+        this.type = type;
         calculatePath();
+    }
+    public void setBuildStartTime(long gameTime) {
+        this.buildStartTime = gameTime;
+    }
+
+    public void setBuildDuration(long duration) {
+        this.buildDuration = duration;
+    }
+
+    public boolean isConstructionComplete(long currentGameTime) {
+        if (type != TunnelType.BUILDING) return false;
+        return currentGameTime - buildStartTime >= buildDuration;
+    }
+
+    public float getConstructionProgress(long currentGameTime) {
+        if (type != TunnelType.BUILDING) return 1.0f;
+        return Math.min(1.0f, (float)(currentGameTime - buildStartTime) / buildDuration);
+    }
+
+    public void setType(TunnelType type, GameTime gameTime) {
+        if (type == TunnelType.BUILDING && this.type != TunnelType.BUILDING) {
+            this.buildStartTime = gameTime.getCurrentTimeMillis();
+        }
+        this.type = type;
+    }
+
+    public TunnelType getType() {
+        return type;
     }
 
     /**
@@ -141,34 +176,6 @@ public class Tunnel extends GameObject {
         return dotProduct <= 0;
     }
 
-    /**
-     * Finds a valid bend point that creates angle >= 90 degrees
-     */
-    private PathPoint findValidBendPoint(int x1, int y1, int x2, int y2) {
-        // Try points along the perpendicular bisector
-        int midX = (x1 + x2) / 4;
-        int midY = (y1 + y2) / 4;
-
-        // Try different points around the midpoint
-        for (int i = 0; i < 4; i++) {
-            int bx, by;
-            switch (i) {
-                case 0: bx = midX + (y2 - y1); by = midY - (x2 - x1); break;
-                case 1: bx = midX - (y2 - y1); by = midY + (x2 - x1); break;
-                case 2: bx = midX + (y2 - y1)/2; by = midY - (x2 - x1)/2; break;
-                case 3: bx = midX - (y2 - y1)/2; by = midY + (x2 - x1)/2; break;
-                default: bx = midX; by = midY;
-            }
-
-            if (isValidAngle(x1, y1, bx, by, x2, y2)) {
-                return new PathPoint(bx, by);
-            }
-        }
-
-        // Fallback to midpoint if no other point found (though angle might be <90)
-        return new PathPoint(midX, midY);
-    }
-
     private void addStraightPath(int x1, int y1, int x2, int y2) {
         // Use Bresenham's line algorithm to get all points between start and end
         List<Point> points = getLinePoints(x1, y1, x2, y2);
@@ -238,9 +245,61 @@ public class Tunnel extends GameObject {
 
         Graphics2D g2d = (Graphics2D)g;
         g2d.setColor(start.getColor());
-        g2d.setStroke(new BasicStroke(12 * zoom, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
 
-        // Создаем путь для плавного соединения сегментов
+        // Общие настройки для всех типов туннелей
+        float baseWidth = 12 * zoom; // Базовая толщина
+
+        if (type == TunnelType.PLANNED) {
+            // Планируемый туннель - двойная линия (контур)
+            float innerWidth = baseWidth - 4 * zoom;
+            g2d.setStroke(new BasicStroke(baseWidth, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            drawTunnelPath(g2d, offsetX, offsetY, zoom);
+
+            // Рисуем внутреннюю линию цветом фона
+            g2d.setColor(getWorld().getWorldColorAt(start.getX(), start.getY()));
+            g2d.setStroke(new BasicStroke(innerWidth, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            drawTunnelPath(g2d, offsetX, offsetY, zoom);
+
+        } else if (type == TunnelType.BUILDING) {
+            float innerWidth = baseWidth - 4 * zoom;
+            float dashLength = 4.0f * zoom; // длина штриха
+            float gapLength = 22.0f * zoom;   // длина пробела
+
+            g2d.setStroke(new BasicStroke(
+                    innerWidth,
+                    BasicStroke.CAP_SQUARE,
+                    BasicStroke.JOIN_ROUND,
+                    0,
+                    new float[]{dashLength, gapLength}, // паттерн штриховки
+                    0
+            ));
+            drawTunnelPath(g2d, offsetX, offsetY, zoom);
+
+        } else {
+            // Активный туннель - обычная сплошная линия
+            g2d.setStroke(new BasicStroke(
+                    baseWidth,
+                    BasicStroke.CAP_ROUND,
+                    BasicStroke.JOIN_ROUND
+            ));
+            drawTunnelPath(g2d, offsetX, offsetY, zoom);
+        }
+
+        // Отрисовка контрольных точек в debug-режиме
+        if(WorldSandboxScreen.getInstance().debugMode) {
+            if (selected || pathPoint != null) {
+                g2d.setColor(Color.LIGHT_GRAY);
+                for (PathPoint p : path) {
+                    int x = (int) ((p.getX() * 32 + offsetX + 16) * zoom);
+                    int y = (int) ((p.getY() * 32 + offsetY + 16) * zoom);
+                    g2d.fillOval(x - 3, y - 3, 6, 6);
+                }
+            }
+        }
+    }
+
+
+    private void drawTunnelPath(Graphics2D g2d, int offsetX, int offsetY, float zoom) {
         GeneralPath tunnelPath = new GeneralPath();
 
         PathPoint first = path.get(0);
@@ -256,18 +315,6 @@ public class Tunnel extends GameObject {
         }
 
         g2d.draw(tunnelPath);
-        if(WorldSandboxScreen.getInstance().debugMode) {
-            // Отрисовка контрольных точек
-            if (selected || pathPoint != null) {
-                g2d.setColor(Color.LIGHT_GRAY);
-                for (PathPoint p : path) {
-                    int x = (int) ((p.getX() * 32 + offsetX + 16) * zoom);
-                    int y = (int) ((p.getY() * 32 + offsetY + 16) * zoom);
-                    g2d.fillOval(x - 3, y - 3, 6, 6);
-                }
-            }
-        }
     }
-
 }
 

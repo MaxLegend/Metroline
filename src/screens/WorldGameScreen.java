@@ -75,6 +75,9 @@ public class WorldGameScreen extends WorldScreen {
         if (x < 0 || x >= getWorld().getWidth() || y < 0 || y >= getWorld().getHeight()) {
             return;
         }
+        if (isAltPressed) {
+            gameClickHandler.handleAltClick(x, y);
+        }
         if (isShiftPressed && isCPressed) {
             gameClickHandler.showColorSelectionPopup(x, y);
         }

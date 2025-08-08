@@ -143,13 +143,13 @@ public class WorldSettingsScreen extends GameScreen {
         if(innerDebugUI) {
             moneyPanel.setBorder(BorderFactory.createLineBorder(Color.PINK, 2));
         }
-        moneyValueLabel = new JLabel("10000000");
+        moneyValueLabel = new JLabel("10000");
         moneyValueLabel.setForeground(StyleUtil.FOREGROUND_COLOR);
         moneyValueLabel.setFont(new Font("Sans Serif", Font.BOLD, 13));
         moneySlider = StyleUtil.createMetrolineSlider(
-                100000,      // мин значение (100 тыс)
-                100000000,   // макс значение (100 млн)
-                10000000,    // начальное значение (10 млн)
+                100,      // мин значение (100 тыс)
+                10000,   // макс значение (100 млн)
+                1000,    // начальное значение (10 млн)
                 "",
                 moneyValueLabel
         );
@@ -310,10 +310,10 @@ public class WorldSettingsScreen extends GameScreen {
     public void onActivate() {
         widthSlider.setValue(100);
         heightSlider.setValue(100);
-        organicPatchesCheck.setSelected(true);
-        riversCheck.setSelected(true);
+        organicPatchesCheck.setSelected(false);
+        riversCheck.setSelected(false);
         roundStationsCheck.setSelected(false);
-        moneySlider.setValue(10000000);
+        moneySlider.setValue(10000);
         String formatted = String.format("%,d ₽", moneySlider.getValue());
         moneyValueLabel.setText(formatted);
     }

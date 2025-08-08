@@ -40,6 +40,7 @@ public class KeyboardController extends KeyAdapter {
     }
     private void updateKeyStates() {
         if(screen instanceof WorldScreen sbScreen) {
+            sbScreen.isAltPressed = pressedKeys.contains(KeyEvent.VK_ALT);
             sbScreen.isCtrlPressed = pressedKeys.contains(KeyEvent.VK_CONTROL);
             sbScreen.isShiftPressed = pressedKeys.contains(KeyEvent.VK_SHIFT);
             sbScreen.isCPressed = pressedKeys.contains(KeyEvent.VK_C);

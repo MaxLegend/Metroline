@@ -1,11 +1,13 @@
 package game.input;
 
 import game.core.GameObject;
+import game.core.GameTime;
 import game.objects.Label;
 import game.objects.PathPoint;
 import game.objects.Station;
 import game.objects.Tunnel;
 import game.objects.enums.StationType;
+import game.objects.enums.TunnelType;
 import screens.WorldSandboxScreen;
 
 import javax.swing.*;
@@ -154,7 +156,7 @@ public class SandboxClickHandler {
 
            if (selectedStation != null && selectedStation != station) {
                // Создаём туннель
-               Tunnel tunnel = new Tunnel(WorldSandboxScreen.getInstance().getWorld(), selectedStation, station);
+               Tunnel tunnel = new Tunnel(WorldSandboxScreen.getInstance().getWorld(), selectedStation, station, TunnelType.ACTIVE);
                WorldSandboxScreen.getInstance().getWorld().addTunnel(tunnel);
 
                // Снимаем выделение
@@ -387,7 +389,7 @@ public class SandboxClickHandler {
     private static void checkForTransferStation(Station station) {
         int x = station.getX();
         int y = station.getY();
-
+        GameTime gametime = WorldSandboxScreen.getInstance().getWorld().getGameTime();
         // Check all 8 directions
         for (int ny = Math.max(0, y-1); ny < Math.min(WorldSandboxScreen.getInstance().getWorld().getHeight(), y+2); ny++) {
             for (int nx = Math.max(0, x-1); nx < Math.min(WorldSandboxScreen.getInstance().getWorld().getWidth(), x+2); nx++) {
@@ -395,8 +397,8 @@ public class SandboxClickHandler {
 
                 Station neighbor = WorldSandboxScreen.getInstance().getWorld().getStationAt(nx, ny);
                 if (neighbor != null && !neighbor.getColor().equals(station.getColor())) {
-                    station.setType(StationType.TRANSFER);
-                    neighbor.setType(StationType.TRANSFER);
+                    station.setType(StationType.TRANSFER,gametime);
+                    neighbor.setType(StationType.TRANSFER,gametime);
                     return;
                 }
             }
