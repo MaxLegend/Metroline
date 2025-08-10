@@ -1,26 +1,31 @@
 package screens;
 
 import game.core.world.GameWorld;
-import game.core.world.SandboxWorld;
 import game.input.GameClickHandler;
-import game.input.KeyboardController;
-import game.input.MouseController;
 import game.objects.Label;
 import game.objects.PathPoint;
 import game.objects.Station;
 import game.objects.Tunnel;
 import game.objects.enums.Direction;
 
+import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.Map;
+import java.util.List;
+
 
 public class WorldGameScreen extends WorldScreen {
     public static WorldGameScreen INSTANCE;
-
+    private Timer repaintTimer;
     public GameClickHandler gameClickHandler;
-    // Input controllers
+
+    private boolean isActive = true;
+
 
     //Debug
     public boolean debugMode = false;
@@ -34,20 +39,47 @@ public class WorldGameScreen extends WorldScreen {
     public WorldGameScreen(MainFrame parent) {
         super(parent, new GameWorld(widthWorld, heightWorld, false, false, Color.WHITE, 1000));
         INSTANCE = this;
-        this.gameClickHandler = new GameClickHandler();
+        this.gameClickHandler = new GameClickHandler(((GameWorld)getWorld()).getGameTime(), this);
         initWorldCache();
+        setupRepaintTimer();
     }
 
     public void createNewWorld(int width, int height, boolean hasOrganicPatches, boolean hasRivers, Color worldColor, int money) {
+        stopRepaintTimer();
         widthWorld = width;
         heightWorld = height;
       //  this.money = money;
         this.setWorld(new GameWorld(width, height, hasOrganicPatches, hasRivers,worldColor, money));
+        this.gameClickHandler = new GameClickHandler(((GameWorld)getWorld()).getGameTime(), this);
+        setupRepaintTimer();
         invalidateCache();
         repaint();
     }
+    public void setActive(boolean active) {
+        this.isActive = active;
+        if (active) {
+            setupRepaintTimer();
+        } else {
+            stopRepaintTimer();
+        }
+    }
 
-
+    private void setupRepaintTimer() {
+        repaintTimer = new Timer(1000, e -> {
+            gameClickHandler.checkConstructionProgress();
+            repaint();
+        });
+        repaintTimer.start();
+    }
+    public void stopRepaintTimer() {
+        if (repaintTimer != null) {
+            repaintTimer.stop();
+        }
+    }
+    public void close() {
+        stopRepaintTimer();
+        // Другие операции закрытия
+    }
     /**
      *
      * MONEY MONEY MONEY!
@@ -110,6 +142,7 @@ public class WorldGameScreen extends WorldScreen {
         @Override
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
+            gameClickHandler.checkConstructionProgress();
             Graphics2D g2d = (Graphics2D)g;
 
             // Обновляем кеш при необходимости
@@ -128,11 +161,49 @@ public class WorldGameScreen extends WorldScreen {
             for (Tunnel tunnel : getWorld().getTunnels()) {
                 tunnel.draw(g, 0, 0, 1);
             }
+            if(getWorld().isRoundStationsEnabled()) {
+                for (Station station : getWorld().getStations()) {
+                    station.drawWorldColorRing(g, 0, 0, 1);
+                }
+                // 1. Сначала рисуем все соединения всех станций
+                for (Station station : getWorld().getStations()) {
+                    station.drawRoundTransfer(g, 0, 0, 1);
+                }
 
+                // 2. Затем рисуем все станции
+                for (Station station : getAllStationsSorted()) {
+                    station.drawRoundStation(g, 0, 0, 1);
+                }
 
-            for (Station station : getWorld().getStations()) {
-                station.draw(g, 0, 0, 1);
+                // 3. В конце рисуем выделения
+                for (Station station : getWorld().getStations()) {
+                    if (station.isSelected()) {
+                        station.drawRoundSelection(g, 0, 0, 1);
+                    }
+                }
+            } else {
+
+                for (Station station : getWorld().getStations()) {
+                    station.drawWorldColorSquare(g, 0, 0, 1);
+                }
+
+                for (Station station : getWorld().getStations()) {
+                    station.drawRoundTransfer(g, 0, 0, 1);
+                }
+
+                // 2. Затем рисуем все станции
+                for (Station station : getAllStationsSorted()) {
+                    station.drawSquareStation(g, 0, 0, 1);
+                }
+
+                // 3. В конце рисуем выделения
+                for (Station station : getWorld().getStations()) {
+                    if (station.isSelected()) {
+                        station.drawSquareSelection(g, 0, 0, 1);
+                    }
+                }
             }
+
 
             for (game.objects.Label label : getWorld().getLabels()) {
                 label.draw(g2d, 0, 0, 1);
@@ -146,6 +217,15 @@ public class WorldGameScreen extends WorldScreen {
                 drawDebugInfo(g2d);
             }
         }
+    private List<Station> getAllStationsSorted() {
+        // Сортируем станции по координатам, чтобы избежать перекрытий
+        List<Station> stations = new ArrayList<>(getWorld().getStations());
+        stations.sort((a, b) -> {
+            if (a.getY() != b.getY()) return Integer.compare(a.getY(), b.getY());
+            return Integer.compare(a.getX(), b.getX());
+        });
+        return stations;
+    }
         private void updateWorldCache() {
             if (worldCache == null ||
                     worldCache.getWidth() != widthWorld * 32 ||
@@ -243,6 +323,7 @@ public class WorldGameScreen extends WorldScreen {
                         yPos += 15;
                     }
                 }
+
             }
             else if (gameClickHandler.getSelectedObject() instanceof game.objects.Label) {
                 game.objects.Label label = (Label) gameClickHandler.getSelectedObject();
@@ -287,6 +368,7 @@ public class WorldGameScreen extends WorldScreen {
                     g.drawString(pointType + " " + i + ": (" + p.getX() + "," + p.getY() + ")", 20, yPos);
                     yPos += 15;
                 }
+
             }
 
             // Убираем старые методы drawTunnelDebugInfo и drawStationDebugInfo
@@ -298,6 +380,14 @@ public class WorldGameScreen extends WorldScreen {
             debugMode = !debugMode;
             repaint();
         }
+    private String formatTime(long timeMillis) {
+        return new SimpleDateFormat("HH:mm:ss").format(new Date(timeMillis));
+    }
 
+    private String formatDuration(long durationMillis) {
+        long minutes = (durationMillis / (1000 * 60)) % 60;
+        long seconds = (durationMillis / 1000) % 60;
+        return String.format("%02d:%02d", minutes, seconds);
+    }
 
     }

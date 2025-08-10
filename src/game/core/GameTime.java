@@ -30,24 +30,26 @@ public class GameTime implements Serializable {
     private static final long serialVersionUID = 1L;
 
     // Сериализуемые поля (сохраняются в файл)
+    // Сериализуемые поля
     private long epochMillis;        // текущее игровое время (мс с эпохи)
     private double timeScale = 12.0; // ускорение (1.0 = реальное время)
     private boolean paused = true;   // флаг паузы
 
-    // transient — не сериализуются
+    // transient поля
     private transient Timer timer;         // Swing таймер
-    private transient long lastRealMillis; // момент последнего обновления (мс), для корректных дельт
+    private transient long lastRealMillis; // момент последнего обновления
 
-    private static final int TICK_MS = 50; // частота тиков (мс) — ~20 тиков/сек
+    private static final int TICK_MS = 50; // частота тиков (мс)
     private static final DateTimeFormatter DISPLAY_FMT = DateTimeFormatter.ofPattern("HH:mm dd.MM.yyyy");
+
 
     /**
      * Конструктор: ставим игровую дату по умолчанию — 1 января 1930 00:00 (локальная зона).
      * Таймер не стартует автоматически — стартует SandboxWorld при создании мира (gameTime.start()).
      */
     public GameTime() {
-        ZonedDateTime zdt = LocalDateTime.of(1930, 1, 1, 0, 0)
-                                         .atZone(ZoneId.systemDefault());
+        ZonedDateTime zdt = LocalDateTime.of(1970, 1, 1, 0, 0)
+                                         .atZone(ZoneId.of("UTC"));
         this.epochMillis = zdt.toInstant().toEpochMilli();
         this.paused = true;
         // timer не создаём здесь, чтобы не запускать таймер вне контекста UI/мода.
@@ -137,13 +139,18 @@ public class GameTime implements Serializable {
         long realDelta = now - lastRealMillis;
         lastRealMillis = now;
 
-        if (paused) {
-            // при паузе ничего не добавляем, но базовую отметку уже обновили
-            return;
-        }
+        if (paused) return;
 
         long gameDelta = (long) Math.round(realDelta * timeScale);
-        epochMillis += gameDelta;
+
+        // Защита от переполнения (особенно при больших timeScale)
+        if (epochMillis > 0 && gameDelta > Long.MAX_VALUE - epochMillis) {
+            epochMillis = Long.MAX_VALUE;
+        } else if (epochMillis < 0 && gameDelta < Long.MIN_VALUE - epochMillis) {
+            epochMillis = Long.MIN_VALUE;
+        } else {
+            epochMillis += gameDelta;
+        }
     }
 
     /**

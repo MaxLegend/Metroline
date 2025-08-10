@@ -146,7 +146,12 @@ public class MainFrame extends JFrame {
     /**
      * UI Initialization
      */
-
+    public void updateMoneyDisplay(int amount) {
+        SwingUtilities.invokeLater(() -> {
+            moneyLabel.setText(String.valueOf(amount));
+            timePanel.repaint();
+        });
+    }
     private JWindow currentPopup;
     private AWTEventListener outsideClickListener;
     private void initUI() {
@@ -177,30 +182,7 @@ public class MainFrame extends JFrame {
         timePanel.add(moneyPanel, BorderLayout.EAST);
 
         add(timePanel, BorderLayout.SOUTH);
-//        timePanel.removeAll();
-//
-//        if (timeLabel == null) {
-//            timeLabel = new JLabel(lastDisplayedTime);
-//            timeLabel.setFont(new Font("Arial", Font.PLAIN, 14));
-//        } else {
-//            timeLabel.setForeground(Color.WHITE);
-//            timeLabel.setText(lastDisplayedTime);
-//        }
-//
-//        timePanel.setBackground(new Color(60, 60, 60));
-//        JPanel moneyPanel = new JPanel();
-//        moneyPanel.setBackground(new Color(60, 60, 60));
-//        moneyLabel = new JLabel("0 ₽");
-//        moneyLabel.setFont(new Font("Arial", Font.BOLD, 14));
-//        moneyLabel.setForeground(new Color(255, 215, 0)); // золотой цвет
-//        moneyPanel.add(moneyLabel);
-//        timePanel.add(moneyPanel);
-//
-//        timePanel.add(timeLabel);
-//        timePanel.add(StyleUtil.createMetrolineInGameButton(LngUtil.translatable("timebar.pause"), e -> timeControl()));
-//        add(timePanel, BorderLayout.SOUTH);
 
-        // Toolbar (upper panel)
         toolBar = new JToolBar();
         toolBar.setFloatable(false);
         toolBar.setVisible(false);

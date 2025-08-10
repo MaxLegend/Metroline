@@ -28,7 +28,7 @@ public class World implements Serializable {
 
     public GameTime gameTime;
     public static final long serialVersionUID = 1L;
-    public static final String SAVE_FOLDER = "metroline_saves";
+    public static final String SAVE_FOLDER = "saves";
     public String SAVE_FILE;
     public Random rand = new Random();
     protected int width, height;
@@ -54,6 +54,7 @@ public class World implements Serializable {
         this.height = height;
         this.gameTime = new GameTime();
         this.gameTime.start();
+
         this.SAVE_FILE = saveName;
         generateWorld(hasOrganicPatches, hasRivers,worldColor);
     }
@@ -318,13 +319,12 @@ public class World implements Serializable {
      * @param tunnel Tunnel to add
      * @return True if tunnel was added successfully
      */
-    public boolean addTunnel(Tunnel tunnel) {
+    public void addTunnel(Tunnel tunnel) {
 
         if (tunnel.getStart().connect(tunnel.getEnd())) {
             tunnels.add(tunnel);
-            return true;
         }
-        return false;
+
     }
     /**
      * Gets the tunnel at specified coordinates
@@ -531,7 +531,9 @@ public class World implements Serializable {
     public WorldTile getWorldTile(int x, int y) {
         return worldGrid[x][y];
     }
-
+    public GameTile getGameTile(int x, int y) {
+        return gameGrid[x][y];
+    }
     /**
      * Gets the world grid
      * @return 2D array of world tiles
@@ -594,7 +596,10 @@ public class World implements Serializable {
         saveData.tunnels = this.tunnels;
         saveData.labels = this.labels;
         saveData.gameTime = this.gameTime;
+        saveData.roundStationsEnabled = this.roundStationsEnabled;
+
         saveData.SAVE_FILE = this.SAVE_FILE;
+
         try {
             // Проверка сериализуемости перед сохранением
             new ObjectOutputStream(new ByteArrayOutputStream()).writeObject(this);
@@ -631,7 +636,10 @@ public class World implements Serializable {
             this.tunnels = loaded.tunnels;
             this.labels = loaded.labels;
             this.gameTime = loaded.gameTime;
+            this.roundStationsEnabled = loaded.roundStationsEnabled;
+
            this.SAVE_FILE = loaded.SAVE_FILE;
+
 
             if (loaded.getGameTime() != null) {
                 loaded.getGameTime().start();

@@ -8,6 +8,9 @@ import java.io.File;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.logging.Level;
 
@@ -48,7 +51,17 @@ public class Main {
     }
 
     private static void showFatalError(String title, Throwable throwable) {
-        try (PrintWriter pw = new PrintWriter("metroline_crash_" + System.currentTimeMillis() + ".log")) {
+        Date d = new Date();
+        ZonedDateTime now = ZonedDateTime.now();
+
+        try (PrintWriter pw = new PrintWriter("metroline_crash_"
+                + now.getDayOfMonth() + "_"
+                + now.getMonth().getValue() + "_"
+                + now.getYear() + "_in_"
+                + now.getHour() + "_"
+                + now.getMinute() + "_"
+                + now.getSecond()
+                + ".log")) {
             pw.println("=== CRASH REPORT ===");
             pw.println("Time: " + new Date());
             pw.println("Title: " + title);

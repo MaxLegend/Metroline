@@ -4,7 +4,7 @@ import java.awt.*;
 
 public class SandboxWorld extends World {
 
-    private static final String SAVE_FILE = "sandbox_save.metro";
+    private static final String SAVE_FILE = "sandbox_save.bin";
 
     public SandboxWorld() {
         super();

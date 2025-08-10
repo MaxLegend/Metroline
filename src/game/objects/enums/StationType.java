@@ -4,6 +4,8 @@ package game.objects.enums;
  * Enum for station types
  */
 public enum StationType {
+    DESTROYED,
+    CLOSED,
     PLANNED,
     BUILDING,
     REGULAR,    // Square

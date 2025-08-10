@@ -35,5 +35,9 @@ public class GameTile extends Tile {
      * @return True if no game object is present
      */
     public boolean isEmpty() { return content == null; }
+
+    public GameTile getGameTile() {
+        return new GameTile(getX(), getY());
+    }
 }
 

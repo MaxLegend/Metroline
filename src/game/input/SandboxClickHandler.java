@@ -2,10 +2,8 @@ package game.input;
 
 import game.core.GameObject;
 import game.core.GameTime;
+import game.objects.*;
 import game.objects.Label;
-import game.objects.PathPoint;
-import game.objects.Station;
-import game.objects.Tunnel;
 import game.objects.enums.StationType;
 import game.objects.enums.TunnelType;
 import screens.WorldSandboxScreen;
@@ -32,7 +30,7 @@ public class SandboxClickHandler {
     private static boolean dragging = false;
     static PathPoint dragOffset = null;
 
-    private static Color currentStationColor = Station.COLORS[0]; // Красный по умолчанию
+    private static Color currentStationColor = GameConstants.COLORS[0]; // Красный по умолчанию
      boolean colorSelectionEnabled = false;
 
     /**
@@ -192,7 +190,7 @@ public class SandboxClickHandler {
         // Конвертируем мировые координаты в экранные
         Point screenPos = WorldSandboxScreen.getInstance().worldToScreen(x, y);
 
-        for (Color color : Station.COLORS) {
+        for (Color color : GameConstants.COLORS) {
             JButton colorBtn = new JButton();
             colorBtn.setBackground(color);
             colorBtn.setPreferredSize(new Dimension(30, 30));
@@ -397,8 +395,8 @@ public class SandboxClickHandler {
 
                 Station neighbor = WorldSandboxScreen.getInstance().getWorld().getStationAt(nx, ny);
                 if (neighbor != null && !neighbor.getColor().equals(station.getColor())) {
-                    station.setType(StationType.TRANSFER,gametime);
-                    neighbor.setType(StationType.TRANSFER,gametime);
+                    station.setType(StationType.TRANSFER);
+                    neighbor.setType(StationType.TRANSFER);
                     return;
                 }
             }

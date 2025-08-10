@@ -3,13 +3,12 @@ package game.input;
 import game.core.GameObject;
 import game.core.GameTime;
 import game.core.world.GameWorld;
+import game.objects.*;
 import game.objects.Label;
-import game.objects.PathPoint;
-import game.objects.Station;
-import game.objects.Tunnel;
 import game.objects.enums.StationType;
 import game.objects.enums.TunnelType;
 import screens.WorldGameScreen;
+import util.MetroLogger;
 
 import javax.swing.*;
 import java.awt.*;
@@ -17,6 +16,8 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.ArrayList;
+import java.util.List;
 
 import static screens.WorldGameScreen.getInstance;
 
@@ -27,62 +28,67 @@ public class GameClickHandler {
     private static int dragStartY;
     private static boolean dragging = false;
     static PathPoint dragOffset = null;
-
-    private static Color currentStationColor = Station.COLORS[0]; // Красный по умолчанию
+    public WorldGameScreen screen;
+    private static Color currentStationColor = GameConstants.COLORS[0]; // Красный по умолчанию
     boolean colorSelectionEnabled = false;
 
+    private GameTime gameTime;
 
-    private static final int STATION_BUILD_COST = 100;
-    private static final int TUNNEL_BUILD_COST = 50;
+    public static final int STATION_BASE_COST = 100;
+    public static final int TUNNEL_COST_PER_SEGMENT = 10;
 
+
+    public GameClickHandler(GameTime gameTime, WorldGameScreen screen) {
+        this.gameTime = gameTime;
+        this.screen = screen;
+    }
     /**
      * Handles Alt+Click to switch between PLANNED and BUILDING states
      */
     public void handleAltClick(int x, int y) {
         GameWorld world = (GameWorld)WorldGameScreen.getInstance().getWorld();
-        GameTime gameTime = world.getGameTime();
-        // Проверяем станции
         Station station = world.getStationAt(x, y);
-        if (station != null) {
-            if (station.getType() == StationType.PLANNED) {
-                // Переключаем в BUILDING, если есть деньги
-                if (world.canAfford(STATION_BUILD_COST)) {
-                    world.addMoney(-STATION_BUILD_COST);
-                    station.setType(StationType.BUILDING,gameTime);
-                    // Здесь можно запустить таймер на завершение строительства
-                } else {
-                    JOptionPane.showMessageDialog(WorldGameScreen.getInstance(),
-                            "Not enough money to start construction!",
-                            "Error", JOptionPane.ERROR_MESSAGE);
-                }
-            } else if (station.getType() == StationType.BUILDING) {
-                // Можно добавить логику для отмены строительства
-                // или переключения обратно в PLANNED
-            }
-            WorldGameScreen.getInstance().repaint();
-        }
-    }
-    private void updateConnectedTunnels(Station station) {
-        GameWorld world = (GameWorld)WorldGameScreen.getInstance().getWorld();
-        GameTime gameTime = world.getGameTime();
-        for (Tunnel tunnel : world.getTunnels()) {
-            if (tunnel.getStart() == station || tunnel.getEnd() == station) {
-                Station otherEnd = (tunnel.getStart() == station) ? tunnel.getEnd() : tunnel.getStart();
 
-                // Если обе станции BUILDING - туннель становится BUILDING
-                if (station.getType() == StationType.BUILDING &&
-                        otherEnd.getType() == StationType.BUILDING) {
-                    tunnel.setType(TunnelType.BUILDING,gameTime);
-                }
-                // Если обе станции построены (не PLANNED/BUILDING) - туннель ACTIVE
-                else if (station.getType() != StationType.PLANNED &&
-                        station.getType() != StationType.BUILDING &&
-                        otherEnd.getType() != StationType.PLANNED &&
-                        otherEnd.getType() != StationType.BUILDING) {
-                    tunnel.setType(TunnelType.ACTIVE,gameTime);
-                }
+        if (station != null && station.getType() == StationType.PLANNED) {
+            int stationCost = calculateStationCost(station);
+            if (world.canAfford(stationCost)) {
+                world.addMoney(-stationCost);
+                station.setType(StationType.BUILDING);
+                world.addStation(station);
             }
         }
+        WorldGameScreen.getInstance().repaint();
+    }
+//    public void handleAltClick(int x, int y) {
+//        GameWorld world = (GameWorld)WorldGameScreen.getInstance().getWorld();
+//        Station station = world.getStationAt(x, y);
+//
+//        if (station != null) {
+//            if (station.getType() == StationType.PLANNED) {
+//                if (world.canAfford(STATION_BASE_COST)) {
+//                    world.addMoney(-STATION_BASE_COST);
+//                    // Важно: сначала меняем тип, потом добавляем в мир
+//                    station.setType(StationType.BUILDING);
+//                    world.addStation(station); // Это обновит время строительства
+//
+//            //        MetroLogger.logInfo("Construction STARTED for station: " + station.getName());
+//                }
+//            }
+//        }
+//        WorldGameScreen.getInstance().repaint();
+//    }
+    private int calculateStationCost(Station station) {
+        int totalCost = STATION_BASE_COST;
+
+        // Добавляем стоимость всех связанных туннелей
+        for (Tunnel tunnel : WorldGameScreen.getInstance().getWorld().getTunnels()) {
+            if ((tunnel.getStart() == station || tunnel.getEnd() == station) &&
+                    tunnel.getType() == TunnelType.PLANNED) {
+                totalCost += tunnel.getLength() * TUNNEL_COST_PER_SEGMENT;
+            }
+        }
+
+        return totalCost;
     }
     /**
      * Handles mouse drag in edit mode
@@ -158,28 +164,68 @@ public class GameClickHandler {
             }
         }
     }
-//    public void completeConstruction(Station station) {
-//        if (station.getType() == StationType.BUILDING) {
-//            // Автоматически определяем правильный тип для построенной станции
-//            station.updateType();
-//            // Обновляем связанные туннели
-//            updateConnectedTunnels(station);
-//            WorldGameScreen.getInstance().repaint();
-//        }
-//    }
-//
-//    public void completeConstruction(Tunnel tunnel) {
-//        if (tunnel.getType() == TunnelType.BUILDING) {
-//            // Проверяем, что обе станции построены
-//            if (tunnel.getStart().getType() != StationType.PLANNED &&
-//                    tunnel.getStart().getType() != StationType.BUILDING &&
-//                    tunnel.getEnd().getType() != StationType.PLANNED &&
-//                    tunnel.getEnd().getType() != StationType.BUILDING) {
-//                tunnel.setType(TunnelType.ACTIVE,gameTime);
-//                WorldGameScreen.getInstance().repaint();
-//            }
-//        }
-//    }
+    public void checkConstructionProgress() {
+        GameWorld world = (GameWorld)WorldGameScreen.getInstance().getWorld();
+
+        // Создаем копии списков для безопасной итерации
+        List<Station> stationsToCheck = new ArrayList<>(world.getStations());
+        List<Tunnel> tunnelsToCheck = new ArrayList<>(world.getTunnels());
+
+        // Для станций
+        for (Station station : stationsToCheck) {
+            try {
+                if (station.getType() == StationType.BUILDING || station.getType() == StationType.DESTROYED) {
+                    float progress = world.getStationConstructionProgress(station);
+                    if (station.getType() == StationType.BUILDING && progress >= 1.0f) {
+                        completeConstruction(station);
+                    } else if (station.getType() == StationType.DESTROYED && progress <= 0f) {
+                        world.removeStation(station);
+                        WorldGameScreen.getInstance().repaint();
+                    }
+                }
+            } catch (Exception e) {
+                MetroLogger.logError("Error processing station " + station.getName(), e);
+            }
+        }
+
+        // Для туннелей
+        for (Tunnel tunnel : tunnelsToCheck) {
+            try {
+                if (tunnel.getType() == TunnelType.BUILDING || tunnel.getType() == TunnelType.DESTROYED) {
+                    float progress = world.getTunnelConstructionProgress(tunnel);
+                    if (tunnel.getType() == TunnelType.BUILDING && progress >= 1.0f) {
+                        completeConstruction(tunnel);
+                    } else if (tunnel.getType() == TunnelType.DESTROYED && progress <= 0f) {
+                        world.removeTunnel(tunnel);
+                        WorldGameScreen.getInstance().repaint();
+                    }
+                }
+            } catch (Exception e) {
+                MetroLogger.logError("Error processing tunnel", e);
+            }
+        }
+    }
+
+    public void completeConstruction(Station station) {
+        if (station.getType() == StationType.BUILDING) {
+            station.updateType();
+            if(WorldGameScreen.getInstance().getWorld() instanceof GameWorld world) world.updateConnectedTunnels(station);
+            WorldGameScreen.getInstance().repaint();
+        }
+    }
+
+    public void completeConstruction(Tunnel tunnel) {
+        if (tunnel.getType() == TunnelType.BUILDING) {
+            // Проверяем, что обе станции построены
+            if (tunnel.getStart().getType() != StationType.PLANNED &&
+                    tunnel.getStart().getType() != StationType.BUILDING &&
+                    tunnel.getEnd().getType() != StationType.PLANNED &&
+                    tunnel.getEnd().getType() != StationType.BUILDING) {
+                tunnel.setType(TunnelType.ACTIVE);
+                WorldGameScreen.getInstance().repaint();
+            }
+        }
+    }
     /**
      * Handles delete game objects
      */
@@ -200,9 +246,11 @@ public class GameClickHandler {
         WorldGameScreen.getInstance().repaint();
     }
     public void handleRemoveTunnel(int worldX, int worldY) {
+
         Tunnel tunnel = WorldGameScreen.getInstance().getWorld().getTunnelAt(worldX, worldY);
         if (tunnel != null) {
-            WorldGameScreen.getInstance().getWorld().removeTunnel(tunnel);
+            GameWorld gameWorld = (GameWorld) WorldGameScreen.getInstance().getWorld();
+            gameWorld.startDestroyingTunnel(tunnel);
             WorldGameScreen.getInstance().repaint();
         }
     }
@@ -219,20 +267,22 @@ public class GameClickHandler {
      * @param y Y coordinate
      */
     public void handleTunnelClick(int x, int y) {
-
-        Station station = WorldGameScreen.getInstance().getWorld().getStationAt(x, y);
+        GameWorld world = (GameWorld)WorldGameScreen.getInstance().getWorld();
+        Station station = world.getStationAt(x, y);
         if (station == null) return;
 
         // Если есть уже выбранная станция и это не та же самая
 
         if (selectedStation != null && selectedStation != station) {
             // Создаём туннель
-            Tunnel tunnel = new Tunnel(WorldGameScreen.getInstance().getWorld(),selectedStation, station, TunnelType.PLANNED);
-            WorldGameScreen.getInstance().getWorld().addTunnel(tunnel);
+            Tunnel tunnel = new Tunnel(world, selectedStation, station, TunnelType.PLANNED);
+
+            world.addTunnel(tunnel);
 
             // Снимаем выделение
             selectedStation.setSelected(false);
             selectedStation = null;
+
         } else {
             // Выбираем новую станцию (или снимаем выделение если кликнули ту же)
             if (selectedStation == station) {
@@ -263,7 +313,7 @@ public class GameClickHandler {
         // Конвертируем мировые координаты в экранные
         Point screenPos = WorldGameScreen.getInstance().worldToScreen(x, y);
 
-        for (Color color : Station.COLORS) {
+        for (Color color : GameConstants.COLORS) {
             JButton colorBtn = new JButton();
             colorBtn.setBackground(color);
             colorBtn.setPreferredSize(new Dimension(30, 30));
@@ -274,7 +324,7 @@ public class GameClickHandler {
 
             colorBtn.addActionListener(e -> {
                 GameClickHandler.currentStationColor = color;
-                Station newStation = new Station(WorldGameScreen.getInstance().getWorld(),x, y, color, StationType.REGULAR);
+                Station newStation = new Station(WorldGameScreen.getInstance().getWorld(),x, y, color, StationType.PLANNED);
                 WorldGameScreen.getInstance().getWorld().addStation(newStation);
                 WorldGameScreen.getInstance().repaint();
                 colorDialog.dispose();
@@ -438,7 +488,20 @@ public class GameClickHandler {
             if (!existing.selected && !getInstance().isShiftPressed) {
                 existing.setSelected(true);
             } else if(getInstance().isShiftPressed) {
-                WorldGameScreen.getInstance().getWorld().removeStation(existing);
+                GameWorld gameWorld = (GameWorld) WorldGameScreen.getInstance().getWorld();
+                if(getInstance().isAltPressed) {
+                    gameWorld.startDestroyingStation(existing);
+                    return;
+                }
+                if(existing.getType() == StationType.PLANNED) {
+                    WorldGameScreen.getInstance().getWorld().removeStation(existing);
+                }
+                if(existing.getType() == StationType.CLOSED) {
+                    existing.setType(StationType.REGULAR);
+                } else {
+                existing.setType(StationType.CLOSED);
+                }
+                //     WorldGameScreen.getInstance().getWorld().removeStation(existing);
             }
             return; // Выходим, если станция уже существует
         }
@@ -468,8 +531,8 @@ public class GameClickHandler {
 
                 Station neighbor = WorldGameScreen.getInstance().getWorld().getStationAt(nx, ny);
                 if (neighbor != null && !neighbor.getColor().equals(station.getColor())) {
-                    station.setType(StationType.TRANSFER,gameTime);
-                    neighbor.setType(StationType.TRANSFER,gameTime);
+                    station.setType(StationType.TRANSFER);
+                    neighbor.setType(StationType.TRANSFER);
                     return;
                 }
             }
