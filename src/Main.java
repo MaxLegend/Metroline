@@ -1,18 +1,13 @@
-import screens.MainFrame;
+import metroline.MainFrame;
 
-import util.MetroLogger;
+import metroline.util.MetroLogger;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.File;
-import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.util.Date;
-import java.util.logging.Level;
 
 /**
  * Main class my game Metroline.
