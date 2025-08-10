@@ -36,7 +36,7 @@ public class MainFrame extends JFrame {
     private boolean isFullscreen = false;
     private JLabel timeLabel = new JLabel("00:00 01.01.0000");
 
-    JLabel moneyLabel = new JLabel("100");
+    public JLabel moneyLabel = new JLabel("100");
 
     private JPanel timePanel = new JPanel();
     private Timer timeUpdateTimer;
