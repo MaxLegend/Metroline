@@ -5,11 +5,16 @@ import util.StyleUtil;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.util.Locale;
+import java.util.prefs.Preferences;
 
 /**
  * Menu screen implementation
  */
 public class MenuScreen extends GameScreen {
+
     public MenuScreen(MainFrame parent) {
         super(parent);
         setBackground(new Color(30, 30, 30));
@@ -23,7 +28,7 @@ public class MenuScreen extends GameScreen {
         gbc.weightx = 0;
 
         // Title
-        JLabel title = new JLabel("METROLINE");
+        JLabel title = new JLabel("METROLINE", SwingUtilities.CENTER);
         title.setForeground(Color.WHITE);
         title.setFont(new Font("Arial", Font.BOLD, 42));
         gbc.insets = new Insets(0, 30, 50, 0);
@@ -47,11 +52,11 @@ public class MenuScreen extends GameScreen {
     }
 
 
+
     private void loadGame(MainFrame parent, boolean isSandbox) {
         if(isSandbox) {
             parent.switchScreen(MainFrame.SANDBOX_SCREEN_NAME);
             WorldSandboxScreen gameScreen = (WorldSandboxScreen) parent.getCurrentScreen();
-            System.out.println("screen " + parent.getCurrentScreen());
             gameScreen.getWorld().loadWorld();
         } else {
             parent.switchScreen(MainFrame.GAME_SCREEN_NAME);
@@ -62,6 +67,6 @@ public class MenuScreen extends GameScreen {
 
     @Override
     public void onActivate() {
-        // Nothing special needed for menu screen
+
     }
 }

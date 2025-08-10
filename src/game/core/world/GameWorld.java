@@ -311,21 +311,22 @@ public class GameWorld extends World {
 
 public void initWorldGrid() {
     this.worldGrid = new WorldTile[width][height];
-
+    this.gameGrid = new GameTile[width][height];
     for (int x = 0; x < width; x++) {
         for (int y = 0; y < height; y++) {
             worldGrid[x][y] = new WorldTile(x,y, 0);
+            gameGrid[x][y] = new GameTile(x,y);
         }
     }
 }
     public void initGameGrid() {
         this.gameGrid = new GameTile[width][height];
-
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
                 gameGrid[x][y] = new GameTile(x,y);
             }
         }
+
     }
     public void saveWorld() {
         try {
@@ -350,6 +351,8 @@ public void initWorldGrid() {
             // Копируем данные из загруженного мира
             this.width = loaded.width;
             this.height = loaded.height;
+            this.initWorldGrid();
+            this.initGameGrid();
             this.money = loaded.money;
             this.worldGrid = loaded.worldGrid;
             this.gameGrid = loaded.gameGrid;
@@ -380,7 +383,11 @@ public void initWorldGrid() {
             if (this.screen != null) {
                 this.screen.reinitializeControllers();
             }
-
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    gameGrid[x][y].restoreContent(this);
+                }
+            }
             MetroLogger.logInfo("World successfully loaded");
             MessageUtil.showTimedMessage(LngUtil.translatable("world.loaded"), false, 2000);
             return true;

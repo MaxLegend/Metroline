@@ -50,7 +50,7 @@ public class WorldTile extends Tile implements Serializable {
     public void setPerm(float perm) { this.perm = perm; }
 
     public void setBaseTileColor(Color color) {
-        baseTileColor = color;
+        this.baseTileColor = color != null ? color : Color.BLACK;
     }
     public Color getBaseTileColor() {
         return baseTileColor;

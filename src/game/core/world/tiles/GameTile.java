@@ -2,6 +2,10 @@ package game.core.world.tiles;
 
 import game.core.GameObject;
 import game.core.Tile;
+import game.core.world.GameWorld;
+import game.objects.Label;
+import game.objects.Station;
+import util.MetroLogger;
 
 import java.io.Serializable;
 
@@ -11,7 +15,7 @@ import java.io.Serializable;
  */
 public class GameTile extends Tile {
 
-    private GameObject content;
+    private transient GameObject content;
     public GameTile() {
         super(0, 0, 16); // Значения по умолчанию
     }
@@ -28,7 +32,10 @@ public class GameTile extends Tile {
      * Sets the game object in this tile
      * @param content GameObject to place or null to clear
      */
-    public void setContent(GameObject content) { this.content = content; }
+    public void setContent(GameObject content) {
+
+        this.content = content;
+    }
 
     /**
      * Checks if this tile is empty
@@ -38,6 +45,13 @@ public class GameTile extends Tile {
 
     public GameTile getGameTile() {
         return new GameTile(getX(), getY());
+    }
+    public void restoreContent(GameWorld world) {
+        if (content instanceof Station) {
+            content = world.getStationAt(getX(), getY());
+        } else if (content instanceof Label) {
+            content = world.getLabelAt(getX(), getY());
+        }
     }
 }
 

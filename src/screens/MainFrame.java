@@ -97,7 +97,7 @@ public class MainFrame extends JFrame {
         }
     }
 
-    private String getActiveScreenName() {
+    String getActiveScreenName() {
         for (Map.Entry<String, GameScreen> entry : screens.entrySet()) {
             if (entry.getValue() == currentScreen) {
                 return entry.getKey();
@@ -148,7 +148,7 @@ public class MainFrame extends JFrame {
      */
     public void updateMoneyDisplay(int amount) {
         SwingUtilities.invokeLater(() -> {
-            moneyLabel.setText(String.valueOf(amount));
+            moneyLabel.setText(String.valueOf(amount) + " " + LngUtil.translatable("money.currency"));
             timePanel.repaint();
         });
     }

@@ -1,5 +1,6 @@
 package util;
 
+import game.core.GameObject;
 import game.core.GameTime;
 import game.core.world.GameWorld;
 import game.core.world.World;
@@ -18,9 +19,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
-
 public class MetroSerializer {
     private static final String VERSION = "1.0";
     private static final String SAVE_FOLDER = "saves";
@@ -29,6 +27,38 @@ public class MetroSerializer {
                 color.getRed(),
                 color.getGreen(),
                 color.getBlue());
+    }
+    private String serializeGameObject(GameObject obj) {
+        if (obj instanceof Station) {
+            Station station = (Station) obj;
+            return String.format("station:%s", escapeString(station.getName()));
+        } else if (obj instanceof Label) {
+            Label label = (Label) obj;
+            return String.format("label:%s", escapeString(label.getText()));
+        }
+        return "null";
+    }
+    private GameObject parseGameObject(String contentStr, GameWorld world, Map<String, Station> stationMap) {
+
+        String[] parts = contentStr.split(":");
+        String type = parts[0];
+        String value = unescapeString(parts[1]);
+
+        return switch (type) {
+            case "station" -> {
+                Station station = stationMap.get(value);
+                yield station;
+            }
+            case "label" -> {
+                for (Label label : world.getLabels()) {
+                    if (label.getText().equals(value)) {
+                        yield label;
+                    }
+                }
+                yield null;
+            }
+            default -> null;
+        };
     }
     public void saveWorld(GameWorld world, String filename) throws IOException {
         File saveDir = new File(SAVE_FOLDER);
@@ -53,7 +83,6 @@ public class MetroSerializer {
             // Время игры
             writer.write("gameTime:" + world.getGameTime().getCurrentTimeMillis() + "\n");
 
-
             //Мир
             writer.write("worldGrid:[\n");
             for (int y = 0; y < world.getHeight(); y++) {
@@ -63,22 +92,13 @@ public class MetroSerializer {
                             "{x:%d,y:%d,perm:%.2f,color:%s}",
                             x, y,
                             tile.getPerm(),
+
                             colorToHex(tile.getCurrentColor())
                     ) + "\n");
                 }
             }
             writer.write("]\n");
 
-            // Добавляем сохранение gameGrid (если нужно)
-            writer.write("gameGrid:[\n");
-            for (int y = 0; y < world.getHeight(); y++) {
-                for (int x = 0; x < world.getWidth(); x++) {
-                    GameTile tile = world.getGameGrid()[x][y];
-                    // Здесь можно сохранить необходимые данные из GameTile
-                    writer.write(String.format("{x:%d,y:%d}", x, y) + "\n");
-                }
-            }
-            writer.write("]\n");
             // Станции
             writer.write("stations:[\n");
             for (Station station : world.getStations()) {
@@ -172,6 +192,22 @@ public class MetroSerializer {
                 ) + "\n");
             }
             writer.write("]\n");
+
+            writer.write("]\n");
+            writer.write("gameGrid:[\n");
+            for (int y = 0; y < world.getHeight(); y++) {
+                for (int x = 0; x < world.getWidth(); x++) {
+                    GameTile tile = world.getGameGrid()[x][y];
+                    GameObject content = tile.getContent();
+
+                    writer.write(String.format(
+                            "{x:%d,y:%d,content:%s}",
+                            x, y,
+                            content != null ? serializeGameObject(content) : "null"
+                    ) + "\n");
+                }
+            }
+            writer.write("]\n");
         }
     }
     private String extractValue(String part, String expectedKey) {
@@ -206,11 +242,30 @@ public class MetroSerializer {
                     continue;
                 }
 
-                if (line.equals("worldGrid:[")) {
+                if (line.startsWith("width:")) {
+                    world.setWidth(Integer.parseInt(line.substring("width:".length())));
+                }
+                else if (line.startsWith("height:")) {
+                    world.setHeight(Integer.parseInt(line.substring("height:".length())));
+                }
+
+                else if (line.startsWith("money:")) {
+                    world.setMoney(Integer.parseInt(line.substring("money:".length())));
+                }
+                else if (line.startsWith("roundStations:")) {
+                    world.setRoundStationsEnabled(Boolean.parseBoolean(line.substring("roundStations:".length())));
+                }
+                else if (line.startsWith("gameTime:")) {
+                    long time = Long.parseLong(line.substring("gameTime:".length()));
+                    GameTime gameTime = new GameTime();
+              //      gameTime.setCurrentTime(time);
+                    world.gameTime = gameTime;
+                }  else if (line.equals("worldGrid:[")) {
                     // Чтение worldGrid с улучшенной обработкой ошибок
                     world.initWorldGrid();
+
                     while (!(line = reader.readLine()).equals("]")) {
-                        try {
+
                             line = line.trim();
                             if (!line.startsWith("{") || !line.endsWith("}")) continue;
 
@@ -218,70 +273,50 @@ public class MetroSerializer {
                             // Используем регулярное выражение для корректного разбиения
                             String[] parts = content.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
 
-                            if (parts.length < 4) {
-                                MetroLogger.logInfo("Invalid worldGrid line format: " + line);
-                                continue;
-                            }
 
                             int x = Integer.parseInt(extractValue(parts[0], "x"));
                             int y = Integer.parseInt(extractValue(parts[1], "y"));
                             float perm = Float.parseFloat(extractValue(parts[2], "perm"));
-                            String colorStr = extractValue(parts[3], "color");
-                            Color color = parseColor(colorStr);
+                            Color color = parseColor(extractValue(parts[3], "color"));
 
                             WorldTile tile = world.getWorldTile(x, y);
                             if (tile != null) {
                                 tile.setPerm(perm);
                                 tile.setBaseTileColor(color);
+
                             }
-                        } catch (Exception e) {
-                            MetroLogger.logError("Failed to parse worldGrid line: " + line, e);
-                        }
+
                     }
                 }
-                else if (line.equals("gameGrid:[")) {
-                    // Чтение gameGrid (если нужно)
-                    world.initGameGrid();
 
-                }
-
-//                if (line.equals("worldGrid:[")) {
-//                    // Чтение worldGrid
-//                    while (!(line = reader.readLine()).equals("]")) {
-//                        String[] parts = line.substring(1, line.length()-1).split(",");
-//
-//                        int x = Integer.parseInt(parts[0].split(":")[1]);
-//                        int y = Integer.parseInt(parts[1].split(":")[1]);
-//                        float perm = Float.parseFloat(parts[2].split(":")[1]);
-//                        String colorStr = parts[3].split(":")[1];
-//                        Color color = parseColor(colorStr);
-//
-//                        WorldTile tile = world.getWorldTile(x, y);
-//                        tile.setPerm(perm);
-//                        tile.setBaseTileColor(color);
-//                    }
-//                }
                 else
                 if (line.equals("stations:[")) {
                     // Чтение станций
                     while (!(line = reader.readLine()).equals("]")) {
                         Station station = parseStation(line, world);
                         stationMap.put(station.getName(), station);
-                        world.getStations().add(station);
+                        if (station != null) {
+                            world.getStations().add(station);
+                        }
                     }
                 }
+
                 else if (line.equals("tunnels:[")) {
                     // Чтение туннелей
                     while (!(line = reader.readLine()).equals("]")) {
                         Tunnel tunnel = parseTunnel(line, world, stationMap);
-                        world.getTunnels().add(tunnel);
+                        if (tunnel != null) {
+                            world.getTunnels().add(tunnel);
+                        }
                     }
                 }
                 else if (line.equals("labels:[")) {
                     // Чтение меток
                     while (!(line = reader.readLine()).equals("]")) {
                         Label label = parseLabel(line, world, stationMap);
-                        world.getLabels().add(label);
+                        if (label != null) {
+                            world.getLabels().add(label);
+                        }
                     }
                 }
                 else if (line.equals("stationBuild:[")) {
@@ -308,23 +343,25 @@ public class MetroSerializer {
                         parseConstructionData(line, world, stationMap, false, true);
                     }
                 }
-                else if (line.startsWith("width:")) {
-                    world.setWidth(Integer.parseInt(line.substring("width:".length())));
-                }
-                else if (line.startsWith("height:")) {
-                    world.setHeight(Integer.parseInt(line.substring("height:".length())));
-                }
-                else if (line.startsWith("money:")) {
-                    world.setMoney(Integer.parseInt(line.substring("money:".length())));
-                }
-                else if (line.startsWith("roundStations:")) {
-                    world.setRoundStationsEnabled(Boolean.parseBoolean(line.substring("roundStations:".length())));
-                }
-                else if (line.startsWith("gameTime:")) {
-                    long time = Long.parseLong(line.substring("gameTime:".length()));
-                    GameTime gameTime = new GameTime();
-              //      gameTime.setCurrentTime(time);
-                    world.gameTime = gameTime;
+                else if (line.equals("gameGrid:[")) {
+                    world.initGameGrid();
+                    while (!(line = reader.readLine()).equals("]")) {
+
+                            line = line.trim();
+                            if (!line.startsWith("{") || !line.endsWith("}")) continue;
+
+                            String content = line.substring(1, line.length()-1);
+                            String[] parts = content.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
+
+                            int x = Integer.parseInt(extractValue(parts[0], "x"));
+                            int y = Integer.parseInt(extractValue(parts[1], "y"));
+                            String contentStr = extractValue(parts[2], "content");
+
+                            if (!contentStr.equals("null")) {
+                                GameObject obj = parseGameObject(contentStr, world, stationMap);
+                                world.getGameGrid()[x][y].setContent(obj);
+                            }
+                    }
                 }
             }
         }
@@ -353,15 +390,22 @@ public class MetroSerializer {
     }
 
     private Tunnel parseTunnel(String line, GameWorld world, Map<String, Station> stationMap) {
-        // Пример строки: {start:"Station 1",end:"Station 2",type:ACTIVE,length:5}
-        String[] parts = line.substring(1, line.length()-1).split(",");
-        Station start = stationMap.get(unescapeString(parts[0].split(":")[1]));
-        Station end = stationMap.get(unescapeString(parts[1].split(":")[1]));
-        TunnelType type = TunnelType.valueOf(parts[2].split(":")[1]);
+            String[] parts = line.substring(1, line.length()-1).split(",");
 
-        Tunnel tunnel = new Tunnel(world, start, end, type);
-        return tunnel;
+            String startName = unescapeString(parts[0].split(":")[1]);
+            String endName = unescapeString(parts[1].split(":")[1]);
+
+            Station start = stationMap.get(startName);
+            Station end = stationMap.get(endName);
+
+            TunnelType type = TunnelType.valueOf(parts[2].split(":")[1]);
+
+            Tunnel tunnel = new Tunnel(world, start, end, type);
+
+            return tunnel;
+
     }
+
 
     private Label parseLabel(String line, GameWorld world, Map<String, Station> stationMap) {
         // Пример строки: {text:"Label text",x:15,y:25,parent:"Station 1"}
@@ -411,7 +455,7 @@ public class MetroSerializer {
             long duration = Long.parseLong(parts[2].split(":")[1]);
 
             if (isDestruction) {
-                world.stationBuildStartTimes.put(station, start);
+                world.stationDestructionStartTimes.put(station, start);
                 world.stationDestructionDurations.put(station, duration);
             } else {
                 world.stationBuildStartTimes.put(station, start);
