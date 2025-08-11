@@ -80,6 +80,12 @@ public class WorldScreen extends GameScreen {
     public void onActivate() {
         requestFocusInWindow();
     }
+
+    @Override
+    public void onDeactivate() {
+
+    }
+
     /**
      * Gets the current zoom level
      * @return Zoom level

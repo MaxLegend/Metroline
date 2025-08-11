@@ -68,4 +68,9 @@ public class MenuScreen extends GameScreen {
     public void onActivate() {
 
     }
+
+    @Override
+    public void onDeactivate() {
+
+    }
 }

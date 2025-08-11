@@ -4,6 +4,7 @@ import metroline.core.time.GameTime;
 import metroline.core.world.tiles.GameTile;
 
 import metroline.core.world.tiles.WorldTile;
+import metroline.objects.enums.Direction;
 import metroline.objects.gameobjects.Station;
 import metroline.objects.gameobjects.Tunnel;
 import metroline.objects.enums.StationType;
@@ -40,6 +41,8 @@ public class GameWorld extends World {
     public transient Map<Station, Long> stationBuildDurations = new HashMap<>();
     public transient Map<Tunnel, Long> tunnelBuildStartTimes = new HashMap<>();
     public transient Map<Tunnel, Long> tunnelBuildDurations = new HashMap<>();
+
+
 
     public GameWorld() {
         super();
@@ -101,17 +104,25 @@ public class GameWorld extends World {
             }
         }
     }
-
     @Override
     public void addTunnel(Tunnel tunnel) {
-        super.addTunnel(tunnel);
+
+
+        // Вызываем родительский метод
+            super.addTunnel(tunnel);
+
+        // Инициализируем карты, если они null
         if (tunnelBuildStartTimes == null) {
+
             tunnelBuildStartTimes = new HashMap<>();
         }
         if (tunnelBuildDurations == null) {
+
             tunnelBuildDurations = new HashMap<>();
         }
+
         if (tunnel.getType() == TunnelType.BUILDING) {
+
             long startTime = gameTime.getCurrentTimeMillis();
             tunnelBuildStartTimes.put(tunnel, startTime);
             tunnelBuildDurations.put(tunnel, tunnelBuildTime);
@@ -119,8 +130,11 @@ public class GameWorld extends World {
             // Устанавливаем стоимость строительства в зависимости от длины
             int lengthBasedCost = tunnel.getLength() * 10; // Например, 10 за сегмент
             tunnelBuildTime = Math.max(50000, lengthBasedCost * 1000); // Минимум 50 секунд
+
         }
+
     }
+
     private float calculateProgress(long startTime, long duration) {
         long currentTime = gameTime.getCurrentTimeMillis();
         if (startTime > currentTime) {
@@ -144,25 +158,7 @@ public class GameWorld extends World {
         return 0f;
     }
 
-    public void debugConstructionState() {
-        MetroLogger.logInfo("=== CONSTRUCTION STATE DEBUG ===");
-        MetroLogger.logInfo("Current game time: " + gameTime.getCurrentTimeMillis());
 
-        MetroLogger.logInfo("Stations in construction (" + stationBuildStartTimes.size() + "):");
-        stationBuildStartTimes.forEach((station, time) -> {
-            MetroLogger.logInfo(" - " + station.getName() +
-                    " | Start: " + time +
-                    " | Type: " + station.getType());
-        });
-
-        MetroLogger.logInfo("Tunnels in construction (" + tunnelBuildStartTimes.size() + "):");
-        tunnelBuildStartTimes.forEach((tunnel, time) -> {
-            MetroLogger.logInfo(" - " + tunnel.getStart().getName() + " -> " +
-                    tunnel.getEnd().getName() +
-                    " | Start: " + time +
-                    " | Type: " + tunnel.getType());
-        });
-    }
     public float getTunnelConstructionProgress(Tunnel tunnel) {
         if (!tunnelBuildStartTimes.containsKey(tunnel)) {
             return 1.0f;
@@ -197,7 +193,7 @@ public class GameWorld extends World {
                 station.getType() != StationType.CLOSED &&
                 station.getType() != StationType.TRANSIT) {
             MetroLogger.logWarning("Cannot destroy station of type " + station.getType());
-            return;
+         //   return;
         }
 
         station.setType(StationType.DESTROYED);
@@ -274,7 +270,7 @@ public class GameWorld extends World {
                     if (canAfford(tunnelCost)) {
                         addMoney(-tunnelCost);
                         tunnel.setType(TunnelType.BUILDING);
-                        addTunnel(tunnel); // Обновит время строительства
+                        tunnel.getWorld().addTunnel(tunnel); // Обновит время строительства
                         canStartBuilding = true;
                     }
                 }
@@ -292,7 +288,32 @@ public class GameWorld extends World {
             }
         }
     }
+    private void restoreStationConnections() {
+        // Создаем карту станций по именам для быстрого доступа
+        Map<String, Station> stationMap = new HashMap<>();
+        for (Station station : this.stations) {
+            stationMap.put(station.getName(), station);
+        }
 
+        // Восстанавливаем соединения
+        for (Station station : this.stations) {
+            for (Map.Entry<Direction, Station> entry : station.getConnections().entrySet()) {
+                Direction dir = entry.getKey();
+                Station connectedTo = entry.getValue();
+
+                // Обновляем ссылку на соединенную станцию
+                Station actualConnectedTo = stationMap.get(connectedTo.getName());
+                if (actualConnectedTo != null) {
+                    station.getConnections().put(dir, actualConnectedTo);
+                }
+            }
+        }
+
+        // Дополнительно проверяем соседей для восстановления TRANSFER станций
+        for (Station station : this.stations) {
+            station.updateType();
+        }
+    }
 public void initWorldGrid() {
     this.worldGrid = new WorldTile[width][height];
     this.gameGrid = new GameTile[width][height];
@@ -335,12 +356,14 @@ public void initWorldGrid() {
             // Копируем данные из загруженного мира
             this.width = loaded.width;
             this.height = loaded.height;
-            this.initWorldGrid();
-            this.initGameGrid();
+//            this.initWorldGrid();
+//            this.initGameGrid();
             this.money = loaded.money;
             this.worldGrid = loaded.worldGrid;
             this.gameGrid = loaded.gameGrid;
             this.stations = loaded.stations;
+
+
             this.tunnels = loaded.tunnels;
             this.labels = loaded.labels;
             this.gameTime = loaded.gameTime;
@@ -355,6 +378,8 @@ public void initWorldGrid() {
             this.stationDestructionDurations = loaded.stationDestructionDurations;
             this.tunnelDestructionStartTimes = loaded.tunnelDestructionStartTimes;
             this.tunnelDestructionDurations = loaded.tunnelDestructionDurations;
+
+            restoreStationConnections();
 
             // Запускаем игровое время
             if (this.gameTime != null) {

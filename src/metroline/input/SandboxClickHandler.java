@@ -1,5 +1,6 @@
 package metroline.input;
 
+import metroline.objects.enums.StationColors;
 import metroline.objects.gameobjects.GameObject;
 import metroline.core.time.GameTime;
 import metroline.objects.gameobjects.*;
@@ -201,7 +202,7 @@ public class SandboxClickHandler {
 
             colorBtn.addActionListener(e -> {
                 SandboxClickHandler.currentStationColor = color;
-                Station newStation = new Station(WorldSandboxScreen.getInstance().getWorld(), x, y, color, StationType.REGULAR);
+                Station newStation = new Station(WorldSandboxScreen.getInstance().getWorld(), x, y, StationColors.fromColor(color), StationType.REGULAR);
                 WorldSandboxScreen.getInstance().getWorld().addStation(newStation);
                 WorldSandboxScreen.getInstance().repaint();
                 colorDialog.dispose();
@@ -292,7 +293,7 @@ public class SandboxClickHandler {
         if (WorldSandboxScreen.getInstance().isShiftPressed) {
             // Дополнительная проверка (хотя предыдущие проверки уже гарантируют пустую клетку)
             if (WorldSandboxScreen.getInstance().getWorld().getStationAt(x, y) == null) {
-                Station newStation = new Station(WorldSandboxScreen.getInstance().getWorld(), x, y, SandboxClickHandler.currentStationColor, StationType.REGULAR);
+                Station newStation = new Station(WorldSandboxScreen.getInstance().getWorld(), x, y, StationColors.fromColor(SandboxClickHandler.currentStationColor), StationType.REGULAR);
                 WorldSandboxScreen.getInstance().getWorld().addStation(newStation);
                 checkForTransferStation(newStation);
                 WorldSandboxScreen.getInstance().repaint();
@@ -375,7 +376,7 @@ public class SandboxClickHandler {
         }
 
         // Создаем новую станцию с текущим цветом
-        Station station = new Station(WorldSandboxScreen.getInstance().getWorld(), x, y, currentStationColor, StationType.REGULAR);
+        Station station = new Station(WorldSandboxScreen.getInstance().getWorld(), x, y, StationColors.fromColor(currentStationColor), StationType.REGULAR);
         WorldSandboxScreen.getInstance().getWorld().addStation(station);
         checkForTransferStation(station);
     }

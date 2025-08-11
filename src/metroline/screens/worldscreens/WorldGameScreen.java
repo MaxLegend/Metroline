@@ -1,17 +1,19 @@
 package metroline.screens.worldscreens;
 
 import metroline.core.world.GameWorld;
-import metroline.input.GameClickHandler;
+import metroline.input.WorldClickController;
 import metroline.objects.gameobjects.Label;
 import metroline.objects.gameobjects.PathPoint;
 import metroline.objects.gameobjects.Station;
 import metroline.objects.gameobjects.Tunnel;
 import metroline.objects.enums.Direction;
 import metroline.MainFrame;
-import metroline.screens.panel.InfoPanel;
+import metroline.screens.panel.InfoWindow;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.text.SimpleDateFormat;
@@ -24,11 +26,11 @@ import java.util.List;
 public class WorldGameScreen extends WorldScreen {
     public static WorldGameScreen INSTANCE;
     private Timer repaintTimer;
-    public GameClickHandler gameClickHandler;
+    public WorldClickController gameClickHandler;
 
 
 
-    public InfoPanel infoPanel;
+    public final List<InfoWindow> infoWindows = new ArrayList<>();
     private Point lastClickPoint;
 
     //Debug
@@ -43,15 +45,9 @@ public class WorldGameScreen extends WorldScreen {
     public WorldGameScreen(MainFrame parent) {
         super(parent, new GameWorld(widthWorld, heightWorld, false, false, Color.WHITE, 1000));
         INSTANCE = this;
-        this.gameClickHandler = new GameClickHandler( this);
+        this.gameClickHandler = new WorldClickController( this);
         initWorldCache();
-        this.infoPanel = new InfoPanel();
-        this.setLayout(null);
-        this.add(infoPanel);
-        infoPanel.setBounds(0, 0,
-                infoPanel.getPreferredSize().width,
-                infoPanel.getPreferredSize().height);
-        infoPanel.setVisible(false);
+
         setupRepaintTimer();
     }
     /**
@@ -72,79 +68,25 @@ public class WorldGameScreen extends WorldScreen {
         widthWorld = width;
         heightWorld = height;
         this.setWorld(new GameWorld(width, height, hasOrganicPatches, hasRivers,worldColor, money));
-        this.gameClickHandler = new GameClickHandler( this);
+        this.gameClickHandler = new WorldClickController( this);
         setupRepaintTimer();
         invalidateCache();
         repaint();
     }
-    public void showInfoPanel(Object selectedObject, int worldX, int worldY) {
-        System.out.println(selectedObject);
-        if (selectedObject == null) {
-            infoPanel.hidePanel();
-            return;
-        }
-
-        Point screenPoint = worldToScreen(worldX, worldY);
-
-        if (selectedObject instanceof Station) {
-            infoPanel.displayStationInfo((Station) selectedObject);
-        } else if (selectedObject instanceof Tunnel) {
-            infoPanel.displayTunnelInfo((Tunnel) selectedObject);
-        }
-
-        positionPanelNearMouse(screenPoint);
-        infoPanel.setVisible(true);
-    }
 
 
-    private void positionPanelNearMouse(Point screenPoint) {
-        int panelWidth = infoPanel.getPreferredSize().width;
-        int panelHeight = infoPanel.getPreferredSize().height;
+    // Обновленный метод close для закрытия всех окон
 
-        // Позиционируем панель рядом с курсором
-        int x = screenPoint.x + 15;
-        int y = screenPoint.y + 15;
 
-        // Проверяем границы экрана
-        Rectangle screenBounds = getGraphicsConfiguration().getBounds();
-        if (x + panelWidth > screenBounds.width) {
-            x = screenPoint.x - panelWidth - 15;
-        }
-        if (y + panelHeight > screenBounds.height) {
-            y = screenPoint.y - panelHeight - 15;
-        }
 
-        infoPanel.setLocation(x, y);
-        infoPanel.revalidate();
-        infoPanel.repaint();
-    }
-
-    private void updateInfoPanelPosition() {
-        if (lastClickPoint == null || !infoPanel.isVisible()) return;
-
-        int panelWidth = infoPanel.getPreferredSize().width;
-        int panelHeight = infoPanel.getPreferredSize().height;
-
-        // Позиционируем панель рядом с точкой клика, но не за пределами экрана
-        int x = lastClickPoint.x + 20;
-        int y = lastClickPoint.y;
-
-        // Проверяем, чтобы панель не выходила за правую границу
-        if (x + panelWidth > getWidth()) {
-            x = lastClickPoint.x - panelWidth - 20;
-        }
-
-        // Проверяем, чтобы панель не выходила за нижнюю границу
-        if (y + panelHeight > getHeight()) {
-            y = getHeight() - panelHeight;
-        }
-
-        infoPanel.setBounds(x, y, panelWidth, panelHeight);
-    }
 
     private void setupRepaintTimer() {
         repaintTimer = new Timer(1000, e -> {
             gameClickHandler.checkConstructionProgress();
+            // Обновляем все открытые информационные окна
+            for (InfoWindow window : infoWindows) {
+                window.updateInfo();
+            }
             repaint();
         });
         repaintTimer.start();
@@ -156,7 +98,11 @@ public class WorldGameScreen extends WorldScreen {
     }
     public void close() {
         stopRepaintTimer();
-        // Другие операции закрытия
+        // Закрываем все информационные окна
+        for (InfoWindow window : new ArrayList<>(infoWindows)) {
+            window.dispose();
+        }
+        infoWindows.clear();
     }
     /**
      *
@@ -194,7 +140,7 @@ public class WorldGameScreen extends WorldScreen {
         @Override
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
-            updateInfoPanelPosition();
+      //      updateInfoPanelPosition();
             gameClickHandler.checkConstructionProgress();
             Graphics2D g2d = (Graphics2D)g;
 

@@ -3,7 +3,6 @@ package metroline.core.world;
 import metroline.objects.gameobjects.GameObject;
 import metroline.core.time.GameTime;
 import metroline.core.world.tiles.GameTile;
-import metroline.core.world.tiles.GameTileBig;
 import metroline.core.world.tiles.WorldTile;
 import metroline.objects.gameobjects.Label;
 import metroline.objects.gameobjects.PathPoint;
@@ -18,10 +17,8 @@ import metroline.util.MetroLogger;
 
 import java.awt.*;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.*;
 import java.util.List;
-import java.util.Random;
 
 public class World implements Serializable {
 
@@ -39,6 +36,8 @@ public class World implements Serializable {
     public java.util.List<Station> stations = new ArrayList<>();
     public java.util.List<Tunnel> tunnels = new ArrayList<>();
     public List<Label> labels = new ArrayList<>();
+
+
 
     public transient WorldScreen screen;
 
@@ -155,10 +154,12 @@ public class World implements Serializable {
     }
 
     public boolean isLabelPositionValid(int labelX, int labelY, Station station) {
-        // Проверяем, что позиция находится в пределах 1 клетки от станции
-        return Math.abs(labelX - station.getX()) <= 1 &&
-                Math.abs(labelY - station.getY()) <= 1 &&
-                getStationAt(labelX, labelY) == null; // И клетка свободна
+        // Проверяем, что позиция находится в пределах 2 клеток от станции
+        int dx = Math.abs(labelX - station.getX());
+        int dy = Math.abs(labelY - station.getY());
+
+        return dx <= 2 && dy <= 2 && (dx + dy) > 0 && // Исключаем позицию станции
+                getStationAt(labelX, labelY) == null; // И клетка свободна от станций
     }
    // public GameTileBig[][] getBigWorldGrid() { return bigWorldGrid; }
     public Label getLabelForStation(Station station) {
@@ -170,7 +171,7 @@ public class World implements Serializable {
         return null;
     }
     public PathPoint findFreePositionNear(int x, int y, String name) {
-        // Сортируем направления по приоритету (право, низ, лево, верх, затем диагонали)
+        // Сортируем направления по приоритету (включая диагонали)
         List<Direction> priorityDirections = Arrays.asList(
                 Direction.EAST, Direction.SOUTH, Direction.WEST, Direction.NORTH,
                 Direction.SOUTHEAST, Direction.SOUTHWEST, Direction.NORTHEAST, Direction.NORTHWEST
@@ -189,6 +190,22 @@ public class World implements Serializable {
                 }
             }
         }
+
+        // Если не нашли подходящую позицию, ищем в расширенном радиусе
+//        for (int dy = -2; dy <= 2; dy++) {
+//            for (int dx = -2; dx <= 2; dx++) {
+//                if (Math.abs(dx) + Math.abs(dy) <= 1) continue; // Пропускаем ортогональные (уже проверили)
+//
+//                int nx = x + dx;
+//                int ny = y + dy;
+//
+//                if (nx >= 0 && nx < width && ny >= 0 && ny < height &&
+//                        getStationAt(nx, ny) == null && getLabelAt(nx, ny) == null) {
+//                    return new PathPoint(nx, ny);
+//                }
+//            }
+//        }
+
         return null;
     }
 
@@ -318,12 +335,72 @@ public class World implements Serializable {
      * @param tunnel Tunnel to add
      * @return True if tunnel was added successfully
      */
-    public void addTunnel(Tunnel tunnel) {
 
-        if (tunnel.getStart().connect(tunnel.getEnd())) {
-            tunnels.add(tunnel);
+    public void addTunnel(Tunnel tunnel) {
+        // Получаем координаты станций
+        int start_x = tunnel.getStart().getX();
+        int start_y = tunnel.getStart().getY();
+        int end_x = tunnel.getEnd().getX();
+        int end_y = tunnel.getEnd().getY();
+
+        Station actualStart = getStationAt(start_x, start_y);
+        Station actualEnd = getStationAt(end_x, end_y);
+
+
+
+        // Проверяем, существует ли уже такой туннель
+        for (Tunnel existingTunnel : tunnels) {
+            if ((existingTunnel.getStart() == actualStart && existingTunnel.getEnd() == actualEnd) ||
+                    (existingTunnel.getStart() == actualEnd && existingTunnel.getEnd() == actualStart)) {
+
+                return;
+            }
         }
 
+        // Создаем новый туннель с найденными станциями
+        Tunnel newTunnel = new Tunnel(this, actualStart, actualEnd, tunnel.getType());
+
+        // Подключаем станции друг к другу
+        actualStart.connectStation(actualEnd);
+
+        // Добавляем туннель в список
+        tunnels.add(newTunnel);
+
+    }
+//    public void addTunnel(Tunnel tunnel) {
+//
+//        if (tunnel.getStart().connectStation(tunnel.getEnd())) {
+//            tunnels.add(tunnel);
+//        }
+//
+//    }
+    /**
+     * Gets the any game object at specified coordinates
+     * @param x X coordinate
+     * @param y Y coordinate
+     * @return GameObject or null if none exists
+     */
+    public GameObject getGameObjectAt(int x, int y) {
+        // Сначала проверяем станции
+        Station station = this.getStationAt(x, y);
+        if (station != null) {
+            return station;
+        }
+
+        // Затем проверяем туннели
+        Tunnel tunnel = this.getTunnelAt(x, y);
+        if (tunnel != null) {
+            return tunnel;
+        }
+
+        // Затем проверяем метки (если нужно)
+        Label label = this.getLabelAt(x, y);
+        if (label != null) {
+            return label;
+        }
+
+        // Если ничего не найдено
+        return null;
     }
     /**
      * Gets the tunnel at specified coordinates

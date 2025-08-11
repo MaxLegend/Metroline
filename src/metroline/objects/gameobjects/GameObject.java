@@ -5,6 +5,7 @@ import metroline.core.world.World;
 
 import java.awt.*;
 import java.io.Serializable;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Base class for all game objects
@@ -16,19 +17,40 @@ public abstract class GameObject implements Serializable {
     public int y;
     public boolean selected = false;
     private World world;
+
+    // Генератор уникальных ID для всех объектов
+    private static final AtomicLong idGenerator = new AtomicLong(0);
+
+    // Уникальный идентификатор объекта
+    private long uniqueId;
+
     public GameObject() {
         super();
+        this.uniqueId = idGenerator.incrementAndGet();
     }
+
     public GameObject(int x, int y) {
         this.x = x;
         this.y = y;
+        this.uniqueId = idGenerator.incrementAndGet();
     }
+
     public GameObject(World world, int x, int y) {
         this.world = world;
         this.x = x;
         this.y = y;
+        this.uniqueId = idGenerator.incrementAndGet();
     }
-
+    /**
+     * Получает уникальный идентификатор объекта
+     * @return уникальный ID
+     */
+    public long getUniqueId() {
+        return uniqueId;
+    }
+    public void setUniqueId(long uniqueId) {
+        this.uniqueId = uniqueId;
+    }
     public World getWorld() {
         return world;
     }
@@ -37,6 +59,17 @@ public abstract class GameObject implements Serializable {
         this.world = world;
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        GameObject that = (GameObject) obj;
+        return uniqueId == that.uniqueId;
+    }
+    @Override
+    public int hashCode() {
+        return Long.hashCode(uniqueId);
+    }
     /**
      * Gets the Tile of this coord
      * @return Tile

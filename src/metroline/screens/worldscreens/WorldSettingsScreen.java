@@ -320,5 +320,10 @@ public class WorldSettingsScreen extends GameScreen {
         moneyValueLabel.setText(formatted);
     }
 
+    @Override
+    public void onDeactivate() {
+
+    }
+
 
 }

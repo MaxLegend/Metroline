@@ -1,5 +1,6 @@
 package metroline.input;
 
+import metroline.objects.enums.StationColors;
 import metroline.objects.gameobjects.GameObject;
 import metroline.core.time.GameTime;
 import metroline.core.world.GameWorld;
@@ -79,14 +80,14 @@ public class GameClickHandler {
         }
         WorldGameScreen.getInstance().repaint();
     }
-    public void handleCtrlDoubleLeftClick(int x, int y) {
-    //   System.out.println("isAPressed " + screen.isAPressed);
-            if (this.getSelectedObject() != null ) {
-                screen.showInfoPanel(this.getSelectedObject(), x, y);
-            } else {
-                screen.infoPanel.hidePanel();
-            }
-    }
+//    public void handleCtrlDoubleLeftClick(int x, int y) {
+//    //   System.out.println("isAPressed " + screen.isAPressed);
+//            if (this.getSelectedObject() != null ) {
+//                screen.showInfoPanel(this.getSelectedObject(), x, y);
+//            } else {
+//                screen.infoWindow.hideWindow();
+//            }
+//    }
 
     /**
      * Handles mouse drag in edit mode
@@ -175,6 +176,7 @@ public class GameClickHandler {
      * @param x X coordinate
      * @param y Y coordinate
      */
+
     public void handleCtrlClick(int x, int y) {
         GameWorld world = (GameWorld)WorldGameScreen.getInstance().getWorld();
         Station station = world.getStationAt(x, y);
@@ -215,14 +217,14 @@ public class GameClickHandler {
         // Сначала снимаем выделение со всех объектов
         deselectAll();
 
-        Label label = WorldGameScreen.getInstance().getWorld().getLabelAt(x, y);
-        if (label != null) {
-            label.setSelected(true);
-            selectedObject = label;
-            dragOffset = new PathPoint(x - label.getX(), y - label.getY());
-            WorldGameScreen.getInstance().repaint();
-            return;
-        }
+//        Label label = WorldGameScreen.getInstance().getWorld().getLabelAt(x, y);
+//        if (label != null) {
+//            label.setSelected(true);
+//            selectedObject = label;
+//            dragOffset = new PathPoint(x - label.getX(), y - label.getY());
+//            WorldGameScreen.getInstance().repaint();
+//            return;
+//        }
 
         // Проверяем станции
         Station station = WorldGameScreen.getInstance().getWorld().getStationAt(x, y);
@@ -233,7 +235,26 @@ public class GameClickHandler {
             WorldGameScreen.getInstance().repaint();
             return;
         }
+        Label label = WorldGameScreen.getInstance().getWorld().getLabelAt(x, y);
+        if (label != null) {
+            label.setSelected(true);
+            selectedObject = label;
+            dragOffset = new PathPoint(x - label.getX(), y - label.getY());
+            WorldGameScreen.getInstance().repaint();
+            return;
+        }
 
+        // Если точное совпадение не найдено, ищем метки рядом (для кликов по визуальному тексту)
+        for (Label l : WorldGameScreen.getInstance().getWorld().getLabels()) {
+            if (isClickOnLabelVisualArea(l, x, y)) {
+                l.setSelected(true);
+                selectedObject = l;
+                // Для кликов по визуальной области используем смещение от станции
+                dragOffset = new PathPoint(x - l.getX(), y - l.getY());
+                WorldGameScreen.getInstance().repaint();
+                return;
+            }
+        }
         // Проверяем туннели
         Tunnel tunnel = WorldGameScreen.getInstance().getWorld().getTunnelAt(x, y);
         if (tunnel != null) {
@@ -264,6 +285,7 @@ public class GameClickHandler {
             } else if(getInstance().isShiftPressed) {
                 GameWorld gameWorld = (GameWorld) WorldGameScreen.getInstance().getWorld();
                 if(getInstance().isAltPressed) {
+                    System.out.println("station destroy " + existing);
                     gameWorld.startDestroyingStation(existing);
                     return;
                 }
@@ -285,7 +307,7 @@ public class GameClickHandler {
         }
 
         // Создаем новую станцию с текущим цветом
-        Station station = new Station(WorldGameScreen.getInstance().getWorld(),x, y, currentStationColor, StationType.PLANNED);
+        Station station = new Station(WorldGameScreen.getInstance().getWorld(),x, y, StationColors.fromColor(currentStationColor), StationType.PLANNED);
         WorldGameScreen.getInstance().getWorld().addStation(station);
         checkForTransferStation(station);
     }
@@ -340,7 +362,7 @@ public class GameClickHandler {
 
             colorBtn.addActionListener(e -> {
                 GameClickHandler.currentStationColor = color;
-                Station newStation = new Station(WorldGameScreen.getInstance().getWorld(),x, y, color, StationType.PLANNED);
+                Station newStation = new Station(WorldGameScreen.getInstance().getWorld(),x, y, StationColors.fromColor(color), StationType.PLANNED);
                 WorldGameScreen.getInstance().getWorld().addStation(newStation);
                 WorldGameScreen.getInstance().repaint();
                 colorDialog.dispose();
@@ -517,6 +539,45 @@ public class GameClickHandler {
         }
 
         return totalCost;
+    }
+    private boolean isClickOnLabelVisualArea(Label label, int clickX, int clickY) {
+        if (label.getParentStation() == null) return false;
+
+        Station parent = label.getParentStation();
+
+        // Рассчитываем визуальную позицию метки (как в методе draw)
+        int relX = label.getX() - parent.getX();
+        int relY = label.getY() - parent.getY();
+
+        // Базовые смещения
+        int baseOffsetX = 32 + 8;
+        int baseOffsetY = 20;
+
+        // Корректируем смещение в зависимости от положения
+        Font font = new Font("Arial", Font.PLAIN, 12);
+        FontMetrics fm = new Canvas().getFontMetrics(font);
+        int textWidth = fm.stringWidth(label.getText());
+        int textHeight = fm.getHeight();
+
+        if (relX < 0) {
+            baseOffsetX = -textWidth - 8;
+        } else if (relX == 0) {
+            baseOffsetX = (32 - textWidth) / 2;
+            if (relY < 0) {
+                baseOffsetY = -textHeight + 4;
+            } else if (relY > 0) {
+                baseOffsetY = textHeight + 32;
+            }
+        }
+
+        // Рассчитываем визуальные координаты текста
+        int visualX = parent.getX() * 32 + baseOffsetX;
+        int visualY = parent.getY() * 32 + baseOffsetY;
+
+        // Проверяем, попал ли клик в область текста (с запасом)
+        int margin = 10;
+        return clickX >= (visualX - margin) / 32 && clickX <= (visualX + textWidth + margin) / 32 &&
+                clickY >= (visualY - textHeight - margin) / 32 && clickY <= (visualY + margin) / 32;
     }
 }
 

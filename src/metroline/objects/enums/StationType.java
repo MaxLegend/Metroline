@@ -1,15 +1,29 @@
 package metroline.objects.enums;
 
+import metroline.util.LngUtil;
+
 /**
  * Enum for station types
  */
 public enum StationType {
-    DESTROYED,
-    CLOSED,
-    PLANNED,
-    BUILDING,
-    REGULAR,    // Square
-    TRANSFER,   // Circle (when near different color)
-    TERMINAL,   // Diamond
-    TRANSIT     // Cross
+    DESTROYED("stype.destroyed"),
+    CLOSED("stype.closed"),
+    PLANNED("stype.planned"),
+    BUILDING("stype.building"),
+    REGULAR("stype.regular"),
+    TRANSFER("stype.transfer"),
+    TERMINAL("stype.terminal"),
+    TRANSIT("stype.transit");
+
+    private final String name;
+    StationType(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
+    }
+    public String getLocalizedName() {
+        return LngUtil.translatable(name);
+    }
 }

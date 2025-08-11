@@ -9,8 +9,11 @@ import java.util.Map;
 
 import metroline.core.world.GameWorld;
 import metroline.core.world.SandboxWorld;
+import metroline.objects.gameobjects.Station;
+import metroline.objects.gameobjects.Tunnel;
 import metroline.screens.GameScreen;
 import metroline.screens.MenuScreen;
+import metroline.screens.panel.InfoWindow;
 import metroline.screens.worldscreens.WorldSettingsScreen;
 import metroline.screens.worldscreens.WorldGameScreen;
 import metroline.screens.worldscreens.WorldSandboxScreen;
@@ -60,6 +63,7 @@ public class MainFrame extends JFrame {
     public MainFrame() {
         super("Metroline");
         INSTANCE = this;
+
         if (screens.isEmpty()) {
             screens.put(MAIN_MENU_SCREEN_NAME, new MenuScreen(this));
             screens.put(SANDBOX_SCREEN_NAME, new WorldSandboxScreen(this));
@@ -281,7 +285,9 @@ public class MainFrame extends JFrame {
      * Back to Main menu
      */
     public void backToMenu() {
+
         switchScreen(MAIN_MENU_SCREEN_NAME);
+        InfoWindow.updateWindowsVisibility(this);
     }
     /**
      * Exit from game
@@ -349,10 +355,11 @@ public class MainFrame extends JFrame {
             remove(currentScreen);
         }
 
-
+        InfoWindow.updateWindowsVisibility(this);
         boolean isSandboxGameScreen = SANDBOX_SCREEN_NAME.equals(screenName);
         boolean isGameScreen = GAME_SCREEN_NAME.equals(screenName);
         currentScreen = screens.get(screenName);
+
         add(currentScreen, BorderLayout.CENTER);
         toolBar.setVisible(isGameScreen || isSandboxGameScreen);
         timePanel.setVisible(isGameScreen|| isSandboxGameScreen);
@@ -360,6 +367,37 @@ public class MainFrame extends JFrame {
         repaint();
         currentScreen.requestFocusInWindow();
 
+    }
+    public void showInfoPanel(Object selectedObject, int worldX, int worldY) {
+        if (selectedObject == null ) {
+            return;
+        }
+        if(currentScreen instanceof WorldGameScreen screen) {
+            // Получаем экранные координаты
+            Point screenPoint = screen.worldToScreen(worldX, worldY);
+            Point windowPoint = new Point(screenPoint);
+            SwingUtilities.convertPointToScreen(windowPoint, this);
+
+            // Создаем новое окно для каждого объекта
+
+            InfoWindow newWindow = new InfoWindow(this);
+
+            if (selectedObject instanceof Station) {
+                newWindow.displayStationInfo((Station) selectedObject, windowPoint);
+            } else if (selectedObject instanceof Tunnel) {
+                newWindow.displayTunnelInfo((Tunnel) selectedObject, windowPoint);
+            }
+
+            // Добавляем обработчик закрытия для удаления окна из списка
+            newWindow.addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosed(WindowEvent e) {
+                    screen.infoWindows.remove(newWindow);
+                }
+            });
+
+            screen.infoWindows.add(newWindow);
+        }
     }
 
     /**

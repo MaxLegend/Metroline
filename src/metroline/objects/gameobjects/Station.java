@@ -3,6 +3,7 @@ package metroline.objects.gameobjects;
 import metroline.core.world.GameWorld;
 import metroline.core.world.World;
 import metroline.objects.enums.Direction;
+import metroline.objects.enums.StationColors;
 import metroline.objects.enums.StationType;
 
 import java.awt.*;
@@ -21,16 +22,17 @@ public class Station extends GameObject {
 
 
     private String name;
-
-
-
-    private Color color;
-    private StationType type;
     private Map<Direction, Station> connections = new EnumMap<>(Direction.class);
+
+
+    private StationColors color;
+    private StationType type;
+
+
     public Station() {
         super(0, 0);
     }
-    public Station(World world, int x, int y, Color color, StationType type) {
+    public Station(World world, int x, int y, StationColors color, StationType type) {
         super(x, y);
         this.setWorld(world);
         this.color = color;
@@ -38,7 +40,11 @@ public class Station extends GameObject {
         this.name = generateRandomName();
     }
 
-
+    /**
+     * Gets connected stations with their directions
+     * @return Map of directions to connected stations
+     */
+    public Map<Direction, Station> getConnections() { return connections; }
 
     private String generateRandomName() {
         Random rand = new Random();
@@ -60,14 +66,34 @@ public class Station extends GameObject {
      * Gets the station color
      * @return Color of the station
      */
-    public Color getColor() { return color; }
-
+    public Color getColor() {
+        return color.getColor();
+    }
+    /**
+     * Gets the station color enum
+     * @return StationColor enum value
+     */
+    public StationColors getStationColor() {
+        return color;
+    }
+    /**
+     * Sets the station color using StationColor enum
+     * @param stationColor New station color
+     */
+    public void setStationColor(StationColors stationColor) {
+        this.color = stationColor;
+    }
     /**
      * Sets the station color
      * @param color New color
      */
-    public void setColor(Color color) { this.color = color; }
-
+    /**
+     * Sets the station color using Color object
+     * @param color New color
+     */
+    public void setColor(Color color) {
+        this.color = StationColors.fromColor(color);
+    }
     /**
      * Gets the station type
      * @return Station type
@@ -128,12 +154,8 @@ public class Station extends GameObject {
             ((GameWorld)getWorld()).updateConnectedTunnels(this);
         }
     }
-    /**
-     * Gets connected stations with their directions
-     * @return Map of directions to connected stations
-     */
-    public Map<Direction, Station> getConnections() { return connections; }
-    public boolean connect(Station other) {
+
+    public boolean connectStation(Station other) {
         Direction dir = getDirectionTo(other);
         Direction oppositeDir = dir.getOpposite();
 
@@ -159,7 +181,9 @@ public class Station extends GameObject {
 
         return true;
     }
-
+    public void clearConnections() {
+        this.connections.clear();
+    }
     public void disconnect(Station other) {
         Direction dirToRemove = null;
         for (Map.Entry<Direction, Station> entry : connections.entrySet()) {
@@ -297,7 +321,7 @@ public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
                 Direction dir = entry.getKey();
                 Station neighbor = entry.getValue();
 
-                if (!neighbor.getColor().equals(this.color)) {
+                if (!neighbor.getColor().equals(this.getColor())) {
                     int nx = neighbor.getX() * 32 + offsetX + 15;
                     int ny = neighbor.getY() * 32 + offsetY + 15;
 
@@ -305,8 +329,8 @@ public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
 
                     // Градиентное соединение
                     Color[] colors = {
-                            color,                // Начальный цвет (100%)
-                            color,                // Сохраняет цвет до 40%
+                            getColor(),                // Начальный цвет (100%)
+                            getColor(),                // Сохраняет цвет до 40%
                             neighbor.getColor(),  // Резкий переход
                             neighbor.getColor()   // Конечный цвет (100%)
                     };
@@ -335,11 +359,11 @@ public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
         Graphics2D g2d = (Graphics2D) g;
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         if (type == StationType.PLANNED) {
-            g2d.setColor(color);
+            g2d.setColor(getColor());
             g2d.setStroke(new BasicStroke(2 * zoom));
             g2d.drawOval(drawX, drawY, drawSize, drawSize);
         } else if (type == StationType.BUILDING) {
-            g2d.setColor(color);
+            g2d.setColor(getColor());
             float[] dashPattern = {4 * zoom, 4 * zoom};
             g2d.setStroke(new BasicStroke(2 * zoom, BasicStroke.CAP_BUTT,
                     BasicStroke.JOIN_MITER, 10, dashPattern, 0));
@@ -350,14 +374,14 @@ public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
             int crossPadding = (int) (6 * zoom);
 
             // Основной контур
-            g2d.setColor(color);
+            g2d.setColor(getColor());
             g2d.setStroke(new BasicStroke(2 * zoom));
             g2d.drawOval(drawX, drawY, drawSize, drawSize);
 
             // Крест внутри
             g2d.setStroke(new BasicStroke(3 * zoom));
             // Диагональ 1
-            g2d.setColor(color.darker().darker());
+            g2d.setColor(getColor().darker().darker());
             g2d.drawLine(drawX + crossPadding,
                     drawY + crossPadding,
                     drawX + drawSize - crossPadding,
@@ -371,18 +395,18 @@ public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
         else if (type == StationType.CLOSED) {
             // Закрытая станция - контур с диагональной линией
             int crossPadding = (int) (6 * zoom);
-            g2d.setColor(color);
+            g2d.setColor(getColor());
             g2d.setStroke(new BasicStroke(2 * zoom));
             g2d.drawOval(drawX, drawY, drawSize, drawSize);
 
             // Диагональная линия
-            g2d.setColor(color.darker().darker());
+            g2d.setColor(getColor().darker().darker());
             g2d.drawLine(drawX + crossPadding,
                     drawY + crossPadding,
                     drawX + drawSize - crossPadding,
                     drawY + drawSize - crossPadding);
         } else {
-            g2d.setColor(color);
+            g2d.setColor(getColor());
             g2d.fillOval(drawX, drawY, drawSize, drawSize);
         }
 
@@ -462,12 +486,12 @@ public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         if (type == StationType.PLANNED) {
             // Планируемая станция - только контур
-            g2d.setColor(color);
+            g2d.setColor(getColor());
             g2d.setStroke(new BasicStroke(2 * zoom));
             g2d.drawRoundRect(drawX, drawY, drawSize, drawSize, arcSize, arcSize);
         } else if (type == StationType.BUILDING) {
             // Строящаяся станция - пунктирный контур
-            g2d.setColor(color);
+            g2d.setColor(getColor());
             float[] dashPattern = {4 * zoom, 4 * zoom};
             g2d.setStroke(new BasicStroke(2 * zoom, BasicStroke.CAP_BUTT,
                     BasicStroke.JOIN_MITER, 10, dashPattern, 0));
@@ -478,14 +502,14 @@ public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
             int crossPadding = (int)(4 * zoom);
 
             // Основной контур
-            g2d.setColor(color);
+            g2d.setColor(getColor());
             g2d.setStroke(new BasicStroke(2 * zoom));
             g2d.drawRoundRect(drawX, drawY, drawSize, drawSize, arcSize, arcSize);
 
             // Крест внутри
             g2d.setStroke(new BasicStroke(3 * zoom));
             // Диагональ 1
-            g2d.setColor(color.darker().darker());
+            g2d.setColor(getColor().darker().darker());
             g2d.drawLine(drawX + crossPadding,
                     drawY + crossPadding,
                     drawX + drawSize - crossPadding,
@@ -498,19 +522,19 @@ public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
         } else if (type == StationType.CLOSED) {
             // Закрытая станция - контур с диагональной линией
             int crossPadding = (int)(4 * zoom);
-            g2d.setColor(color);
+            g2d.setColor(getColor());
             g2d.setStroke(new BasicStroke(2 * zoom));
             g2d.drawRoundRect(drawX, drawY, drawSize, drawSize, arcSize, arcSize);
 
             // Диагональная линия
-            g2d.setColor(color.darker().darker());
+            g2d.setColor(getColor().darker().darker());
             g2d.drawLine(drawX + crossPadding,
                     drawY + crossPadding,
                     drawX + drawSize - crossPadding,
                     drawY + drawSize - crossPadding);
         } else {
             // Обычная отрисовка для других типов
-            g2d.setColor(color);
+            g2d.setColor(getColor());
             g2d.fillRoundRect(drawX, drawY, drawSize, drawSize, arcSize, arcSize);
         }
     }

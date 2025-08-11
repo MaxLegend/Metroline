@@ -34,7 +34,6 @@ public class Tunnel extends GameObject {
     }
 
 
-
     public void setType(TunnelType type) {
         this.type = type;
     }

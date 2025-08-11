@@ -1,5 +1,6 @@
 package metroline.objects.gameobjects;
 
+import metroline.objects.enums.StationColors;
 import metroline.util.LngUtil;
 
 import java.awt.*;
@@ -34,24 +35,8 @@ public class GameConstants {
             LngUtil.translatable("st_name_25"),
     };
 
-    public static final Color[] COLORS = {
-            new Color(157, 6, 6),
-            new Color(0, 100, 0),
-            new Color(0, 120, 190),
-            new Color(27, 57, 208),
-            new Color(25, 149, 176),
-            new Color(110, 63, 21),
-            new Color(200, 100, 0),
-            new Color(133, 7, 133),
-            new Color(211, 179, 8),
-            new Color(153, 153, 153),
-            new Color(153, 204, 0),
-            new Color(79, 155, 155),
-            new Color(201, 48, 128),
-            new Color(3, 121, 95),
-            new Color(148, 21, 73),
-            new Color(109, 148, 104),
-    };
+    public static final Color[] COLORS = StationColors.getAllColors();
+
     public static final Color[] COLORS_DARK = {
             // Приглушенные, землистые тона
             new Color(160, 60, 50),    // Терракотовый

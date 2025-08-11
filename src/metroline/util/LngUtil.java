@@ -13,7 +13,7 @@ import java.util.Properties;
  */
 public class LngUtil {
     private static final Map<String, Properties> translations = new HashMap<>();
-    private static String currentLanguage = "en"; // По умолчанию английский
+    private static String currentLanguage = "ru"; // По умолчанию английский
 
     // Статический блок инициализации
     static {

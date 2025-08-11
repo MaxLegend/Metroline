@@ -15,6 +15,7 @@ import java.util.Date;
  * @Create Application birth July 17, 2025
  */
 public class Main {
+    //  static ImageIcon icon = new ImageIcon("path/to/your/icon.png");
     public static void main(String[] args) {
         try {
             MetroLogger.setup();
@@ -30,7 +31,10 @@ public class Main {
 
             SwingUtilities.invokeLater(() -> {
                 try {
+                    ImageIcon icon = new ImageIcon("resourses/icon2.png");
                     MainFrame frame = new MainFrame();
+
+                    frame.setIconImage(icon.getImage());
                     frame.setVisible(true);
                     MetroLogger.logInfo("Main window launched successfully");
                 } catch (Exception e) {

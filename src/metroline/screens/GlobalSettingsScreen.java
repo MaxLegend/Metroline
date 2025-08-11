@@ -11,4 +11,9 @@ public class GlobalSettingsScreen extends GameScreen {
     public void onActivate() {
 
     }
+
+    @Override
+    public void onDeactivate() {
+
+    }
 }

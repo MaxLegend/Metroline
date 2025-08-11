@@ -1,15 +1,15 @@
 package metroline.util;
 
-import metroline.objects.gameobjects.GameObject;
+import metroline.objects.enums.Direction;
+import metroline.objects.enums.StationColors;
+import metroline.objects.gameobjects.*;
 import metroline.core.time.GameTime;
 import metroline.core.world.GameWorld;
 import metroline.core.world.tiles.GameTile;
 import metroline.core.world.tiles.WorldTile;
-import metroline.objects.gameobjects.Label;
-import metroline.objects.gameobjects.Station;
-import metroline.objects.gameobjects.Tunnel;
 import metroline.objects.enums.StationType;
 import metroline.objects.enums.TunnelType;
+import metroline.objects.gameobjects.Label;
 
 import java.awt.*;
 import java.io.*;
@@ -30,38 +30,37 @@ public class MetroSerializer {
                 color.getGreen(),
                 color.getBlue());
     }
-    private String serializeGameObject(GameObject obj) {
-        if (obj instanceof Station) {
-            Station station = (Station) obj;
-            return String.format("station:%s", escapeString(station.getName()));
-        } else if (obj instanceof Label) {
-            Label label = (Label) obj;
-            return String.format("label:%s", escapeString(label.getText()));
-        }
-        return "null";
-    }
-    private GameObject parseGameObject(String contentStr, GameWorld world, Map<String, Station> stationMap) {
 
-        String[] parts = contentStr.split(":");
-        String type = parts[0];
-        String value = unescapeString(parts[1]);
+//    private GameObject parseGameObject(String contentStr, GameWorld world, Map<String, Station> stationMap, Map<Integer, Station> stationHashMap) {
+//        String[] parts = contentStr.split(":");
+//        String type = parts[0];
+//        String value = parts[1];
+//
+//        return switch (type) {
+//            case "station" -> {
+//                String stationName = unescapeString(value);
+//                Station station = stationMap.get(stationName);
+//                yield station;
+//            }
+//            case "label" -> {
+//                String labelText = unescapeString(value);
+//                for (Label label : world.getLabels()) {
+//                    if (label.getText().equals(labelText)) {
+//                        yield label;
+//                    }
+//                }
+//                yield null;
+//            }
+//            case "pathpoint" -> {
+//                String[] coords = value.split(",");
+//                int x = Integer.parseInt(coords[0]);
+//                int y = Integer.parseInt(coords[1]);
+//                yield new PathPoint(x, y);
+//            }
+//            default -> null;
+//        };
+//    }
 
-        return switch (type) {
-            case "station" -> {
-                Station station = stationMap.get(value);
-                yield station;
-            }
-            case "label" -> {
-                for (Label label : world.getLabels()) {
-                    if (label.getText().equals(value)) {
-                        yield label;
-                    }
-                }
-                yield null;
-            }
-            default -> null;
-        };
-    }
     public void saveWorld(GameWorld world, String filename) throws IOException {
         File saveDir = new File(SAVE_FOLDER);
         if (!saveDir.exists()) {
@@ -105,7 +104,8 @@ public class MetroSerializer {
             writer.write("stations:[\n");
             for (Station station : world.getStations()) {
                 writer.write(String.format(
-                        "{name:%s,x:%d,y:%d,color:%s,type:%s}",
+                        "{id:%d,name:%s,x:%d,y:%d,color:%s,type:%s}",
+                        station.getUniqueId(),
                         escapeString(station.getName()),
                         station.getX(),
                         station.getY(),
@@ -115,16 +115,51 @@ public class MetroSerializer {
             }
             writer.write("]\n");
 
+            writer.write("connections:[\n");
+            for (Station station : world.getStations()) {
+                for (Map.Entry<Direction, Station> entry : station.getConnections().entrySet()) {
+                    writer.write(String.format(
+                            "{stationId:%d,direction:%s,connectedToId:%d}",
+                            station.getUniqueId(),
+                            entry.getKey().name(),
+                            entry.getValue().getUniqueId()
+                    ) + "\n");
+                }
+            }
+            writer.write("]\n");
+
             // Туннели
             writer.write("tunnels:[\n");
             for (Tunnel tunnel : world.getTunnels()) {
                 writer.write(String.format(
-                        "{start:%s,end:%s,type:%s,length:%d}",
-                        escapeString(tunnel.getStart().getName()),
-                        escapeString(tunnel.getEnd().getName()),
+                        "{startId:%d,endId:%d,type:%s,length:%d}",
+                        tunnel.getStart().getUniqueId(),
+                        tunnel.getEnd().getUniqueId(),
                         tunnel.getType().name(),
                         tunnel.getLength()
                 ) + "\n");
+            }
+            writer.write("]\n");
+
+            //path points
+            writer.write("pathPoints:[\n");
+            for (Tunnel tunnel : world.getTunnels()) {
+                if (!tunnel.getPath().isEmpty()) {
+                    writer.write(String.format(
+                            "{tunnelStartId:%d,tunnelEndId:%d,points:[",
+                            tunnel.getStart().getUniqueId(),
+                            tunnel.getEnd().getUniqueId()
+                    ));
+
+                    for (int i = 0; i < tunnel.getPath().size(); i++) {
+                        PathPoint point = tunnel.getPath().get(i);
+                        writer.write(String.format("{x:%d,y:%d}", point.getX(), point.getY()));
+                        if (i < tunnel.getPath().size() - 1) {
+                            writer.write(",");
+                        }
+                    }
+                    writer.write("]}\n");
+                }
             }
             writer.write("]\n");
 
@@ -132,22 +167,23 @@ public class MetroSerializer {
             writer.write("labels:[\n");
             for (Label label : world.getLabels()) {
                 writer.write(String.format(
-                        "{text:%s,x:%d,y:%d,parent:%s}",
+                        "{text:%s,x:%d,y:%d,parentStationId:%d}",
                         escapeString(label.getText()),
                         label.getX(),
                         label.getY(),
-                        escapeString(label.getParentStation().getName())
+                        label.getParentStation().getUniqueId()
                 ) + "\n");
             }
             writer.write("]\n");
+
 
             // Строительство станций
             writer.write("stationBuild:[\n");
             for (Map.Entry<Station, Long> entry : world.stationBuildStartTimes.entrySet()) {
                 Station station = entry.getKey();
                 writer.write(String.format(
-                        "{station:%s,start:%d,duration:%d}",
-                        escapeString(station.getName()),
+                        "{stationId:%d,start:%d,duration:%d}",
+                        station.getUniqueId(),
                         entry.getValue(),
                         world.stationBuildDurations.get(station)
                 ) + "\n");
@@ -159,8 +195,8 @@ public class MetroSerializer {
             for (Map.Entry<Station, Long> entry : world.stationDestructionStartTimes.entrySet()) {
                 Station station = entry.getKey();
                 writer.write(String.format(
-                        "{station:%s,start:%d,duration:%d}",
-                        escapeString(station.getName()),
+                        "{stationId:%d,start:%d,duration:%d}",
+                        station.getUniqueId(),
                         entry.getValue(),
                         world.stationDestructionDurations.get(station)
                 ) + "\n");
@@ -172,9 +208,9 @@ public class MetroSerializer {
             for (Map.Entry<Tunnel, Long> entry : world.tunnelBuildStartTimes.entrySet()) {
                 Tunnel tunnel = entry.getKey();
                 writer.write(String.format(
-                        "{start:%s,end:%s,startTime:%d,duration:%d}",
-                        escapeString(tunnel.getStart().getName()),
-                        escapeString(tunnel.getEnd().getName()),
+                        "{startId:%d,endId:%d,startTime:%d,duration:%d}",
+                        tunnel.getStart().getUniqueId(),
+                        tunnel.getEnd().getUniqueId(),
                         entry.getValue(),
                         world.tunnelBuildDurations.get(tunnel)
                 ) + "\n");
@@ -186,9 +222,9 @@ public class MetroSerializer {
             for (Map.Entry<Tunnel, Long> entry : world.tunnelDestructionStartTimes.entrySet()) {
                 Tunnel tunnel = entry.getKey();
                 writer.write(String.format(
-                        "{start:%s,end:%s,startTime:%d,duration:%d}",
-                        escapeString(tunnel.getStart().getName()),
-                        escapeString(tunnel.getEnd().getName()),
+                        "{startId:%d,endId:%d,startTime:%d,duration:%d}",
+                        tunnel.getStart().getUniqueId(),
+                        tunnel.getEnd().getUniqueId(),
                         entry.getValue(),
                         world.tunnelDestructionDurations.get(tunnel)
                 ) + "\n");
@@ -212,16 +248,7 @@ public class MetroSerializer {
             writer.write("]\n");
         }
     }
-    private String extractValue(String part, String expectedKey) {
-        String[] keyValue = part.split(":", 2);
-        if (keyValue.length < 2) {
-            throw new IllegalArgumentException("Invalid key-value pair: " + part);
-        }
-        if (!keyValue[0].trim().equals(expectedKey)) {
-            throw new IllegalArgumentException("Expected key '" + expectedKey + "' but found '" + keyValue[0] + "'");
-        }
-        return keyValue[1].trim();
-    }
+
     public GameWorld loadWorld(String filename) throws IOException {
         File saveFile = new File(SAVE_FOLDER + File.separator + filename);
         if (!saveFile.exists()) {
@@ -237,7 +264,7 @@ public class MetroSerializer {
             String version = null;
             String line;
             Map<String, Station> stationMap = new HashMap<>();
-
+            Map<Long, Station> stationIdMap = new HashMap<>();
             while ((line = reader.readLine()) != null) {
                 if (line.startsWith("version:")) {
                     version = line.substring("version:".length());
@@ -293,56 +320,73 @@ public class MetroSerializer {
 
                 else
                 if (line.equals("stations:[")) {
+
                     // Чтение станций
                     while (!(line = reader.readLine()).equals("]")) {
                         Station station = parseStation(line, world);
                         stationMap.put(station.getName(), station);
+                        stationIdMap.put(station.getUniqueId(), station);
                         if (station != null) {
                             world.getStations().add(station);
+
                         }
                     }
-                }
 
+                }
+                else if (line.equals("connections:[")) {
+                    // Чтение соединений
+                    while (!(line = reader.readLine()).equals("]")) {
+                        parseConnection(line, world, stationIdMap);
+                    }
+                }
                 else if (line.equals("tunnels:[")) {
                     // Чтение туннелей
                     while (!(line = reader.readLine()).equals("]")) {
-                        Tunnel tunnel = parseTunnel(line, world, stationMap);
+                        Tunnel tunnel = parseTunnel(line, world, stationIdMap);
                         if (tunnel != null) {
                             world.getTunnels().add(tunnel);
                         }
                     }
                 }
+                else if (line.equals("pathPoints:[")) {
+                    // Чтение путевых точек для туннелей
+                    while (!(line = reader.readLine()).equals("]")) {
+                        parsePathPoints(line, world, stationIdMap);
+                    }
+                }
                 else if (line.equals("labels:[")) {
+
                     // Чтение меток
                     while (!(line = reader.readLine()).equals("]")) {
-                        Label label = parseLabel(line, world, stationMap);
+                        Label label = parseLabel(line, world, stationMap, stationIdMap);
                         if (label != null) {
                             world.getLabels().add(label);
                         }
                     }
+
                 }
                 else if (line.equals("stationBuild:[")) {
                     // Чтение данных о строительстве станций
                     while (!(line = reader.readLine()).equals("]")) {
-                        parseConstructionData(line, world, stationMap, true, false);
+                        parseConstructionData(line, world, stationIdMap, true, false);
                     }
                 }
                 else if (line.equals("stationDestroy:[")) {
                     // Чтение данных о разрушении станций
                     while (!(line = reader.readLine()).equals("]")) {
-                        parseConstructionData(line, world, stationMap, true, true);
+                        parseConstructionData(line, world, stationIdMap, true, true);
                     }
                 }
                 else if (line.equals("tunnelBuild:[")) {
                     // Чтение данных о строительстве туннелей
                     while (!(line = reader.readLine()).equals("]")) {
-                        parseConstructionData(line, world, stationMap, false, false);
+                        parseConstructionData(line, world, stationIdMap, false, false);
                     }
                 }
                 else if (line.equals("tunnelDestroy:[")) {
                     // Чтение данных о разрушении туннелей
                     while (!(line = reader.readLine()).equals("]")) {
-                        parseConstructionData(line, world, stationMap, false, true);
+                        parseConstructionData(line, world, stationIdMap, false, true);
                     }
                 }
                 else if (line.equals("gameGrid:[")) {
@@ -360,7 +404,7 @@ public class MetroSerializer {
                             String contentStr = extractValue(parts[2], "content");
 
                             if (!contentStr.equals("null")) {
-                                GameObject obj = parseGameObject(contentStr, world, stationMap);
+                                GameObject obj = parseGameObject(contentStr, world, stationIdMap);
                                 world.getGameGrid()[x][y].setContent(obj);
                             }
                     }
@@ -373,52 +417,178 @@ public class MetroSerializer {
         return world;
     }
 
-    private Station parseStation(String line, GameWorld world) {
-        // Пример строки: {name:"Station 1",x:10,y:20,color:rgb(255,0,0),type:REGULAR}
+
+    /*****************************************
+     * PARSING AND AUXILIARY METHODS SECTIONS
+     *****************************************/
+    private GameObject parseGameObject(String contentStr, GameWorld world, Map<Long, Station> stationIdMap) {
+        String[] parts = contentStr.split(":");
+        String type = parts[0];
+        String value = parts[1];
+//        String[] parts = contentStr.split(":");
+//        String type = parts[0];
+//        String value = unescapeString(parts[1]);
+
+        return switch (type) {
+            case "station" -> {
+                long stationId = Long.parseLong(value);
+                Station station = stationIdMap.get(stationId);
+                yield station;
+            }
+            case "label" -> {
+                for (Label label : world.getLabels()) {
+                    if (label.getText().equals(value)) {
+                        yield label;
+                    }
+                }
+                yield null;
+            }
+            case "pathpoint" -> {
+                String[] coords = value.split(",");
+                int x = Integer.parseInt(coords[0]);
+                int y = Integer.parseInt(coords[1]);
+                yield new PathPoint(x, y);
+            }
+
+            default -> null;
+        };
+    }
+    private String serializeGameObject(GameObject obj) {
+        if (obj instanceof Station) {
+            Station station = (Station) obj;
+            return String.format("station:%d", station.getUniqueId()); // Используем ID вместо имени
+        } else if (obj instanceof Label) {
+            Label label = (Label) obj;
+            return String.format("label:%d", label.getUniqueId()); // Используем ID
+        } else if (obj instanceof PathPoint) {
+            PathPoint pathPoint = (PathPoint) obj;
+            return String.format("pathpoint:%d,%d", pathPoint.getX(), pathPoint.getY());
+        }
+        return "null";
+    }
+    private void parseConnection(String line, GameWorld world, Map<Long, Station> stationIdMap) {
+        // Пример строки: {stationId:123,direction:NORTH,connectedToId:456}
         String[] parts = line.substring(1, line.length()-1).split(",");
-        String name = unescapeString(parts[0].split(":")[1]);
-        int x = Integer.parseInt(parts[1].split(":")[1]);
-        int y = Integer.parseInt(parts[2].split(":")[1]);
 
-        // Парсим цвет
-        String colorStr = parts[3].split(":")[1];
-        Color color = parseColor(colorStr);
+        long stationId = Long.parseLong(parts[0].split(":")[1]);
+        Direction direction = Direction.valueOf(parts[1].split(":")[1]);
+        long connectedToId = Long.parseLong(parts[2].split(":")[1]);
 
-        StationType type = StationType.valueOf(parts[4].split(":")[1]);
+        Station station = stationIdMap.get(stationId);
+        Station connectedTo = stationIdMap.get(connectedToId);
 
-        Station station = new Station(world, x, y, color, type);
+        if (station != null && connectedTo != null) {
+            station.getConnections().put(direction, connectedTo);
+        }
+    }
+    private Station parseStation(String line, GameWorld world) {
+        // Пример строки: {id:123,name:"Station 1",x:10,y:20,color:rgb(255,0,0),type:REGULAR}
+        String[] parts = line.substring(1, line.length()-1).split(",");
+
+        long id = -1;
+        String name = "";
+        int x = 0, y = 0;
+        Color color = Color.BLACK;
+        StationType type = StationType.REGULAR;
+
+        // Парсим все поля по ключам
+        for (String part : parts) {
+            String[] keyValue = part.split(":", 2);
+            String key = keyValue[0].trim();
+            String value = keyValue.length > 1 ? keyValue[1].trim() : "";
+
+            switch (key) {
+                case "id":
+                    id = Long.parseLong(value);
+                    break;
+                case "name":
+                    name = unescapeString(value);
+                    break;
+                case "x":
+                    x = Integer.parseInt(value);
+                    break;
+                case "y":
+                    y = Integer.parseInt(value);
+                    break;
+                case "color":
+                    color = parseColor(value);
+                    break;
+                case "type":
+                    type = StationType.valueOf(value);
+                    break;
+            }
+        }
+
+        Station station = new Station(world, x, y, StationColors.fromColor(color), type);
         station.setName(name);
+        if (id != -1) {
+            station.setUniqueId(id); // Устанавливаем сохраненный ID
+        }
+
         return station;
     }
 
-    private Tunnel parseTunnel(String line, GameWorld world, Map<String, Station> stationMap) {
-            String[] parts = line.substring(1, line.length()-1).split(",");
 
-            String startName = unescapeString(parts[0].split(":")[1]);
-            String endName = unescapeString(parts[1].split(":")[1]);
-
-            Station start = stationMap.get(startName);
-            Station end = stationMap.get(endName);
-
-            TunnelType type = TunnelType.valueOf(parts[2].split(":")[1]);
-
-            Tunnel tunnel = new Tunnel(world, start, end, type);
-
-            return tunnel;
-
-    }
-
-
-    private Label parseLabel(String line, GameWorld world, Map<String, Station> stationMap) {
-        // Пример строки: {text:"Label text",x:15,y:25,parent:"Station 1"}
+    private Tunnel parseTunnel(String line, GameWorld world, Map<Long, Station> stationIdMap) {
         String[] parts = line.substring(1, line.length()-1).split(",");
-        String text = unescapeString(parts[0].split(":")[1]);
-        int x = Integer.parseInt(parts[1].split(":")[1]);
-        int y = Integer.parseInt(parts[2].split(":")[1]);
-        Station parent = stationMap.get(unescapeString(parts[3].split(":")[1]));
 
-        return new Label(world, x, y, text, parent);
+        long startId = Long.parseLong(parts[0].split(":")[1]);
+        long endId = Long.parseLong(parts[1].split(":")[1]);
+
+        Station start = stationIdMap.get(startId);
+        Station end = stationIdMap.get(endId);
+
+        TunnelType type = TunnelType.valueOf(parts[2].split(":")[1]);
+
+        if (start != null && end != null) {
+            Tunnel tunnel = new Tunnel(world, start, end, type);
+            return tunnel;
+        }
+        return null;
     }
+
+    private Label parseLabel(String line, GameWorld world, Map<String, Station> stationMap, Map<Long, Station> stationIdMap) {
+        // Пример строки: {text:"Label text",x:15,y:25,parentStationId:123456}
+        try {
+            String[] parts = line.substring(1, line.length()-1).split(",");
+            String text = unescapeString(parts[0].split(":")[1]);
+            int x = Integer.parseInt(parts[1].split(":")[1]);
+            int y = Integer.parseInt(parts[2].split(":")[1]);
+
+            // Ищем parentStationId более надежным способом
+            Station parent = null;
+            for (String part : parts) {
+                part = part.trim();
+                if (part.startsWith("parentStationId:")) {
+                    String idStr = part.substring("parentStationId:".length()).trim();
+                    long parentId = Long.parseLong(idStr);
+                    parent = stationIdMap.get(parentId);
+                    break;
+                }
+            }
+
+            if (parent != null) {
+                Label label = new Label(world, x, y, text, parent);
+
+                return label;
+            }
+        } catch (Exception e) {
+            System.err.println("Error parsing label line: " + line);
+            e.printStackTrace();
+        }
+        return null;
+    }
+    private String extractValue(String part, String expectedKey) {
+        String[] keyValue = part.split(":", 2);
+        if (keyValue.length < 2) {
+            throw new IllegalArgumentException("Invalid key-value pair: " + part);
+        }
+        if (!keyValue[0].trim().equals(expectedKey)) {
+            throw new IllegalArgumentException("Expected key '" + expectedKey + "' but found '" + keyValue[0] + "'");
+        }
+        return keyValue[1].trim();
+    }
+
     private Color parseColor(String colorStr) {
         try {
             if (colorStr.startsWith("#") && colorStr.length() == 7) {
@@ -429,45 +599,80 @@ public class MetroSerializer {
             }
             return Color.BLACK; // Значение по умолчанию
         } catch (Exception e) {
-            MetroLogger.logError("Invalid color format: " + colorStr, e);
             return Color.BLACK;
         }
     }
-//    private Color parseColor(String colorStr) {
-//        // Парсим строку вида "rgb(255,0,0)"
-//        if (colorStr.startsWith("rgb(") && colorStr.endsWith(")")) {
-//            String rgbValues = colorStr.substring(4, colorStr.length() - 1);
-//            String[] rgb = rgbValues.split(",");
-//            int r = Integer.parseInt(rgb[0]);
-//            int g = Integer.parseInt(rgb[1]);
-//            int b = Integer.parseInt(rgb[2]);
-//            return new Color(r, g, b);
-//        }
-//        return Color.BLACK; // Значение по умолчанию
-//    }
+    private void parsePathPoints(String line, GameWorld world, Map<Long, Station> stationIdMap) {
+        // Пример строки: {tunnelStartId:123,tunnelEndId:456,points:[{x:10,y:20},{x:11,y:21}]}
+        if (!line.contains("points:[")) return;
+
+        String[] mainParts = line.substring(1, line.length()-1).split(",points:\\[");
+        String tunnelPart = mainParts[0];
+        String pointsPart = mainParts[1].substring(0, mainParts[1].length()-1); // убираем последнюю ]
+
+        // Парсим ID станций туннеля
+        String[] tunnelParts = tunnelPart.split(",");
+        long startId = -1, endId = -1;
+
+        for (String part : tunnelParts) {
+            if (part.startsWith("tunnelStartId:")) {
+                startId = Long.parseLong(part.split(":")[1]);
+            } else if (part.startsWith("tunnelEndId:")) {
+                endId = Long.parseLong(part.split(":")[1]);
+            }
+        }
+
+        Station start = stationIdMap.get(startId);
+        Station end = stationIdMap.get(endId);
+
+        // Находим соответствующий туннель
+        Tunnel tunnel = world.getTunnels().stream()
+                             .filter(t -> t.getStart() == start && t.getEnd() == end)
+                             .findFirst()
+                             .orElse(null);
+
+        if (tunnel != null && !pointsPart.isEmpty()) {
+            tunnel.getPath().clear();
+
+            // Парсим точки: {x:10,y:20},{x:11,y:21}
+            String[] pointStrings = pointsPart.split("\\},\\{");
+            for (String pointStr : pointStrings) {
+                pointStr = pointStr.replace("{", "").replace("}", "");
+                String[] coords = pointStr.split(",");
+                int x = Integer.parseInt(coords[0].split(":")[1]);
+                int y = Integer.parseInt(coords[1].split(":")[1]);
+                tunnel.getPath().add(new PathPoint(x, y));
+            }
+        }
+    }
 
     private void parseConstructionData(String line, GameWorld world,
-            Map<String, Station> stationMap,
+            Map<Long, Station> stationIdMap,
             boolean isStation, boolean isDestruction) {
         if (isStation) {
-            // Для станций: {station:"Station 1",start:12345,duration:10000}
+            // Для станций: {stationId:123,start:12345,duration:10000}
             String[] parts = line.substring(1, line.length()-1).split(",");
-            Station station = stationMap.get(unescapeString(parts[0].split(":")[1]));
+            long stationId = Long.parseLong(parts[0].split(":")[1]);
+            Station station = stationIdMap.get(stationId);
             long start = Long.parseLong(parts[1].split(":")[1]);
             long duration = Long.parseLong(parts[2].split(":")[1]);
 
-            if (isDestruction) {
-                world.stationDestructionStartTimes.put(station, start);
-                world.stationDestructionDurations.put(station, duration);
-            } else {
-                world.stationBuildStartTimes.put(station, start);
-                world.stationBuildDurations.put(station, duration);
+            if (station != null) {
+                if (isDestruction) {
+                    world.stationDestructionStartTimes.put(station, start);
+                    world.stationDestructionDurations.put(station, duration);
+                } else {
+                    world.stationBuildStartTimes.put(station, start);
+                    world.stationBuildDurations.put(station, duration);
+                }
             }
         } else {
-            // Для туннелей: {start:"Station 1",end:"Station 2",startTime:12345,duration:10000}
+            // Для туннелей: {startId:123,endId:456,startTime:12345,duration:10000}
             String[] parts = line.substring(1, line.length()-1).split(",");
-            Station start = stationMap.get(unescapeString(parts[0].split(":")[1]));
-            Station end = stationMap.get(unescapeString(parts[1].split(":")[1]));
+            long startId = Long.parseLong(parts[0].split(":")[1]);
+            long endId = Long.parseLong(parts[1].split(":")[1]);
+            Station start = stationIdMap.get(startId);
+            Station end = stationIdMap.get(endId);
             long startTime = Long.parseLong(parts[2].split(":")[1]);
             long duration = Long.parseLong(parts[3].split(":")[1]);
 

@@ -1,5 +1,7 @@
 package metroline.input;
 
+import metroline.MainFrame;
+import metroline.objects.gameobjects.GameObject;
 import metroline.objects.gameobjects.PathPoint;
 import metroline.screens.worldscreens.WorldGameScreen;
 import metroline.screens.worldscreens.WorldSandboxScreen;
@@ -19,116 +21,205 @@ import java.awt.event.MouseWheelEvent;
 public class MouseController extends MouseAdapter {
     private WorldScreen screen;
     private Point lastDragPoint;
-    private Point dragVelocity;
-
-
+    private boolean isRightMouseDragging = false;
+    private boolean isLeftMouseDragging = false;
 
     public MouseController(WorldScreen screen) {
         this.screen = screen;
-        this.dragVelocity = new Point(0, 0);
-
+        this.lastDragPoint = new Point(0, 0);
     }
-    //Double click
+
+    /*********************************
+     * ОБРАБОТЧИКИ СОБЫТИЙ МЫШИ
+     *********************************/
+
+    /**
+     * Обработка кликов мыши
+     */
     @Override
     public void mouseClicked(MouseEvent e) {
         PathPoint worldPos = screen.screenToWorld(e.getX(), e.getY());
+
+        if (e.getClickCount() == 2 && SwingUtilities.isLeftMouseButton(e)) {
+            handleDoubleClick(e, worldPos);
+        }
+    }
+
+    /**
+     * Обработка нажатия кнопок мыши
+     */
+    @Override
+    public void mousePressed(MouseEvent e) {
+        if (SwingUtilities.isRightMouseButton(e)) {
+            handleRightMousePressed(e);
+        } else if (SwingUtilities.isLeftMouseButton(e)) {
+            handleLeftMousePressed(e);
+        }
+    }
+
+    /**
+     * Обработка перетаскивания мыши
+     */
+    @Override
+    public void mouseDragged(MouseEvent e) {
+        if (isRightMouseDragging) {
+            handleRightMouseDrag(e);
+        } else if (isLeftMouseDragging) {
+            handleLeftMouseDrag(e);
+        }
+    }
+
+    /**
+     * Обработка отпускания кнопок мыши
+     */
+    @Override
+    public void mouseReleased(MouseEvent e) {
+        if (SwingUtilities.isRightMouseButton(e)) {
+            handleRightMouseReleased(e);
+        } else if (SwingUtilities.isLeftMouseButton(e)) {
+            handleLeftMouseReleased(e);
+        }
+    }
+
+    /**
+     * Обработка колесика мыши
+     */
+    @Override
+    public void mouseWheelMoved(MouseWheelEvent e) {
+        handleMouseWheel(e);
+    }
+
+    /*********************************
+     * ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ
+     *********************************/
+
+    /**
+     * Обработка двойного клика
+     */
+    private void handleDoubleClick(MouseEvent e, PathPoint worldPos) {
+
         if (screen instanceof WorldSandboxScreen sbScreen) {
-            if (!sbScreen.isCtrlPressed && !sbScreen.isShiftPressed && SwingUtilities.isLeftMouseButton(e) && e.getClickCount() == 2) {
+            if (!sbScreen.isCtrlPressed && !sbScreen.isShiftPressed) {
                 sbScreen.sandboxClickHandler.handleEditStationName(worldPos.x, worldPos.y);
                 sbScreen.sandboxClickHandler.handleRemoveTunnel(worldPos.x, worldPos.y);
             }
+        } else if (screen instanceof WorldGameScreen gScreen) {
+            GameObject selectedObject = gScreen.getWorld().getGameObjectAt(worldPos.x, worldPos.y);
+
+            gScreen.parent.showInfoPanel(selectedObject, worldPos.x, worldPos.y);
+//            if (!gScreen.isCtrlPressed && !gScreen.isShiftPressed) {
+//                gScreen.gameClickHandler.handleCtrlDoubleLeftClick(worldPos.x, worldPos.y);
+//            }
         }
-        if (screen instanceof WorldGameScreen gScreen) {
-            if(SwingUtilities.isLeftMouseButton(e)&& e.getClickCount() == 2) {
-                gScreen.gameClickHandler.handleEditStationName(worldPos.x, worldPos.y);
+    }
+
+    /**
+     * Обработка нажатия правой кнопки мыши
+     */
+    private void handleRightMousePressed(MouseEvent e) {
+        lastDragPoint = e.getPoint();
+        isRightMouseDragging = true;
+
+        if (screen instanceof WorldSandboxScreen) {
+            SandboxClickHandler.startDrag(e.getX(), e.getY());
+        }
+    }
+
+    /**
+     * Обработка нажатия левой кнопки мыши
+     */
+    private void handleLeftMousePressed(MouseEvent e) {
+        PathPoint worldPos = screen.screenToWorld(e.getX(), e.getY());
+        isLeftMouseDragging = true;
+
+        if (screen instanceof WorldSandboxScreen sbScreen) {
+            sbScreen.handleClick(worldPos.x, worldPos.y);
+        } else if (screen instanceof WorldGameScreen gsScreen) {
+            gsScreen.handleWorldClick(worldPos.x, worldPos.y);
+        }
+    }
+
+    /**
+     * Обработка перетаскивания правой кнопкой мыши
+     */
+    private void handleRightMouseDrag(MouseEvent e) {
+        Point currentPoint = e.getPoint();
+        float zoomFactor = 1.0f / screen.getZoom();
+        int dx = (int) ((currentPoint.x - lastDragPoint.x) * zoomFactor);
+        int dy = (int) ((currentPoint.y - lastDragPoint.y) * zoomFactor);
+
+        screen.setOffset(
+                screen.getOffsetX() + dx,
+                screen.getOffsetY() + dy
+        );
+        lastDragPoint = currentPoint;
+    }
+
+    /**
+     * Обработка перетаскивания левой кнопкой мыши
+     */
+    private void handleLeftMouseDrag(MouseEvent e) {
+        PathPoint worldPos = screen.screenToWorld(e.getX(), e.getY());
+        if (worldPos != null) {
+            if (screen instanceof WorldSandboxScreen sbscreen) {
+                sbscreen.sandboxClickHandler.handleEditDrag(worldPos.x, worldPos.y);
+            } else if (screen instanceof WorldGameScreen gamescreen) {
+                gamescreen.gameClickHandler.handleEditDrag(worldPos.x, worldPos.y);
             }
         }
     }
 
+    /**
+     * Обработка отпускания правой кнопки мыши
+     */
+    private void handleRightMouseReleased(MouseEvent e) {
+        isRightMouseDragging = false;
 
-    @Override
-    public void mousePressed(MouseEvent e) {
-            if (SwingUtilities.isRightMouseButton(e)) {
-                lastDragPoint = e.getPoint();
-                dragVelocity.setLocation(0, 0);
-                SandboxClickHandler.startDrag(e.getX(), e.getY());
-            } else if (SwingUtilities.isLeftMouseButton(e)) {
-                PathPoint worldPos = screen.screenToWorld(e.getX(), e.getY());
-                if(screen instanceof WorldSandboxScreen sbScreen) sbScreen.handleClick(worldPos.x, worldPos.y);
-                if(screen instanceof WorldGameScreen gsScreen) {
-                    gsScreen.handleWorldClick(worldPos.x, worldPos.y);
-                }
-            }
-
-    }
-    @Override
-    public void mouseDragged(MouseEvent e) {
-        if (SwingUtilities.isRightMouseButton(e)) {
-            Point currentPoint = e.getPoint();
-            float zoomFactor = 1.0f / screen.getZoom();
-            int dx = (int)((currentPoint.x - lastDragPoint.x) * zoomFactor);
-            int dy = (int)((currentPoint.y - lastDragPoint.y) * zoomFactor);
-
-            screen.setOffset(
-                    screen.getOffsetX() + dx,
-                    screen.getOffsetY() + dy
-            );
-            lastDragPoint = currentPoint;
-
-        } else if (SwingUtilities.isLeftMouseButton(e)) {
-            PathPoint worldPos = screen.screenToWorld(e.getX(), e.getY());
-            if (worldPos != null) {
-                if(screen instanceof WorldSandboxScreen sbscreen) {
-                    sbscreen.sandboxClickHandler.handleEditDrag(worldPos.x, worldPos.y);
-                }
-                if(screen instanceof WorldGameScreen gamescreen) {
-                    gamescreen.gameClickHandler.handleEditDrag(worldPos.x, worldPos.y);
-                }
-            }
+        if (screen instanceof WorldSandboxScreen) {
+            SandboxClickHandler.stopDrag();
         }
     }
 
-    @Override
-    public void mouseReleased(MouseEvent e) {
-        if(screen instanceof WorldSandboxScreen sbscreen) {
-            if (SwingUtilities.isLeftMouseButton(e)) {
-                sbscreen.sandboxClickHandler.selectedObject = null;
-                SandboxClickHandler.dragOffset = null;
-            }
-            if (SwingUtilities.isRightMouseButton(e)) {
-                SandboxClickHandler.stopDrag();
-            }
-        }
-        if(screen instanceof WorldGameScreen gScreen) {
-            if (SwingUtilities.isLeftMouseButton(e)) {
-                gScreen.gameClickHandler.selectedObject = null;
-                GameClickHandler.dragOffset = null;
+    /**
+     * Обработка отпускания левой кнопки мыши
+     */
+    private void handleLeftMouseReleased(MouseEvent e) {
+        isLeftMouseDragging = false;
 
-            }
-            if (SwingUtilities.isRightMouseButton(e)) {
-                gScreen.gameClickHandler.dragging = false;
-            }
+        if (screen instanceof WorldSandboxScreen sbscreen) {
+            sbscreen.sandboxClickHandler.selectedObject = null;
+            SandboxClickHandler.dragOffset = null;
+        } else if (screen instanceof WorldGameScreen gScreen) {
+            gScreen.gameClickHandler.selectedObject = null;
+            WorldClickController.dragOffset = null;
         }
     }
 
-    @Override
-    public void mouseWheelMoved(MouseWheelEvent e) {
+    /**
+     * Обработка колесика мыши (масштабирование)
+     */
+    private void handleMouseWheel(MouseWheelEvent e) {
         float currentZoom = screen.getZoom();
         int currentOffsetX = screen.getOffsetX();
         int currentOffsetY = screen.getOffsetY();
+
         PathPoint worldPosBefore = screen.screenToWorld(e.getX(), e.getY());
         float zoomDelta = -e.getWheelRotation() * 0.1f;
         float newZoom = currentZoom * (1 + zoomDelta);
         newZoom = Math.max(0.1f, Math.min(3.0f, newZoom));
+
         if (currentZoom == newZoom) return;
+
         screen.setZoom(newZoom);
+
         Point screenPosAfter = screen.worldToScreen(worldPosBefore.x, worldPosBefore.y);
         int dx = e.getX() - screenPosAfter.x;
         int dy = e.getY() - screenPosAfter.y;
+
         screen.setOffset(
                 currentOffsetX + dx,
                 currentOffsetY + dy
         );
-
     }
 }
+
