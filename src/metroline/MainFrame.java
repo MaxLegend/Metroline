@@ -7,6 +7,7 @@ import java.awt.event.*;
 import java.util.HashMap;
 import java.util.Map;
 
+import metroline.core.time.GameTime;
 import metroline.core.world.GameWorld;
 import metroline.core.world.SandboxWorld;
 import metroline.objects.gameobjects.Station;
@@ -45,9 +46,12 @@ public class MainFrame extends JFrame {
     private JToolBar toolBar;
 
     public LinesLegendWindow legendWindow;
-    private boolean legendWindowVisible = false;
+
+   public static boolean showPaymentZones = false;
+    public static boolean showPassengerZones = false;
 
     private JButton legendButton;
+    private JButton economicLayerButton;
 
     public JLabel moneyLabel = new JLabel("100");
 
@@ -144,6 +148,8 @@ public class MainFrame extends JFrame {
         initializeWindow(true);
 
     }
+
+
     /**
      * Set to fullscreen mode
      */
@@ -170,9 +176,9 @@ public class MainFrame extends JFrame {
     /**
      * UI Initialization
      */
-    public void updateMoneyDisplay(int amount) {
+    public void updateMoneyDisplay(float amount) {
         SwingUtilities.invokeLater(() -> {
-            moneyLabel.setText(String.valueOf(amount) + " " + LngUtil.translatable("money.currency"));
+            moneyLabel.setText(String.format("%.2f M", amount));
             timePanel.repaint();
         });
     }
@@ -199,10 +205,15 @@ public class MainFrame extends JFrame {
         legendButton = StyleUtil.createMetrolineInGameButton(LngUtil.translatable("legend.button"), e -> toggleLegendWindow());
         rightPanel.add(legendButton, BorderLayout.EAST);
 
+        economicLayerButton = StyleUtil.createMetrolineInGameButton(LngUtil.translatable("timebar.economic_layers"),
+                e -> showEconomicLayerPopupMenu((JButton)e.getSource()));
+        rightPanel.add(economicLayerButton, BorderLayout.WEST);
+
         rightPanel.setBackground(new Color(60, 60, 60));
         moneyLabel.setForeground(Color.WHITE);
         moneyLabel.setFont(new Font("Sans Serif", Font.BOLD, 14));
         rightPanel.add(moneyLabel);
+
 
 
         timePanel.add(timeLeftPanel, BorderLayout.WEST);
@@ -223,12 +234,9 @@ public class MainFrame extends JFrame {
         toolBar.add(StyleUtil.createMetrolineInGameButton(LngUtil.translatable("toolbar.save_game"), e -> saveGame()));
         toolBar.add(StyleUtil.createMetrolineInGameButton(LngUtil.translatable("toolbar.load_game"), e -> loadGame()));
         toolBar.add(StyleUtil.createMetrolineInGameButton(LngUtil.translatable("toolbar.back_menu"), e -> backToMenu()));
-        JButton menuButton = StyleUtil.createMetrolineInGameButton(LngUtil.translatable("toolbar.options"), e -> showPopupMenu((JButton)e.getSource()));
+        JButton menuButton = StyleUtil.createMetrolineInGameButton(LngUtil.translatable("toolbar.options"), e -> showOptionsPopupMenu((JButton)e.getSource()));
         toolBar.add(menuButton);
         toolBar.add(StyleUtil.createMetrolineInGameButton(LngUtil.translatable("toolbar.exit"), e -> exitGame()));
-
-
-
 
         add(toolBar, BorderLayout.NORTH);
 
@@ -253,18 +261,34 @@ public class MainFrame extends JFrame {
             legendWindow.showWindow();
         }
     }
-    private void showPopupMenu(JButton sourceButton) {
+    public void togglePaymentZones() {
+        showPaymentZones = !showPaymentZones;
+        if (currentScreen instanceof WorldGameScreen) {
+            ((WorldGameScreen)currentScreen).invalidateCache();
+            currentScreen.repaint();
+        }
+    }
+
+    public void togglePassengerZones() {
+        showPassengerZones = !showPassengerZones;
+        if (currentScreen instanceof WorldGameScreen) {
+            ((WorldGameScreen)currentScreen).invalidateCache();
+            currentScreen.repaint();
+        }
+    }
+    private void showEconomicLayerPopupMenu(JButton sourceButton) {
 
         closePopupMenu();
         JPanel menuPanel = new JPanel(new GridLayout(0, 1));
         menuPanel.setBackground(StyleUtil.BACKGROUND_COLOR);
         menuPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+        JButton passengerButton = StyleUtil.createMetrolineInGameButton(LngUtil.translatable("elayer.passenger" ), e -> togglePassengerZones());
+        JButton abilityPayButton = StyleUtil.createMetrolineInGameButton(LngUtil.translatable("elayer.abilityPay" ), e -> togglePaymentZones());
 
-        JButton option1 = StyleUtil.createMetrolineInGameButton(LngUtil.translatable("options.1"), e -> {});
-        JButton option2 = StyleUtil.createMetrolineInGameButton(LngUtil.translatable("options.2"), e -> {});
-        option2.setSize(100, 100);
-        menuPanel.add(option1);
-        menuPanel.add(option2);
+        passengerButton.setSize(sourceButton.getSize());
+        abilityPayButton.setSize(sourceButton.getSize());
+        menuPanel.add(passengerButton);
+        menuPanel.add(abilityPayButton);
 
         // Создаем и настраиваем popup-окно
         currentPopup = new JWindow(this);
@@ -272,22 +296,54 @@ public class MainFrame extends JFrame {
         currentPopup.pack();
 
         // Позиционируем под кнопкой
+
         Point location = sourceButton.getLocationOnScreen();
-        currentPopup.setLocation(location.x, location.y + sourceButton.getHeight());
+        currentPopup.setLocation(location.x, location.y -18 - sourceButton.getHeight());
+
         currentPopup.setVisible(true);
 
         // Добавляем глобальный слушатель кликов
-        outsideClickListener = new AWTEventListener() {
-            @Override
-            public void eventDispatched(AWTEvent event) {
-                if (event.getID() == MouseEvent.MOUSE_PRESSED && currentPopup != null) {
-                    MouseEvent mouseEvent = (MouseEvent)event;
+        outsideClickListener = event -> {
+            if (event.getID() == MouseEvent.MOUSE_PRESSED && currentPopup != null) {
+                MouseEvent mouseEvent = (MouseEvent)event;
 
-                    // Проверяем, был ли клик вне popup-меню
-                    if (!currentPopup.getBounds().contains(mouseEvent.getLocationOnScreen()) &&
-                            !sourceButton.getBounds().contains(mouseEvent.getPoint())) {
-                        closePopupMenu();
-                    }
+                if (!currentPopup.getBounds().contains(mouseEvent.getLocationOnScreen()) &&
+                        !sourceButton.getBounds().contains(mouseEvent.getPoint())) {
+                    closePopupMenu();
+                }
+            }
+        };
+        Toolkit.getDefaultToolkit().addAWTEventListener(outsideClickListener, AWTEvent.MOUSE_EVENT_MASK);
+    }
+    private void showOptionsPopupMenu(JButton sourceButton) {
+
+        closePopupMenu();
+        JPanel menuPanel = new JPanel(new GridLayout(0, 1));
+        menuPanel.setBackground(StyleUtil.BACKGROUND_COLOR);
+        menuPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+        JButton button = StyleUtil.createMetrolineInGameButton(LngUtil.translatable("options.1" ), e -> {});
+        menuPanel.add(button);
+
+        // Создаем и настраиваем popup-окно
+        currentPopup = new JWindow(this);
+        currentPopup.getContentPane().add(menuPanel);
+        currentPopup.pack();
+
+        // Позиционируем под кнопкой
+
+        Point location = sourceButton.getLocationOnScreen();
+        currentPopup.setLocation(location.x, location.y + sourceButton.getHeight());
+
+        currentPopup.setVisible(true);
+
+        // Добавляем глобальный слушатель кликов
+        outsideClickListener = event -> {
+            if (event.getID() == MouseEvent.MOUSE_PRESSED && currentPopup != null) {
+                MouseEvent mouseEvent = (MouseEvent)event;
+
+                if (!currentPopup.getBounds().contains(mouseEvent.getLocationOnScreen()) &&
+                        !sourceButton.getBounds().contains(mouseEvent.getPoint())) {
+                    closePopupMenu();
                 }
             }
         };
@@ -353,6 +409,13 @@ public class MainFrame extends JFrame {
             } else if (currentScreen instanceof WorldGameScreen) {
                 GameWorld world =  ((GameWorld)((WorldGameScreen)currentScreen).getWorld());
                 if (world != null && world.getGameTime() != null) newTime = world.getGameTime().getDateTimeString();
+                GameTime gameTime = world.getGameTime();
+
+                if (gameTime.checkMinutePassed()) {
+                    world.updateStationsRevenue();
+                }
+               //
+
             }
 
             if (newTime != null && !newTime.equals(lastDisplayedTime)) {

@@ -279,7 +279,7 @@ public class MetroSerializer {
                 }
 
                 else if (line.startsWith("money:")) {
-                    world.setMoney(Integer.parseInt(line.substring("money:".length())));
+                    world.setMoney((int) Float.parseFloat(line.substring("money:".length())));
                 }
                 else if (line.startsWith("roundStations:")) {
                     world.setRoundStationsEnabled(Boolean.parseBoolean(line.substring("roundStations:".length())));

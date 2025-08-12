@@ -1,8 +1,10 @@
 package metroline.core.world.tiles;
 
+import metroline.MainFrame;
 import metroline.screens.worldscreens.WorldSandboxScreen;
 
 import java.awt.*;
+import java.util.Random;
 
 /**
  * World tile that represents terrain with building permissions
@@ -11,6 +13,9 @@ import java.awt.*;
 public class WorldTile extends Tile {
     private float perm; // 0 = can build, 1 = cannot build
     private Color baseTileColor = new Color(110, 110, 110);
+    private boolean isWater; // Новая переменная для воды
+    private float abilityPay; // Платежеспособность
+    private int passengerCount; // Количество пассажиров
 
     public WorldTile() {
         super(0, 0, 16);
@@ -52,6 +57,14 @@ public class WorldTile extends Tile {
     public Color getBaseTileColor() {
         return baseTileColor;
     }
+    public boolean isWater() { return isWater; }
+    public void setWater(boolean water) { this.isWater = water; }
+
+    public float getAbilityPay() { return abilityPay; }
+    public void setAbilityPay(float abilityPay) { this.abilityPay = abilityPay; }
+
+    public int getPassengerCount() { return passengerCount; }
+    public void setPassengerCount(int passengerCount) { this.passengerCount = passengerCount; }
     @Override
     public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
         super.draw(g, offsetX, offsetY, zoom);
@@ -60,30 +73,44 @@ public class WorldTile extends Tile {
         int drawX = (int)((x * size + offsetX) * zoom);
         int drawY = (int)((y * size + offsetY) * zoom);
 
-        int range = 50;    // Диапазон вариаций
+        int range = 50;
 
         int red = Math.max(0, Math.min(255, baseTileColor.getRed() - (int)(perm * range)));
         int green = Math.max(0, Math.min(255, baseTileColor.getGreen() - (int)(perm * range)));
         int blue = Math.max(0, Math.min(255, baseTileColor.getBlue() - (int)(perm * range)));
 
         // Создаем основной цвет плитки
-        Color tileColor = new Color(red, green, blue);
-        g.setColor(tileColor);
+        Color baseColor = isWater ?
+                new Color(64, 164, 223) : // Водный цвет
+                new Color(red, green, blue);
+
+        g.setColor(baseColor);
 
         // Рисуем плитку с небольшим перекрытием
         g.fillRect(drawX - 1, drawY - 1, drawSize + 2, drawSize + 2);
+        if (MainFrame.showPaymentZones || MainFrame.showPassengerZones) {
+            Graphics2D g2d = (Graphics2D)g.create();
 
-        // В debug-режиме рисуем границы
-        if (WorldSandboxScreen.getInstance().debugMode) {
-            g.setColor(new Color(80, 80, 80)); // Темно-серые границы
-            g.drawRect(drawX, drawY, drawSize, drawSize);
+            try {
+                // Настройка прозрачности
+                g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.4f));
+                int layerColor = 200 + (int)(55 * abilityPay);
+                // Отрисовка платежеспособности (красный)
+                if (MainFrame.showPaymentZones && abilityPay > 0) {
 
-            // Дополнительная информация для отладки
-            if (zoom > 1.5) { // Показываем только при достаточном увеличении
-                g.setColor(Color.WHITE);
-                g.setFont(new Font("Arial", Font.PLAIN, 10));
-                g.drawString(String.format("%.1f", perm), drawX + 2, drawY + 12);
+                    g2d.setColor(new Color(layerColor, 0, 0, 180));
+                    g2d.fillRect(drawX-1, drawY-1, drawSize+2, drawSize+2);
+                }
+
+                // Отрисовка пассажиропотока (зеленый)
+                if (MainFrame.showPassengerZones && passengerCount > 0) {
+                    g2d.setColor(new Color(0, layerColor, 0, 180));
+                    g2d.fillRect(drawX-1, drawY-1, drawSize+2, drawSize+2);
+                }
+            } finally {
+                g2d.dispose();
             }
         }
     }
+
 }

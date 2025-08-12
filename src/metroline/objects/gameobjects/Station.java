@@ -2,6 +2,7 @@ package metroline.objects.gameobjects;
 
 import metroline.core.world.GameWorld;
 import metroline.core.world.World;
+import metroline.core.world.tiles.WorldTile;
 import metroline.objects.enums.Direction;
 import metroline.objects.enums.StationColors;
 import metroline.objects.enums.StationType;
@@ -248,22 +249,22 @@ public class Station extends GameObject {
             }
         }
     }
-//
-//    @Override
-//    public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
-//        if (getWorld().isRoundStationsEnabled()) {
-//            drawRoundStyle(g, offsetX, offsetY, zoom);
-//        } else {
-//            drawSquareStyle(g, offsetX, offsetY, zoom);
-//        }
-//    }
+    public boolean isOnWater() {
+        WorldTile tile = getWorld().getWorldTile(getX(), getY());
+        return tile != null && tile.isWater();
+    }
 @Override
 public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
     if (getWorld().isRoundStationsEnabled()) {
-        drawWorldColorRing(g, offsetX, offsetY, zoom);
-        drawRoundTransfer(g, offsetX, offsetY, zoom);
-        drawRoundStation(g, offsetX, offsetY, zoom);
-        if(selected) drawRoundSelection(g, offsetX, offsetY, zoom);
+        if (isOnWater()) {
+            drawWaterStation(g, offsetX, offsetY, zoom);
+            if (selected) drawRoundSelection(g, offsetX, offsetY, zoom);
+        } else {
+            drawWorldColorRing(g, offsetX, offsetY, zoom);
+            drawRoundTransfer(g, offsetX, offsetY, zoom);
+            drawRoundStation(g, offsetX, offsetY, zoom);
+            if (selected) drawRoundSelection(g, offsetX, offsetY, zoom);
+        }
     } else {
         drawWorldColorSquare(g, offsetX, offsetY, zoom);
         drawRoundTransfer(g, offsetX, offsetY, zoom);
@@ -272,7 +273,36 @@ public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
     }
 
 }
+    private void drawWaterStation(Graphics g, int offsetX, int offsetY, float zoom) {
+        Graphics2D g2d = (Graphics2D)g;
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
+        // Размеры и позиция
+        int drawSize = (int)(24 * zoom);
+        int cellCenterX = (int)((getX() * 32 + offsetX + 15) * zoom);
+        int cellCenterY = (int)((getY() * 32 + offsetY + 15) * zoom);
+        int drawX = cellCenterX - drawSize/2;
+        int drawY = cellCenterY - drawSize/2;
+
+        // Рисуем основу станции (синий цвет для воды)
+        g2d.setColor(new Color(64, 164, 223)); // Голубой цвет воды
+        g2d.fillOval(drawX, drawY, drawSize, drawSize);
+
+        // Рисуем "мост" поверх (серый цвет)
+        int bridgeWidth = (int)(drawSize * 0.7);
+        int bridgeHeight = (int)(drawSize * 0.3);
+        g2d.setColor(new Color(150, 150, 150));
+        g2d.fillRect(drawX + (drawSize - bridgeWidth)/2,
+                drawY + (drawSize - bridgeHeight)/2,
+                bridgeWidth, bridgeHeight);
+
+        // Если выбрана - рисуем выделение
+        if(selected) {
+            g2d.setColor(Color.YELLOW);
+            g2d.setStroke(new BasicStroke(2 * zoom));
+            g2d.drawOval(drawX - 2, drawY - 2, drawSize + 4, drawSize + 4);
+        }
+    }
     public void drawWorldColorRing(Graphics g, int offsetX, int offsetY, float zoom) {
         int drawSize = (int) (24 * zoom);
         int cellCenterX = (int) ((getX() * 32 + offsetX + 15) * zoom);

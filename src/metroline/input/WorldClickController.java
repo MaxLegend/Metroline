@@ -30,9 +30,6 @@ public class WorldClickController {
     public WorldGameScreen screen;
     private static StationColors currentStationColor = StationColors.RED;
 
-    // Константы стоимости
-    public static final int STATION_BASE_COST = 100;
-    public static final int TUNNEL_COST_PER_SEGMENT = 10;
 
     public WorldClickController(WorldGameScreen screen) {
         this.screen = screen;
@@ -85,7 +82,7 @@ public class WorldClickController {
         Station station = world.getStationAt(x, y);
 
         if (station != null && station.getType() == StationType.PLANNED) {
-            int stationCost = calculateStationCost(station);
+            float stationCost = calculateStationCost(station);
             if (world.canAfford(stationCost)) {
                 world.addMoney(-stationCost);
                 station.setType(StationType.BUILDING);
@@ -439,40 +436,6 @@ public class WorldClickController {
     }
 
     /**
-     * Редактирование имени станции
-     */
-    public void handleEditStationName(int x, int y) {
-        Station station = WorldGameScreen.getInstance().getWorld().getStationAt(x, y);
-        Tunnel t = WorldGameScreen.getInstance().getWorld().getTunnelAt(x, y);
-        if (station != null) {
-            editStationName(station);
-        }
-    }
-    public static void editStationName(Station station) {
-        JPanel panel = new JPanel(new BorderLayout());
-        JLabel label = new JLabel("Station Name:");
-        JTextField textField = new JTextField(station.getName(), 20);
-        panel.add(label, BorderLayout.NORTH);
-        panel.add(textField, BorderLayout.CENTER);
-
-        int result = JOptionPane.showConfirmDialog(
-                WorldGameScreen.getInstance(),
-                panel,
-                "Edit name",
-                JOptionPane.OK_CANCEL_OPTION,
-                JOptionPane.PLAIN_MESSAGE
-        );
-
-        if (result == JOptionPane.OK_OPTION) {
-            String newName = textField.getText().trim();
-            if (!newName.isEmpty()) {
-                station.setName(newName);
-                WorldGameScreen.getInstance().repaint();
-            }
-        }
-    }
-
-    /**
      * Проверка на трансферную станцию
      */
     private static void checkForTransferStation(Station station) {
@@ -569,16 +532,16 @@ public class WorldClickController {
     /**
      * Расчет стоимости станции
      */
-    private int calculateStationCost(Station station) {
-        int totalCost = STATION_BASE_COST;
+    private float calculateStationCost(Station station) {
+        float totalCost = GameConstants.STATION_BASE_COST * WorldGameScreen.getInstance().getWorld().getWorldTile(station.getX(), station.getY()).getPerm();
 
         for (Tunnel tunnel : WorldGameScreen.getInstance().getWorld().getTunnels()) {
             if ((tunnel.getStart() == station || tunnel.getEnd() == station) &&
                     tunnel.getType() == TunnelType.PLANNED) {
-                totalCost += tunnel.getLength() * TUNNEL_COST_PER_SEGMENT;
+                totalCost += tunnel.getLength() * GameConstants.TUNNEL_COST_PER_SEGMENT;
             }
         }
-
+        System.out.println("totalCost " + totalCost);
         return totalCost;
     }
 

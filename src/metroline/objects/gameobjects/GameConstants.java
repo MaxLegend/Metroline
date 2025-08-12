@@ -7,6 +7,13 @@ import java.awt.*;
 
 public class GameConstants {
 
+    // Константы стоимости
+    public static final float STATION_BASE_COST = 100;
+    public static final float TUNNEL_COST_PER_SEGMENT = 10;
+
+    public static final float STATION_BASE_REVENUE = 2;
+
+
     public static final String[] NAME_PARTS = {
             LngUtil.translatable("st_name_1"),
             LngUtil.translatable("st_name_2"),

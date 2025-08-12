@@ -1,6 +1,7 @@
 package metroline.screens.worldscreens;
 
 import metroline.core.world.GameWorld;
+import metroline.core.world.tiles.WorldTile;
 import metroline.input.WorldClickController;
 import metroline.objects.gameobjects.Label;
 import metroline.objects.gameobjects.PathPoint;
@@ -32,7 +33,6 @@ public class WorldGameScreen extends WorldScreen {
 
     public transient LinesLegendWindow legendWindow;
     public final List<InfoWindow> infoWindows = new ArrayList<>();
-    private Point lastClickPoint;
 
     //Debug
     public boolean debugMode = false;
@@ -41,13 +41,19 @@ public class WorldGameScreen extends WorldScreen {
     private BufferedImage worldCache; // Кешированное изображение мира
     private boolean cacheValid = false; // Флаг валидности кеша
 
+
     public WorldGameScreen(MainFrame parent) {
-        super(parent, new GameWorld(widthWorld, heightWorld, false, false, Color.WHITE, 1000));
+        super(parent, new GameWorld(widthWorld, heightWorld, false, false,false, false, Color.WHITE, 1000));
         INSTANCE = this;
         this.gameClickHandler = new WorldClickController( this);
         initWorldCache();
         setupRepaintTimer();
     }
+
+
+
+
+
     /**
      * Handles mouse click on the world
      * @param x X coordinate in world space
@@ -67,22 +73,16 @@ public class WorldGameScreen extends WorldScreen {
         }
     }
 
-    public void createNewWorld(int width, int height, boolean hasOrganicPatches, boolean hasRivers, Color worldColor, int money) {
+    public void createNewWorld(int width, int height, boolean hasPassengerCount, boolean hasAbilityPay, boolean hasLandscape, boolean hasRivers, Color worldColor, int money) {
         stopRepaintTimer();
         widthWorld = width;
         heightWorld = height;
-        this.setWorld(new GameWorld(width, height, hasOrganicPatches, hasRivers,worldColor, money));
+        this.setWorld(new GameWorld(width, height,hasPassengerCount, hasAbilityPay, hasLandscape, hasRivers,worldColor, money));
         this.gameClickHandler = new WorldClickController( this);
         setupRepaintTimer();
         invalidateCache();
         repaint();
     }
-
-
-    // Обновленный метод close для закрытия всех окон
-
-
-
 
     private void setupRepaintTimer() {
         repaintTimer = new Timer(1000, e -> {
@@ -114,8 +114,8 @@ public class WorldGameScreen extends WorldScreen {
      */
     public void updateMoneyDisplay() {
         if(getWorld() instanceof GameWorld) {
-            int money = ((GameWorld) getWorld()).getMoney();
-            String formatted = String.format("%,d ₽", money);
+            float money = ((GameWorld) getWorld()).getMoney();
+            String formatted = String.format("%.2f M", money);
             parent.moneyLabel.setText(formatted);
         }
     }
@@ -160,6 +160,7 @@ public class WorldGameScreen extends WorldScreen {
 
             // Рисуем кешированный мир
             g2d.drawImage(worldCache, 0, 0, null);
+
 
             for (Tunnel tunnel : getWorld().getTunnels()) {
                 tunnel.draw(g, 0, 0, 1);
@@ -383,9 +384,6 @@ public class WorldGameScreen extends WorldScreen {
             debugMode = !debugMode;
             repaint();
         }
-    private String formatTime(long timeMillis) {
-        return new SimpleDateFormat("HH:mm:ss").format(new Date(timeMillis));
-    }
 
     private String formatDuration(long durationMillis) {
         long minutes = (durationMillis / (1000 * 60)) % 60;

@@ -11,9 +11,7 @@ import metroline.objects.gameobjects.Tunnel;
 import metroline.objects.enums.Direction;
 import metroline.screens.worldscreens.WorldGameScreen;
 import metroline.screens.worldscreens.WorldScreen;
-import metroline.util.LngUtil;
-import metroline.util.MessageUtil;
-import metroline.util.MetroLogger;
+import metroline.util.*;
 
 import java.awt.*;
 import java.io.*;
@@ -31,61 +29,153 @@ public class World implements Serializable {
 
     protected WorldTile[][] worldGrid;
     protected GameTile[][] gameGrid;
-  //  protected GameTileBig[][] bigWorldGrid;
 
     public java.util.List<Station> stations = new ArrayList<>();
     public java.util.List<Tunnel> tunnels = new ArrayList<>();
     public List<Label> labels = new ArrayList<>();
 
-
-
     public transient WorldScreen screen;
-
     public boolean roundStationsEnabled = false;
 
     public World() {
         super();
     }
-    public World(WorldScreen screen, int width, int height, boolean hasOrganicPatches, boolean hasRivers, Color worldColor, String saveName) {
+
+    public World(WorldScreen screen, int width, int height,boolean hasPassengerCount, boolean hasAbilityPay, boolean hasLandscape, boolean hasRivers, Color worldColor, String saveName) {
         this.screen = screen;
         this.width = width;
         this.height = height;
         this.gameTime = new GameTime();
         this.gameTime.start();
-
         this.SAVE_FILE = saveName;
-        generateWorld(hasOrganicPatches, hasRivers,worldColor);
+        generateWorld(hasPassengerCount, hasAbilityPay, hasLandscape, hasRivers, worldColor);
     }
 
-
-     public void generateWorld(boolean hasOrganicPatches, boolean hasRivers, Color worldColor) {
-        // Create world grid
+    public void generateWorld(boolean hasPassengerCount, boolean hasAbilityPay, boolean hasLandscape, boolean hasRivers, Color worldColor) {
+        //Create world grid
         worldGrid = new WorldTile[width][height];
         gameGrid = new GameTile[width][height];
-     //   bigWorldGrid = new GameTileBig[width*4][height*4];
 
-        // Initialize with all perm=0
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                worldGrid[x][y] = new WorldTile(x, y, 0);
-                worldGrid[x][y].setBaseTileColor(worldColor);
-                gameGrid[x][y] = new GameTile(x, y);
+        // Инициализация генераторов шума с общим seed для согласованности
+        long seed = rand.nextLong();
+        PerlinNoise perlin = new PerlinNoise(seed);
+        VoronoiNoise voronoi = new VoronoiNoise(seed);
+        if(!hasLandscape) {
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    worldGrid[x][y] = new WorldTile(x, y, 0f);
+                    worldGrid[x][y].setBaseTileColor(worldColor);
+                    gameGrid[x][y] = new GameTile(x, y);
+                }
             }
+        } else {
+
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    float nx = (float) x / width;
+                    float ny = (float) y / height;
+
+                    // Генерируем оба типа шума для одних и тех же координат
+                    float perlinValue = perlin.fractalNoise(nx * 10, ny * 10, 0, 4, 0.5f);
+                    float voronoiValue = voronoi.evaluate(nx * 15, ny * 15);
+
+                    // Смешиваем шумы с учетом весов
+                    float noiseValue = mixNoises(perlinValue, voronoiValue, 0.6f); // 60% перлина, 40% вороного
+
+                    // Преобразуем в значение твердости породы (0..1)
+                    float perm = transformNoiseToPerm(noiseValue);
+
+                    // Создаем тайл
+                    worldGrid[x][y] = new WorldTile(x, y, perm);
+                    worldGrid[x][y].setBaseTileColor(worldColor);
+                    gameGrid[x][y] = new GameTile(x, y);
+
+                }
+            }
+
         }
+        // Генерация зон с использованием того же смешанного шума
+        if(hasAbilityPay) {
+            generatePaymentZones(perlin, voronoi);
+         }
+         if(hasPassengerCount) {
+             generatePassengerZones(perlin, voronoi);
+         }
+
 
 
         if (hasRivers) {
-            addRivers(1);
-        }
-
-        if (hasOrganicPatches) {
-            addOrganicAreas(0.5f, 8, 5, 15, 0.7f);
-            addOrganicAreas(1.0f, 5, 8, 20, 0.5f);
+            if(getWidth() > 100 || getHeight() > 100) {
+                addRivers(rand.nextInt(2,8));
+            } else
+            if(getWidth() > 50 || getHeight() > 50) {
+                addRivers(rand.nextInt(3,5));
+            } else {
+                addRivers(rand.nextInt(1,2));
+            }
         }
 
         applyGradient();
     }
 
+    private float mixNoises(float perlin, float voronoi, float perlinWeight) {
+        // Нормализуем вороной шум (изначально 0..1)
+        voronoi = (float)Math.pow(voronoi, 2);
+
+        // Смешиваем с весами
+        return perlin * perlinWeight + voronoi * (1 - perlinWeight);
+    }
+
+    private float transformNoiseToPerm(float noise) {
+        // Преобразуем шум в значение твердости породы
+        // Здесь можно настроить кривую распределения
+        if (noise < 0.3f) {
+            return 0.1f + noise * 0.6f; // Мягкие породы
+        } else if (noise < 0.7f) {
+            return 0.4f + (noise - 0.3f) * 0.2f; // Средние породы
+        } else {
+            return 0.9f + (noise - 0.7f) * 0.3f; // Твердые породы
+        }
+    }
+    private void generatePaymentZones(PerlinNoise perlin, VoronoiNoise voronoi) {
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                float nx = (float)x / width * 12f; // Более высокая частота
+                float ny = (float)y / height * 12f;
+
+                // Больше вороного для четких зон
+                float perlinValue = perlin.noise(nx, ny, 0);
+                float voronoiValue = voronoi.evaluate(nx, ny);
+                float value = mixNoises(perlinValue, voronoiValue, 0.3f); // 70% вороного
+
+                value = 1f - value; // Инвертируем
+
+                if (value > 0.4f) { // Более высокий порог
+                    worldGrid[x][y].setAbilityPay((int)(value * 1.5)); // Усиливаем значения
+                }
+            }
+        }
+    }
+
+    private void generatePassengerZones(PerlinNoise perlin, VoronoiNoise voronoi) {
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                float nx = (float)x / width * 12f; // Более высокая частота
+                float ny = (float)y / height * 12f;
+
+                // Больше вороного для четких зон
+                float perlinValue = perlin.noise(nx, ny, 0);
+                float voronoiValue = voronoi.evaluate(nx, ny);
+                float value = mixNoises(perlinValue, voronoiValue, 0.3f); // 70% вороного
+
+                value = 1f - value; // Инвертируем
+
+                if (value > 0.6f) { // Только самые яркие зоны
+                    worldGrid[x][y].setPassengerCount((int)(value * 1200)); // Усиливаем значения
+                }
+            }
+        }
+    }
     public boolean isRoundStationsEnabled() {
         return roundStationsEnabled;
     }
@@ -100,68 +190,11 @@ public class World implements Serializable {
         }
         return gameTime;
     }
-    private void addOrganicAreas(float perm, int count, int minSize, int maxSize, float irregularity) {
-        Random rand = new Random();
 
-        for (int i = 0; i < count; i++) {
-            // Случайный центр и размер пятна
-            int centerX = rand.nextInt(width);
-            int centerY = rand.nextInt(height);
-            int size = minSize + rand.nextInt(maxSize - minSize + 1);
 
-            // Основной радиус пятна
-            float baseRadius = size / 2.0f;
 
-            // Генерируем шум Перлина для органической формы
-            float[][] noise = generateOrganicNoise(size * 2, size * 2, irregularity);
 
-            // Определяем границы для оптимизации
-            int minX = Math.max(0, centerX - size);
-            int maxX = Math.min(width, centerX + size);
-            int minY = Math.max(0, centerY - size);
-            int maxY = Math.min(height, centerY + size);
 
-            for (int y = minY; y < maxY; y++) {
-                for (int x = minX; x < maxX; x++) {
-                    // Относительные координаты внутри пятна
-                    float relX = (x - centerX) / baseRadius;
-                    float relY = (y - centerY) / baseRadius;
-
-                    // Расстояние от центра (нормализованное)
-                    float dist = (float)Math.sqrt(relX * relX + relY * relY);
-
-                    if (dist <= 1.0f) {
-                        // Координаты в шумовом поле
-                        int noiseX = (int)((relX + 1) * (size - 1));
-                        int noiseY = (int)((relY + 1) * (size - 1));
-
-                        // Получаем значение шума для этой точки
-                        float noiseValue = noise[Math.max(0, Math.min(noise.length - 1, noiseX))]
-                                [Math.max(0, Math.min(noise[0].length - 1, noiseY))];
-
-                        // Фактор формы с учетом шума
-                        float shapeFactor = 1.0f - dist + noiseValue * irregularity;
-
-                        if (shapeFactor > 0.5f) { // Порог для создания плавных краев
-                            // Плавное уменьшение к краям
-                            float edgeFactor = Math.min(1.0f, shapeFactor * 2.0f);
-                            worldGrid[x][y].setPerm(perm * edgeFactor);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    public boolean isLabelPositionValid(int labelX, int labelY, Station station) {
-        // Проверяем, что позиция находится в пределах 2 клеток от станции
-        int dx = Math.abs(labelX - station.getX());
-        int dy = Math.abs(labelY - station.getY());
-
-        return dx <= 2 && dy <= 2 && (dx + dy) > 0 && // Исключаем позицию станции
-                getStationAt(labelX, labelY) == null; // И клетка свободна от станций
-    }
-   // public GameTileBig[][] getBigWorldGrid() { return bigWorldGrid; }
     public Label getLabelForStation(Station station) {
         for (Label label : labels) {
             if (label.getParentStation() == station) {
@@ -190,21 +223,6 @@ public class World implements Serializable {
                 }
             }
         }
-
-        // Если не нашли подходящую позицию, ищем в расширенном радиусе
-//        for (int dy = -2; dy <= 2; dy++) {
-//            for (int dx = -2; dx <= 2; dx++) {
-//                if (Math.abs(dx) + Math.abs(dy) <= 1) continue; // Пропускаем ортогональные (уже проверили)
-//
-//                int nx = x + dx;
-//                int ny = y + dy;
-//
-//                if (nx >= 0 && nx < width && ny >= 0 && ny < height &&
-//                        getStationAt(nx, ny) == null && getLabelAt(nx, ny) == null) {
-//                    return new PathPoint(nx, ny);
-//                }
-//            }
-//        }
 
         return null;
     }
@@ -367,13 +385,7 @@ public class World implements Serializable {
         tunnels.add(newTunnel);
 
     }
-//    public void addTunnel(Tunnel tunnel) {
-//
-//        if (tunnel.getStart().connectStation(tunnel.getEnd())) {
-//            tunnels.add(tunnel);
-//        }
-//
-//    }
+
     /**
      * Gets the any game object at specified coordinates
      * @param x X coordinate
@@ -477,82 +489,169 @@ public class World implements Serializable {
 
         return output;
     }
-    private void addRivers(int riverCount) {
-        Random rand = new Random();
 
-        for (int i = 0; i < riverCount; i++) {
-
-            WorldEdge startEdge = WorldEdge.values()[rand.nextInt(WorldEdge.values().length)];
-            WorldEdge endEdge;
-            do {
-                endEdge = WorldEdge.values()[rand.nextInt(WorldEdge.values().length)];
-            } while (endEdge == startEdge); // Убедимся, что река не начинается и не заканчивается на одной стороне
-
-            int[] startPos = getRandomEdgePosition(startEdge);
-            int[] endPos = getRandomEdgePosition(endEdge);
-
-            // Генерируем путь реки
-            generateRiverPath(startPos[0], startPos[1], endPos[0], endPos[1]);
+    private WorldEdge getOppositeEdge(WorldEdge edge) {
+        switch (edge) {
+            case TOP: return WorldEdge.BOTTOM;
+            case BOTTOM: return WorldEdge.TOP;
+            case LEFT: return WorldEdge.RIGHT;
+            case RIGHT: return WorldEdge.LEFT;
+            default: return WorldEdge.TOP;
         }
     }
 
+    // Замените старый метод addRivers на этот:
+    private void addRivers(int riverCount) {
+        for (int i = 0; i < riverCount; i++) {
+            WorldEdge startEdge = WorldEdge.values()[rand.nextInt(WorldEdge.values().length)];
+            WorldEdge endEdge = getOppositeEdge(startEdge);
 
+            // Получаем начальную и конечную точки в мировых координатах
+            PathPoint startPos = getRandomEdgePathPoint(startEdge);
+            PathPoint endPos = getRandomEdgePathPoint(endEdge);
 
-    private int[] getRandomEdgePosition(WorldEdge edge) {
+            generateMeanderingRiver(startPos, endPos, rand.nextFloat() * 0.3f + 0.1f);
+        }
+    }
+
+    private PathPoint getRandomEdgePathPoint(WorldEdge edge) {
+        int x, y;
+        int edgeOffset = 3; // Отступ от края карты
 
         switch (edge) {
             case TOP:
-                return new int[]{rand.nextInt(width), 0};
-            case RIGHT:
-                return new int[]{width - 1, rand.nextInt(height)};
-            case BOTTOM:
-                return new int[]{rand.nextInt(width), height - 1};
-            case LEFT:
-                return new int[]{0, rand.nextInt(height)};
-            default:
-                return new int[]{0, 0};
-        }
-    }
-
-    private void generateRiverPath(int startX, int startY, int endX, int endY) {
-        int currentX = startX;
-        int currentY = startY;
-        Random rand = new Random();
-        while (true) {
-            setRiverTile(currentX, currentY);
-            if (Math.abs(currentX - endX) <= 1 && Math.abs(currentY - endY) <= 1) {
-                setRiverTile(endX, endY);
+                x = rand.nextInt(width - edgeOffset*2) + edgeOffset;
+                y = 0;
                 break;
-            }
-            int dx = Integer.compare(endX, currentX);
-            int dy = Integer.compare(endY, currentY);
+            case RIGHT:
+                x = width - 1;
+                y = rand.nextInt(height - edgeOffset*2) + edgeOffset;
+                break;
+            case BOTTOM:
+                x = rand.nextInt(width - edgeOffset*2) + edgeOffset;
+                y = height - 1;
+                break;
+            case LEFT:
+                x = 0;
+                y = rand.nextInt(height - edgeOffset*2) + edgeOffset;
+                break;
+            default:
+                x = 0;
+                y = 0;
+        }
 
-            if (rand.nextBoolean()) {
-                if (rand.nextBoolean() && currentX + dx >= 0 && currentX + dx < width) {
-                    currentX += dx;
-                } else if (currentY + dy >= 0 && currentY + dy < height) {
-                    currentY += dy;
-                }
+        // Создаем PathPoint с мировыми координатами
+        return new PathPoint(x, y);
+    }
+
+    private void generateMeanderingRiver(PathPoint start, PathPoint end, float meanderAmount) {
+        List<PathPoint> riverPath = new ArrayList<>();
+        riverPath.add(start);
+
+        int currentX = start.getX();
+        int currentY = start.getY();
+        Random rand = new Random();
+
+        // Основное направление к конечной точке
+        int dx = Integer.compare(end.getX(), currentX);
+        int dy = Integer.compare(end.getY(), currentY);
+
+        // Перпендикулярное направление для изгибов
+        int perpX = -dy;
+        int perpY = dx;
+
+        while (!(currentX == end.getX() && currentY == end.getY())) {
+            // Основное движение к цели (70% вероятность)
+            if (rand.nextFloat() < 0.7) {
+                currentX = clamp(currentX + dx, 0, width-1);
+                currentY = clamp(currentY + dy, 0, height-1);
+            }
+
+            // Добавляем изгибы (40% вероятность)
+            if (rand.nextFloat() < 0.4) {
+                int offset = rand.nextBoolean() ? 1 : -1;
+                currentX = clamp(currentX + perpX * offset, 0, width-1);
+                currentY = clamp(currentY + perpY * offset, 0, height-1);
+            }
+
+            // Добавляем точку только если она изменилась
+            PathPoint last = riverPath.get(riverPath.size()-1);
+            if (currentX != last.getX() || currentY != last.getY()) {
+                riverPath.add(new PathPoint(currentX, currentY));
+            }
+
+            // Защита от зацикливания
+            if (riverPath.size() > width * height) break;
+        }
+
+        // Сглаживаем путь реки
+        riverPath = smoothRiverPath(riverPath);
+
+        // Устанавливаем тайлы реки
+        for (PathPoint point : riverPath) {
+            setRiverTile(point.getX(), point.getY(), 2 + rand.nextInt(2)); // Ширина 2-3 тайла
+        }
+    }
+
+    private int clamp(int value, int min, int max) {
+        return Math.min(Math.max(value, min), max);
+    }
+
+    private List<PathPoint> smoothRiverPath(List<PathPoint> path) {
+        if (path.size() < 3) return path;
+
+        List<PathPoint> smoothed = new ArrayList<>();
+        smoothed.add(path.get(0));
+
+        for (int i = 1; i < path.size() - 1; i++) {
+            PathPoint prev = path.get(i-1);
+            PathPoint curr = path.get(i);
+            PathPoint next = path.get(i+1);
+
+            // Усредняем только угловые точки
+            if (prev.getX() != next.getX() && prev.getY() != next.getY()) {
+                int avgX = (prev.getX() + curr.getX() + next.getX()) / 3;
+                int avgY = (prev.getY() + curr.getY() + next.getY()) / 3;
+                smoothed.add(new PathPoint(avgX, avgY));
             } else {
-                if (currentX + dx >= 0 && currentX + dx < width &&
-                        currentY + dy >= 0 && currentY + dy < height) {
-                    currentX += dx;
-                    currentY += dy;
+                smoothed.add(curr);
+            }
+        }
+
+        smoothed.add(path.get(path.size()-1));
+        return smoothed;
+    }
+
+    private void setRiverTile(int x, int y, int radius) {
+        worldGrid[x][y].setPerm(0.3f);
+        worldGrid[x][y].setWater(true);
+
+        for (int dy = -radius; dy <= radius; dy++) {
+            for (int dx = -radius; dx <= radius; dx++) {
+                float dist = (float)Math.sqrt(dx*dx + dy*dy);
+                if (dist <= radius) {
+                    int nx = x + dx;
+                    int ny = y + dy;
+
+                    if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                        float perm = 0.3f + (dist/radius) * 0.4f;
+                        worldGrid[nx][ny].setPerm(perm);
+                        if (dist < radius * 0.7f) {
+                            worldGrid[nx][ny].setWater(true);
+                        }
+                    }
                 }
             }
         }
     }
 
-    private void setRiverTile(int x, int y) {
-        worldGrid[x][y].setPerm(0.4f);
-        for (int ny = Math.max(0, y - 1); ny <= Math.min(height - 1, y + 1); ny++) {
-            for (int nx = Math.max(0, x - 1); nx <= Math.min(width - 1, x + 1); nx++) {
-                if (nx != x || ny != y) {
-                    worldGrid[nx][ny].setPerm(0.4f);
-                }
-            }
-        }
+
+
+
+    private boolean canMove(int x, int y) {
+        return x >= 0 && x < width && y >= 0 && y < height;
     }
+
     /**
      * Applies gradient smoothing around permission boundaries
      */

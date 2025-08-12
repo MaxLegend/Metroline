@@ -23,7 +23,7 @@ public class WorldSettingsScreen extends GameScreen {
 
     private JSlider widthSlider;
     private JSlider heightSlider;
-    private JCheckBox organicPatchesCheck;
+    private JCheckBox landscapeCheck, abilityPayCheck, passengerCountCheck;
     private JCheckBox riversCheck;
     private JCheckBox roundStationsCheck;
 
@@ -135,7 +135,10 @@ public class WorldSettingsScreen extends GameScreen {
         // Кнопка выбора цвета
         colorButton = StyleUtil.createMetrolineColorableButton(LngUtil.translatable("world.color"), e -> showWindowColorSelection(), worldColor);
 
-        organicPatchesCheck = StyleUtil.createMetrolineCheckBox(LngUtil.translatable("world.gen_hard_rocks"), true);
+        abilityPayCheck = StyleUtil.createMetrolineCheckBox(LngUtil.translatable("world.gen_abilityPay_zone"), true);
+        passengerCountCheck = StyleUtil.createMetrolineCheckBox(LngUtil.translatable("world.gen_passengerCount_zone"), true);
+
+        landscapeCheck = StyleUtil.createMetrolineCheckBox(LngUtil.translatable("world.gen_landscape"), true);
 
         riversCheck = StyleUtil.createMetrolineCheckBox(LngUtil.translatable("world.gen_river"), true);
         roundStationsCheck = StyleUtil.createMetrolineCheckBox(LngUtil.translatable("world.round_stations"), false);
@@ -149,9 +152,9 @@ public class WorldSettingsScreen extends GameScreen {
         moneyValueLabel.setForeground(StyleUtil.FOREGROUND_COLOR);
         moneyValueLabel.setFont(new Font("Sans Serif", Font.BOLD, 13));
         moneySlider = StyleUtil.createMetrolineSlider(
-                100,      // мин значение (100 тыс)
-                10000,   // макс значение (100 млн)
-                1000,    // начальное значение (10 млн)
+                1000,
+                20000,
+                5000,
                 "",
                 moneyValueLabel
         );
@@ -166,12 +169,13 @@ public class WorldSettingsScreen extends GameScreen {
 
         moneySlider.addChangeListener(e -> {
             int value = moneySlider.getValue();
-            // Форматируем число с разделителями тысяч
             String formatted = String.format("%,d ₽", value);
             moneyValueLabel.setText(formatted);
         });
-        featuresPanel.add(organicPatchesCheck);
-        featuresPanel.add(organicPatchesCheck);
+
+        featuresPanel.add(passengerCountCheck);
+        featuresPanel.add(abilityPayCheck);
+        featuresPanel.add(landscapeCheck);
         featuresPanel.add(riversCheck);
         featuresPanel.add(roundStationsCheck);
         featuresPanel.add(colorButton);
@@ -288,7 +292,9 @@ public class WorldSettingsScreen extends GameScreen {
     private void createWorld(boolean isSandbox) {
         int width = widthSlider.getValue();
         int height = heightSlider.getValue();
-        boolean hasOrganicPatches = organicPatchesCheck.isSelected();
+        boolean hasPassengerCount = passengerCountCheck.isSelected();
+        boolean hasAbilityPay = abilityPayCheck.isSelected();
+        boolean hasLandscape = landscapeCheck.isSelected();
         boolean hasRivers = riversCheck.isSelected();
         boolean roundStations = roundStationsCheck.isSelected();
         int startMoney = moneySlider.getValue();
@@ -296,12 +302,12 @@ public class WorldSettingsScreen extends GameScreen {
         if(isSandbox) {
             parent.switchScreen(MainFrame.SANDBOX_SCREEN_NAME);
             WorldSandboxScreen gameScreen = (WorldSandboxScreen) parent.getCurrentScreen();
-            gameScreen.createNewWorld(width, height, hasOrganicPatches, hasRivers, worldColor);
+            gameScreen.createNewWorld(width, height, hasLandscape, hasRivers, worldColor);
             gameScreen.getWorld().setRoundStationsEnabled(roundStations);
         } else {
             parent.switchScreen(MainFrame.GAME_SCREEN_NAME);
             WorldGameScreen gameScreen = (WorldGameScreen) parent.getCurrentScreen();
-            gameScreen.createNewWorld(width, height, hasOrganicPatches, hasRivers, worldColor, startMoney);
+            gameScreen.createNewWorld(width, height,hasPassengerCount,hasAbilityPay,  hasLandscape, hasRivers, worldColor, startMoney);
             gameScreen.getWorld().setRoundStationsEnabled(roundStations);
             ((GameWorld)gameScreen.getWorld()).setMoney(startMoney); // Устанавливаем начальные деньги
             gameScreen.updateMoneyDisplay(); // Обновляем отображение
@@ -312,7 +318,9 @@ public class WorldSettingsScreen extends GameScreen {
     public void onActivate() {
         widthSlider.setValue(100);
         heightSlider.setValue(100);
-        organicPatchesCheck.setSelected(false);
+        passengerCountCheck.setSelected(false);
+        abilityPayCheck.setSelected(false);
+        landscapeCheck.setSelected(false);
         riversCheck.setSelected(false);
         roundStationsCheck.setSelected(false);
         moneySlider.setValue(10000);

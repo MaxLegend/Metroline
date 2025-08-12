@@ -37,6 +37,7 @@ public class GameTime implements Serializable {
     // transient поля
     private transient Timer timer;         // Swing таймер
     private transient long lastRealMillis; // момент последнего обновления
+    private transient int lastMinute = -1;
 
     private static final int TICK_MS = 50; // частота тиков (мс)
     private static final DateTimeFormatter DISPLAY_FMT = DateTimeFormatter.ofPattern("HH:mm dd.MM.yyyy");
@@ -115,7 +116,20 @@ public class GameTime implements Serializable {
         Instant inst = Instant.ofEpochMilli(epochMillis);
         return LocalDateTime.ofInstant(inst, ZoneId.systemDefault()).format(DISPLAY_FMT);
     }
+    /**
+     * Проверяет, наступила ли новая игровая минута
+     * @return true если минута изменилась с последней проверки
+     */
+    public synchronized boolean checkMinutePassed() {
+        Instant instant = Instant.ofEpochMilli(epochMillis);
+        int currentMinute = instant.atZone(ZoneId.systemDefault()).getMinute();
 
+        if (currentMinute != lastMinute) {
+            lastMinute = currentMinute;
+            return true;
+        }
+        return false;
+    }
     /**
      * Создаёт (если нужно) и запускает Swing Timer.
      * Timer сам ничего не прибавляет при paused == true.

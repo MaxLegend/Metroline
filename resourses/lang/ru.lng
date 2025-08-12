@@ -1,31 +1,58 @@
+-------------------------------
+# Main menu
+-------------------------------
 create_world_title=СОЗДАТЬ НОВЫЙ МИР
 main_menu.start=Начать игру
 main_menu.load_sandbox=Загрузить песочницу
 main_menu.load_standart=Загрузить игру
 main_menu.settings=Настройки
 main_menu.exit=Выход
+-------------------------------
+# World
+-------------------------------
 world.not_loaded=Ошибка загрузки мира!
 world.not_saved=Ошибка сохранения мира!
 world.loaded=Мир успешно загружен!
 world.saved=Мир успешно сохранен!
 world.save_png=Изображение сохранено в
-world.color=Цвет мира
-world.gen_hard_rocks=Генерировать твердые камни
+world.color=Цвет карты метро
+world.gen_landscape=Генерировать включения
 world.gen_river=Генерировать реки
 world.back=Назад
-world.create_standart=Создать мир
+world.create_standart=Создать карту
 world.create_sandbox=Создать песочницу
+world.gen_abilityPay_zone=Зоны платежеспособности
+world.gen_passengerCount_zone=Зоны пассажиропотока
+world.width=Ширина мира
+world.height=Высота мира
+world.cells=клеток
+world.round_stations=Круглые станции
+world.start_money=Начальный капитал
+
+# Toolbar
+
 toolbar.save_game=Сохранить игру
 toolbar.load_game=Загрузить игру
 toolbar.back_menu=Выход в меню
 toolbar.options=Опции
 toolbar.exit=Выход из игры
 timebar.pause=Пауза
-world.width=Ширина мира
-world.height=Высота мира
-world.cells=клеток
-world.round_stations=Круглые станции
-world.start_money=Начальный капитал
+
+# Stations and Tunnels
+
+stype.destroyed=Разрушаемая
+stype.closed=Закрытая
+stype.planned=Планируемая
+stype.building=Строящаяся
+stype.regular=Одиночная
+stype.transfer=Пересадочная
+stype.terminal=Конечная
+stype.transit=Обычная
+ttype.destroyed=Разрушаемый
+ttype.planned=Планируемый
+ttype.building=Строящийся
+ttype.active=Обычный
+
 st_name_1=Московская
 st_name_2=Стрелка
 st_name_3=Нижегородская
@@ -51,12 +78,7 @@ st_name_22=Коммунаровская
 st_name_23=Центральная
 st_name_24=Максимовская
 st_name_25=Тракторный завод
-money.currency=₽
-infoWnd.position=Позиция:
-infoWnd.type=Тип:
-infoWnd.color=Цвет:
-infoWnd.cost=Стоимость:
-infoWnd.connections=Соединено:
+
 color.red=Красный
 color.dark_green=Темно-зеленый
 color.blue=Синий
@@ -73,27 +95,7 @@ color.pink=Розовый
 color.mint=Мятный
 color.maroon=Бордовый
 color.light_green=Светло-зеленый
-stype.destroyed=Разрушаемая
-stype.closed=Закрытая
-stype.planned=Планируемая
-stype.building=Строящаяся
-stype.regular=Одиночная
-stype.transfer=Пересадочная
-stype.terminal=Конечная
-stype.transit=Обычная
-ttype.destroyed=Разрушаемый
-ttype.planned=Планируемый
-ttype.building=Строящийся
-ttype.active=Обычный
-infoWnd.tunnel_from=От:
-infoWnd.tunnel_to=До:
-infoWnd.tunnel_length=Длина:
-infoWnd.tunnel_segments=сегментов
-infoWnd.tunnel_type=Тип:
-infoWnd.tunnel_cost=Стоимость:
-infoWnd.tunnel_title=Перегон
-legend.title=Линии метро
-legend.button=Линии метро
+
 line.red=Красная линия
 line.dark_green=Тёмно-зелёная линия
 line.blue=Голубая линия
@@ -110,4 +112,32 @@ line.pink=Розовая линия
 line.mint=Мятная линия
 line.maroon=Бордовая линия
 line.light_green=Светло-зелёная линия
+
+# Economic
+money.currency=₽
+elayer.passenger=Пассажиропоток
+elayer.abilityPay=Платежеспособность
+timebar.economic_layers=Слои
+
+# Info
+infoWnd.position=Позиция:
+infoWnd.type=Тип:
+infoWnd.color=Цвет:
+infoWnd.cost=Стоимость:
+infoWnd.connections=Соединено:
+infoWnd.tunnel_from=От:
+infoWnd.tunnel_to=До:
+infoWnd.tunnel_length=Длина:
+infoWnd.tunnel_segments=сегментов
+infoWnd.tunnel_type=Тип:
+infoWnd.tunnel_cost=Стоимость:
+infoWnd.tunnel_title=Перегон
+infoWnd.abilityPay=Платежеспособность:
+infoWnd.passengerCount=Пассажиропоток:
+infoWnd.revenue:Доход в сутки:
+# Line Legend
+legend.title=Линии метро
+legend.button=Линии метро
+
+
 

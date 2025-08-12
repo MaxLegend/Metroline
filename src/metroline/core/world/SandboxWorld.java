@@ -11,7 +11,7 @@ public class SandboxWorld extends World {
     }
 
     public SandboxWorld(int width, int height, boolean hasOrganicPatches, boolean hasRivers, Color worldColor) {
-        super(null, width, height, hasOrganicPatches,hasRivers,worldColor, SAVE_FILE);
+        super(null, width, height, false, false, hasOrganicPatches,hasRivers,worldColor, SAVE_FILE);
     }
 
     @Override

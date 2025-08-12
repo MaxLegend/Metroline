@@ -2,7 +2,9 @@ package metroline.screens.panel;
 
 import metroline.MainFrame;
 import metroline.core.world.GameWorld;
+import metroline.input.WorldClickController;
 import metroline.objects.enums.StationColors;
+import metroline.objects.gameobjects.GameConstants;
 import metroline.objects.gameobjects.Station;
 import metroline.objects.gameobjects.Tunnel;
 import metroline.objects.enums.StationType;
@@ -385,14 +387,17 @@ public class InfoWindow extends JWindow {
         if (currentObject instanceof Station) {
             Station station = (Station) currentObject;
             titleLabel.setText(station.getName());
-
+           GameWorld world = (GameWorld) WorldGameScreen.getInstance().getWorld();
             StringBuilder info = new StringBuilder("<html>");
             info.append(LngUtil.translatable("infoWnd.position") + " ").append(station.getX()).append(", ").append(station.getY()).append("<br>");
             info.append(LngUtil.translatable("infoWnd.type") + " ").append(station.getType().getLocalizedName()).append("<br>");
             info.append(LngUtil.translatable("infoWnd.color") + " ").append(station.getStationColor().getLocalizedName()).append("<br>");
-            info.append(LngUtil.translatable("infoWnd.cost") + " ").append(NumberFormat.getIntegerInstance().format(50000)).append(" ₽").append("<br>");
+            info.append(LngUtil.translatable("infoWnd.abilityPay") + " ").append("" + world.getWorldTile(station.getX(), station.getY()).getAbilityPay()).append("<br>");
+            info.append(LngUtil.translatable("infoWnd.passengerCount") + " ").append("" + world.getWorldTile(station.getX(), station.getY()).getPassengerCount()).append("<br>");
+            info.append(LngUtil.translatable("infoWnd.revenue") + " ").append("" + world.calculateStationRevenue(station)).append(" M").append("<br>");
 
-            infoLabel.setText(info.toString());
+            info.append(LngUtil.translatable("infoWnd.cost") + " ").append(NumberFormat.getIntegerInstance().format(GameConstants.STATION_BASE_COST* WorldGameScreen.getInstance().getWorld().getWorldTile(station.getX(), station.getY()).getPerm())).append(" M").append("<br>");
+         infoLabel.setText(info.toString());
             updateProgress();
         } else if (currentObject instanceof Tunnel) {
             Tunnel tunnel = (Tunnel) currentObject;
@@ -403,8 +408,8 @@ public class InfoWindow extends JWindow {
             info.append(LngUtil.translatable("infoWnd.tunnel_to")+ " ").append(tunnel.getEnd().getName()).append("<br>");
             info.append(LngUtil.translatable("infoWnd.tunnel_length")+ " ").append(tunnel.getLength()).append( " " + LngUtil.translatable("infoWnd.tunnel_segments") + " <br>");
             info.append(LngUtil.translatable("infoWnd.tunnel_type")+ " ").append(tunnel.getType().getLocalizedName()+ "<br>");
-            int cost = tunnel.getLength() * 10000;
-            info.append(LngUtil.translatable("infoWnd.tunnel_cost")+ " ").append(NumberFormat.getIntegerInstance().format(cost)).append(" ₽" + " <br>");
+            float cost = tunnel.getLength() * GameConstants.TUNNEL_COST_PER_SEGMENT * WorldGameScreen.getInstance().getWorld().getWorldTile(tunnel.getX(), tunnel.getY()).getPerm();
+            info.append(LngUtil.translatable("infoWnd.tunnel_cost")+ " ").append(NumberFormat.getIntegerInstance().format(cost)).append(" M" + " <br>");
 
 
             infoLabel.setText(info.toString());

@@ -4,7 +4,9 @@ import metroline.core.time.GameTime;
 import metroline.core.world.tiles.GameTile;
 
 import metroline.core.world.tiles.WorldTile;
+import metroline.input.WorldClickController;
 import metroline.objects.enums.Direction;
+import metroline.objects.gameobjects.GameConstants;
 import metroline.objects.gameobjects.Station;
 import metroline.objects.gameobjects.Tunnel;
 import metroline.objects.enums.StationType;
@@ -22,12 +24,12 @@ import java.io.*;
 import java.util.*;
 import java.util.List;
 
-import static metroline.input.GameClickHandler.TUNNEL_COST_PER_SEGMENT;
+
 
 public class GameWorld extends World {
     private transient MainFrame mainFrame;
     private static String SAVE_FILE = "game_save.metro";
-    public int money;
+    public float money;
 
     private long stationDestroyTime = 100000; // Время разрушения станции
     private long tunnelDestroyTime = 100000;
@@ -51,8 +53,8 @@ public class GameWorld extends World {
         initTransientFields();
     }
 
-    public GameWorld(int width, int height, boolean hasOrganicPatches, boolean hasRivers, Color worldColor, int money) {
-        super(null, width, height, hasOrganicPatches,hasRivers,worldColor, SAVE_FILE);
+    public GameWorld(int width, int height,boolean hasPassengerCount, boolean hasAbilityPay,  boolean hasLandscape, boolean hasRivers, Color worldColor, int money) {
+        super(null, width, height, hasPassengerCount, hasAbilityPay, hasLandscape,hasRivers,worldColor, SAVE_FILE);
         this.mainFrame = MainFrame.getInstance();
         this.money = money;
         initTransientFields();
@@ -144,7 +146,50 @@ public class GameWorld extends World {
         }
 
     }
+    public float calculateStationRevenue(Station station) {
+        // Получаем тайл, на котором стоит станция
+        WorldTile tile = getWorldTile(station.getX(), station.getY());
 
+        // Базовый доход
+        float revenue = GameConstants.STATION_BASE_REVENUE;
+
+        // Модификаторы:
+        // 1. Учитываем permission (чем больше perm, тем больше доход)
+        //    Диапазон perm: 0-1, добавляем 1 чтобы избежать умножения на 0
+        float permModifier = 1 + (tile.getPerm()); // От 1.0 до 2.0
+
+        // 2. Учитываем платежеспособность (abilityPay)
+        //    Диапазон abilityPay: 0-1.5 (судя по generatePaymentZones)
+        float abilityPayModifier = 1 + (tile.getAbilityPay()); // От 1.0 до 2.5
+
+        // 3. Учитываем пассажиропоток (passengerCount)
+        //    Нормализуем значение (предполагаем макс 2000 пассажиров)
+        float passengerModifier = 1 + (float) tile.getPassengerCount() / 2000; // От 1.0 до 2.0
+
+        // Итоговый расчет
+        revenue = revenue * permModifier * abilityPayModifier * passengerModifier;
+
+        // Для станций пересадки увеличиваем доход в 1.5 раза
+//        if (station.getType() == StationType.TRANSFER) {
+//            revenue *= 1.5f;
+//        }
+
+        return revenue;
+    }
+    public void updateStationsRevenue() {
+        for (Station station : stations) {
+            // Пропускаем станции, которые строятся или разрушаются
+            if (station.getType() == StationType.BUILDING ||
+                    station.getType() == StationType.CLOSED ||
+                    station.getType() == StationType.DESTROYED ||
+                    station.getType() == StationType.PLANNED) {
+                continue;
+            }
+
+            float revenue = calculateStationRevenue(station);
+            addMoney(revenue);
+        }
+    }
     private float calculateProgress(long startTime, long duration) {
         long currentTime = gameTime.getCurrentTimeMillis();
         if (startTime > currentTime) {
@@ -221,15 +266,26 @@ public class GameWorld extends World {
     public World getWorld() {
         return this;
     }
-    public int getMoney() {
+    public float getMoney() {
         return money;
     }
 
-    public boolean canAfford(int amount) {
+    public boolean canAfford(float amount) {
         return money >= amount;
     }
+    public boolean removeMoney(float amount) {
+        if (amount < 0 && !canAfford(-amount)) {
+            return false;
+        }
+        money -= amount;
 
-    public boolean addMoney(int amount) {
+        if (MainFrame.getInstance() != null) {
+            MainFrame.getInstance().updateMoneyDisplay(money);
+        }
+
+        return true;
+    }
+    public boolean addMoney(float amount) {
         if (amount < 0 && !canAfford(-amount)) {
             return false;
         }
@@ -276,7 +332,7 @@ public class GameWorld extends World {
                 if ((bothBuilding || oneBuildingOneBuilt) &&
                         tunnel.getType() == TunnelType.PLANNED) {
 
-                    int tunnelCost = tunnel.getLength() * TUNNEL_COST_PER_SEGMENT;
+                    float tunnelCost = tunnel.getLength() * GameConstants.TUNNEL_COST_PER_SEGMENT;
                     if (canAfford(tunnelCost)) {
                         addMoney(-tunnelCost);
                         tunnel.setType(TunnelType.BUILDING);
