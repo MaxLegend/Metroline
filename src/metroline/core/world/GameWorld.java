@@ -10,6 +10,8 @@ import metroline.objects.gameobjects.Tunnel;
 import metroline.objects.enums.StationType;
 import metroline.objects.enums.TunnelType;
 import metroline.MainFrame;
+import metroline.screens.panel.LinesLegendWindow;
+import metroline.screens.worldscreens.WorldGameScreen;
 import metroline.util.LngUtil;
 import metroline.util.MessageUtil;
 import metroline.util.MetroLogger;
@@ -43,7 +45,7 @@ public class GameWorld extends World {
     public transient Map<Tunnel, Long> tunnelBuildDurations = new HashMap<>();
 
 
-
+    public transient LinesLegendWindow legendWindow;
     public GameWorld() {
         super();
         initTransientFields();
@@ -82,8 +84,14 @@ public class GameWorld extends World {
             tunnelBuildDurations = new HashMap<>();
         }
     }
-
-
+    public void setLegendWindow(LinesLegendWindow legendWindow) {
+        this.legendWindow = legendWindow;
+    }
+    public void updateLegendWindow() {
+        if (mainFrame != null && mainFrame.legendWindow != null) {
+            mainFrame.legendWindow.updateLegend(this);
+        }
+    }
     @Override
     public void addStation(Station station) {
         super.addStation(station);
@@ -103,6 +111,8 @@ public class GameWorld extends World {
                 MetroLogger.logWarning("Station already in construction: " + station.getName());
             }
         }
+
+
     }
     @Override
     public void addTunnel(Tunnel tunnel) {

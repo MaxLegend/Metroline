@@ -9,6 +9,7 @@ import metroline.objects.gameobjects.Tunnel;
 import metroline.objects.enums.Direction;
 import metroline.MainFrame;
 import metroline.screens.panel.InfoWindow;
+import metroline.screens.panel.LinesLegendWindow;
 
 import javax.swing.*;
 import java.awt.*;
@@ -29,7 +30,7 @@ public class WorldGameScreen extends WorldScreen {
     public WorldClickController gameClickHandler;
 
 
-
+    public transient LinesLegendWindow legendWindow;
     public final List<InfoWindow> infoWindows = new ArrayList<>();
     private Point lastClickPoint;
 
@@ -40,14 +41,11 @@ public class WorldGameScreen extends WorldScreen {
     private BufferedImage worldCache; // Кешированное изображение мира
     private boolean cacheValid = false; // Флаг валидности кеша
 
-    private int money; // Начальный капитал
-
     public WorldGameScreen(MainFrame parent) {
         super(parent, new GameWorld(widthWorld, heightWorld, false, false, Color.WHITE, 1000));
         INSTANCE = this;
         this.gameClickHandler = new WorldClickController( this);
         initWorldCache();
-
         setupRepaintTimer();
     }
     /**
@@ -61,6 +59,12 @@ public class WorldGameScreen extends WorldScreen {
         }
         gameClickHandler.mainClickHandler(x,y);
         repaint();
+    }
+    public void setLegendWindow(LinesLegendWindow legendWindow) {
+        this.legendWindow = legendWindow;
+        if (getWorld() instanceof GameWorld) {
+            ((GameWorld)getWorld()).setLegendWindow(legendWindow);
+        }
     }
 
     public void createNewWorld(int width, int height, boolean hasOrganicPatches, boolean hasRivers, Color worldColor, int money) {

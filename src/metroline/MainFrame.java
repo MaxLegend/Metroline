@@ -14,6 +14,7 @@ import metroline.objects.gameobjects.Tunnel;
 import metroline.screens.GameScreen;
 import metroline.screens.MenuScreen;
 import metroline.screens.panel.InfoWindow;
+import metroline.screens.panel.LinesLegendWindow;
 import metroline.screens.worldscreens.WorldSettingsScreen;
 import metroline.screens.worldscreens.WorldGameScreen;
 import metroline.screens.worldscreens.WorldSandboxScreen;
@@ -34,10 +35,19 @@ public class MainFrame extends JFrame {
     public static final String WORLD_SETTINGS_SCREEN_NAME = "world_settings";
 
     private GameScreen currentScreen;
-    private JToolBar toolBar;
+
+
     private Map<String, GameScreen> screens = new HashMap<>();
     private boolean isFullscreen = false;
+
+
     private JLabel timeLabel = new JLabel("00:00 01.01.0000");
+    private JToolBar toolBar;
+
+    public LinesLegendWindow legendWindow;
+    private boolean legendWindowVisible = false;
+
+    private JButton legendButton;
 
     public JLabel moneyLabel = new JLabel("100");
 
@@ -79,14 +89,17 @@ public class MainFrame extends JFrame {
     }
     private void initializeWindow(boolean preserveState) {
        try {
+
            GameScreen previousScreen = currentScreen;
            String activeScreenName = getActiveScreenName();
            MetroLogger.logInfo("Screen mode: " + (isFullscreen ? "Fullscreen" : "Windowed"));
            dispose();
 
            if (isFullscreen) {
+
                setupFullscreenWindow();
            } else {
+
                setupWindowedMode();
            }
 
@@ -95,6 +108,7 @@ public class MainFrame extends JFrame {
            if (preserveState && previousScreen != null) {
                screens.put(activeScreenName, previousScreen);
                switchScreen(activeScreenName);
+
            } else {
                switchScreen(MAIN_MENU_SCREEN_NAME);
            }
@@ -104,6 +118,7 @@ public class MainFrame extends JFrame {
            MetroLogger.logError( "Failed changed screen mode!", e);
         }
     }
+
 
     String getActiveScreenName() {
         for (Map.Entry<String, GameScreen> entry : screens.entrySet()) {
@@ -127,6 +142,7 @@ public class MainFrame extends JFrame {
     public void toggleFullscreen() {
         isFullscreen = !isFullscreen;
         initializeWindow(true);
+
     }
     /**
      * Set to fullscreen mode
@@ -178,18 +194,26 @@ public class MainFrame extends JFrame {
         timeLeftPanel.add(timeLabel);
         timeLeftPanel.add(StyleUtil.createMetrolineInGameButton(LngUtil.translatable("timebar.pause"), e -> timeControl()));
 
-        // Правая часть - деньги
-        JPanel moneyPanel = new JPanel();
-        moneyPanel.setBackground(new Color(60, 60, 60));
+        JPanel rightPanel = new JPanel(new BorderLayout());
+        rightPanel.setBackground(new Color(60, 60, 60));
+        legendButton = StyleUtil.createMetrolineInGameButton(LngUtil.translatable("legend.button"), e -> toggleLegendWindow());
+        rightPanel.add(legendButton, BorderLayout.EAST);
+
+        rightPanel.setBackground(new Color(60, 60, 60));
         moneyLabel.setForeground(Color.WHITE);
         moneyLabel.setFont(new Font("Sans Serif", Font.BOLD, 14));
-        moneyPanel.add(moneyLabel);
+        rightPanel.add(moneyLabel);
 
 
         timePanel.add(timeLeftPanel, BorderLayout.WEST);
-        timePanel.add(moneyPanel, BorderLayout.EAST);
+        timePanel.add(rightPanel, BorderLayout.EAST);
 
         add(timePanel, BorderLayout.SOUTH);
+
+        legendWindow = new LinesLegendWindow(this);
+        // Позиционируем в правом нижнем углу
+        Rectangle bounds = getBounds();
+        legendWindow.setLocation(bounds.x + bounds.width - 350, bounds.y + bounds.height - 260);
 
         toolBar = new JToolBar();
         toolBar.setFloatable(false);
@@ -210,6 +234,25 @@ public class MainFrame extends JFrame {
 
     }
 
+    private void toggleLegendWindow() {
+        if (legendWindow == null) {
+            legendWindow = new LinesLegendWindow(this);
+            if (currentScreen instanceof WorldGameScreen) {
+                ((WorldGameScreen)currentScreen).setLegendWindow(legendWindow);
+            }
+        }
+        if (legendWindow.isVisible()) {
+            legendWindow.hideWindow();
+        } else {
+            if (currentScreen instanceof WorldGameScreen) {
+                WorldGameScreen screen = (WorldGameScreen) currentScreen;
+                if (screen.getWorld() instanceof GameWorld) {
+                    legendWindow.updateLines((GameWorld) screen.getWorld());
+                }
+            }
+            legendWindow.showWindow();
+        }
+    }
     private void showPopupMenu(JButton sourceButton) {
 
         closePopupMenu();
@@ -354,8 +397,11 @@ public class MainFrame extends JFrame {
         if (currentScreen != null) {
             remove(currentScreen);
         }
-
+//        if (!(screenName.equals(GAME_SCREEN_NAME) || screenName.equals(SANDBOX_SCREEN_NAME))) {
+//            clearLegendWindow();
+//        }
         InfoWindow.updateWindowsVisibility(this);
+        //     LinesLegendWindow.updateWindowsVisibility(this);
         boolean isSandboxGameScreen = SANDBOX_SCREEN_NAME.equals(screenName);
         boolean isGameScreen = GAME_SCREEN_NAME.equals(screenName);
         currentScreen = screens.get(screenName);
@@ -363,6 +409,7 @@ public class MainFrame extends JFrame {
         add(currentScreen, BorderLayout.CENTER);
         toolBar.setVisible(isGameScreen || isSandboxGameScreen);
         timePanel.setVisible(isGameScreen|| isSandboxGameScreen);
+        legendButton.setVisible(isGameScreen || isSandboxGameScreen);
         revalidate();
         repaint();
         currentScreen.requestFocusInWindow();

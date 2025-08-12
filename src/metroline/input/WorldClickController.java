@@ -6,10 +6,12 @@ import metroline.objects.enums.StationType;
 import metroline.objects.enums.TunnelType;
 import metroline.objects.gameobjects.*;
 import metroline.objects.gameobjects.Label;
+import metroline.screens.panel.LinesLegendWindow;
 import metroline.screens.worldscreens.WorldGameScreen;
 import metroline.util.MetroLogger;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -48,14 +50,17 @@ public class WorldClickController {
         } else if (screen.isAltPressed) {
             handleAltClick(x, y); // Alt - альтернативные действия
         } else if (screen.isShiftPressed && screen.isCPressed) {
+            ((GameWorld)screen.getWorld()).updateLegendWindow();
             showColorSelectionPopup(x, y); // Shift+C - выбор цвета
         } else if (screen.isShiftPressed) {
+            ((GameWorld)screen.getWorld()).updateLegendWindow();
             handleShiftClick(x, y); // Shift - строительство/удаление
         } else if (screen.isCtrlPressed) {
             handleCtrlClick(x, y); // Ctrl - создание туннелей
         } else {
 
             handleDefaultLeftClick(x, y); // Обычный клик - выбор объектов
+
         }
     }
     public void handleAltShiftClick(int x, int y) {
@@ -584,48 +589,82 @@ public class WorldClickController {
         Window parentWindow = SwingUtilities.getWindowAncestor(WorldGameScreen.getInstance());
         JDialog colorDialog = new JDialog(parentWindow);
         colorDialog.setUndecorated(true);
-        colorDialog.setBackground(new Color(0, 0, 0, 0));
+        colorDialog.setModal(false);
 
-        JPanel colorPanel = new JPanel(new GridLayout(2, 2));
-        colorPanel.setBorder(BorderFactory.createLineBorder(Color.WHITE, 2));
-        colorPanel.setOpaque(true);
-        colorPanel.setBackground(new Color(50, 50, 50));
+        // Создаем панель с темной подложкой и скругленными углами
+        JPanel mainPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setColor(new Color(255, 255, 255, 0));
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
+                g2d.setColor(new Color(80, 80, 80, 70));
+                g2d.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 12, 12);
+                g2d.dispose();
+            }
+        };
 
-        Point screenPos = WorldGameScreen.getInstance().worldToScreen(x, y);
+        mainPanel.setLayout(new BorderLayout());
+        mainPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+        mainPanel.setOpaque(false);
 
-        for (Color color : GameConstants.COLORS) {
-            JButton colorBtn = createColorButton(color, x, y, colorDialog);
+        // Панель для цветов
+        JPanel colorPanel = new JPanel(new GridLayout(4, 4, 5, 5));
+        colorPanel.setOpaque(false);
+
+        for (StationColors color : StationColors.values()) {
+            JButton colorBtn = createColorButton(color.getColor(), x, y, colorDialog);
             colorPanel.add(colorBtn);
         }
 
-        colorDialog.add(colorPanel);
-        colorDialog.pack();
-        colorDialog.setLocation(screenPos.x + 20, screenPos.y + 20);
+        mainPanel.add(colorPanel, BorderLayout.CENTER);
+        colorDialog.add(mainPanel);
 
+        // Рассчитываем позицию как для InfoWindow
+        Point screenPoint = WorldGameScreen.getInstance().worldToScreen(x, y);
+        Point windowPoint = new Point(screenPoint);
+        SwingUtilities.convertPointToScreen(windowPoint, WorldGameScreen.getInstance());
+        colorDialog.setLocation(windowPoint.x + 20, windowPoint.y + 20);
+
+        // Обработчики закрытия
         colorDialog.addWindowFocusListener(new WindowAdapter() {
-            public void windowLostFocus(WindowEvent e) {
-                colorDialog.dispose();
-            }
             @Override
-            public void windowClosed(WindowEvent e) {
+            public void windowLostFocus(WindowEvent e) {
                 colorDialog.dispose();
             }
         });
 
+        colorDialog.pack();
         colorDialog.setVisible(true);
     }
 
-    /**
-     * Создание кнопки цвета
-     */
     private JButton createColorButton(Color colorButton, int x, int y, JDialog dialog) {
-        JButton colorBtn = new JButton();
-        colorBtn.setBackground(colorButton);
+        JButton colorBtn = new JButton() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                // Рисуем скругленную кнопку
+                g2d.setColor(colorButton);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
+
+                // Обводка при наведении
+                if (getModel().isRollover()) {
+                    g2d.setColor(Color.WHITE);
+                    g2d.setStroke(new BasicStroke(2));
+                    g2d.drawRoundRect(1, 1, getWidth()-3, getHeight()-3, 20, 20);
+                }
+                g2d.dispose();
+            }
+        };
+
         colorBtn.setPreferredSize(new Dimension(30, 30));
-        colorBtn.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         colorBtn.setContentAreaFilled(false);
-        colorBtn.setOpaque(true);
+        colorBtn.setOpaque(false);
         colorBtn.setFocusPainted(false);
+        colorBtn.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
         colorBtn.addActionListener(e -> {
             currentStationColor = StationColors.fromColor(colorButton);
@@ -638,16 +677,42 @@ public class WorldClickController {
             dialog.dispose();
         });
 
-        colorBtn.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) {
-                colorBtn.setBorder(BorderFactory.createLineBorder(Color.WHITE, 2));
-            }
-            public void mouseExited(MouseEvent e) {
-                colorBtn.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-            }
-        });
-
         return colorBtn;
     }
+
+    /**
+     * Создание кнопки цвета
+     */
+//    private JButton createColorButton(Color colorButton, int x, int y, JDialog dialog) {
+//        JButton colorBtn = new JButton();
+//        colorBtn.setBackground(colorButton);
+//        colorBtn.setPreferredSize(new Dimension(30, 30));
+//        colorBtn.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+//        colorBtn.setContentAreaFilled(false);
+//        colorBtn.setOpaque(true);
+//        colorBtn.setFocusPainted(false);
+//
+//        colorBtn.addActionListener(e -> {
+//            currentStationColor = StationColors.fromColor(colorButton);
+//            Station newStation = new Station(
+//                    WorldGameScreen.getInstance().getWorld(),
+//                    x, y, StationColors.fromColor(colorButton), StationType.PLANNED
+//            );
+//            WorldGameScreen.getInstance().getWorld().addStation(newStation);
+//            WorldGameScreen.getInstance().repaint();
+//            dialog.dispose();
+//        });
+//
+//        colorBtn.addMouseListener(new MouseAdapter() {
+//            public void mouseEntered(MouseEvent e) {
+//                colorBtn.setBorder(BorderFactory.createLineBorder(Color.WHITE, 2));
+//            }
+//            public void mouseExited(MouseEvent e) {
+//                colorBtn.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+//            }
+//        });
+//
+//        return colorBtn;
+//    }
 
 }

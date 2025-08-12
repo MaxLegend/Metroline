@@ -105,11 +105,7 @@ public class MouseController extends MouseAdapter {
             }
         } else if (screen instanceof WorldGameScreen gScreen) {
             GameObject selectedObject = gScreen.getWorld().getGameObjectAt(worldPos.x, worldPos.y);
-
             gScreen.parent.showInfoPanel(selectedObject, worldPos.x, worldPos.y);
-//            if (!gScreen.isCtrlPressed && !gScreen.isShiftPressed) {
-//                gScreen.gameClickHandler.handleCtrlDoubleLeftClick(worldPos.x, worldPos.y);
-//            }
         }
     }
 

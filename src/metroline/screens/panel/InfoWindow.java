@@ -28,10 +28,12 @@ public class InfoWindow extends JWindow {
     private Timer updateTimer;
     public Object currentObject;
     private JPanel headerPanel;
-    private Point dragStartPoint;
-    private Point windowStartPoint;
     private JPanel contentPanel;
     private JButton closeButton;
+    private JPanel editNamePanel;
+    private JTextField nameEditField;
+    private JButton saveNameButton;
+
     public InfoWindow(Window owner) {
         super(owner); // Создаем окно без владельца
 
@@ -86,29 +88,6 @@ public class InfoWindow extends JWindow {
         closeButton.setMargin(new Insets(0, 0, 0, 0));
         closeButton.addActionListener(e -> hideWindow());
 
-        // Обработчики для перетаскивания за любую часть окна
-        MouseAdapter dragAdapter = new MouseAdapter() {
-            public void mousePressed(MouseEvent e) {
-                dragStartPoint = e.getLocationOnScreen();
-                windowStartPoint = getLocation();
-            }
-
-            public void mouseDragged(MouseEvent e) {
-                if (dragStartPoint != null && windowStartPoint != null) {
-                    Point currentPoint = e.getLocationOnScreen();
-                    int deltaX = currentPoint.x - dragStartPoint.x;
-                    int deltaY = currentPoint.y - dragStartPoint.y;
-                    setLocation(windowStartPoint.x + deltaX, windowStartPoint.y + deltaY);
-                }
-            }
-        };
-
-        // Добавляем обработчики перетаскивания ко всем компонентам
-        contentPanel.addMouseListener(dragAdapter);
-        contentPanel.addMouseMotionListener(dragAdapter);
-        headerPanel.addMouseListener(dragAdapter);
-        headerPanel.addMouseMotionListener(dragAdapter);
-
         // Основная информация
         infoLabel = new JLabel();
         infoLabel.setFont(StyleUtil.getMetrolineFont(13));
@@ -142,8 +121,238 @@ public class InfoWindow extends JWindow {
         updateTimer = new Timer(200, e -> updateInfo());
         updateTimer.start();
 
+        initNameEditComponents();
+
         // Установка начального размера
         pack();
+        KeyboardFocusManager.getCurrentKeyboardFocusManager()
+                            .addPropertyChangeListener("activeWindow", evt -> {
+                                Window activeWindow = (Window)evt.getNewValue();
+                                if (activeWindow == getOwner()) {
+                                    // Главное окно получило фокус - показываем поверх
+                                    bringToFrontProperly();
+                                } else if (isVisible()) {
+                                    // Другое окно получило фокус - убираем alwaysOnTop
+                                    setAlwaysOnTop(false);
+                                }
+                            });
+    }
+    private void bringToFrontProperly() {
+        if (getOwner() != null) {
+            // 1. Сбрасываем alwaysOnTop
+            setAlwaysOnTop(false);
+
+            // 2. Устанавливаем правильный порядок
+            toFront();
+
+            // 3. Если владелец в фокусе - делаем поверх других окон приложения
+            if (getOwner().isFocused()) {
+                setAlwaysOnTop(true);
+            }
+        }
+    }
+    private void initNameEditComponents() {
+        // Панель для редактирования имени
+        editNamePanel = new JPanel(new BorderLayout(5, 0));
+        editNamePanel.setOpaque(false);
+        editNamePanel.setVisible(false);
+
+        nameEditField = new JTextField();
+        nameEditField.setFont(StyleUtil.getMetrolineFont(13));
+        nameEditField.setForeground(StyleUtil.FOREGROUND_COLOR);
+        nameEditField.setBackground(new Color(60, 60, 60));
+        nameEditField.setBorder(BorderFactory.createCompoundBorder());
+
+        saveNameButton = new JButton("✓");
+        saveNameButton.setFont(StyleUtil.getMetrolineFont(14));
+        saveNameButton.setForeground(Color.GREEN);
+        saveNameButton.setContentAreaFilled(false);
+        saveNameButton.setBorderPainted(false);
+        saveNameButton.setFocusPainted(false);
+        saveNameButton.setMargin(new Insets(0, 5, 0, 0));
+        saveNameButton.addActionListener(e -> saveStationName());
+        nameEditField.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+                    cancelNameEditing();
+                }
+            }
+        });
+        nameEditField.addActionListener(e -> saveStationName());
+
+        editNamePanel.add(nameEditField, BorderLayout.CENTER);
+        editNamePanel.add(saveNameButton, BorderLayout.EAST);
+
+        // Добавляем обработчик двойного клика на название станции
+        MouseAdapter dragAdapter = new MouseAdapter() {
+            private Point dragStartPoint;
+            private boolean isDragging = false;
+
+            public void mousePressed(MouseEvent e) {
+                dragStartPoint = e.getLocationOnScreen();
+                isDragging = false;
+            }
+
+            public void mouseDragged(MouseEvent e) {
+                if (dragStartPoint != null) {
+
+                    isDragging = true;
+                    Point currentPoint = e.getLocationOnScreen();
+                    int deltaX = currentPoint.x - dragStartPoint.x;
+                    int deltaY = currentPoint.y - dragStartPoint.y;
+                    int newX = getLocation().x + deltaX;
+                    int newY = getLocation().y + deltaY;
+                    Rectangle bounds = getAdjustedBounds(newX, newY);
+
+                    // Устанавливаем новое положение
+                    setLocation(bounds.x, bounds.y);
+                    dragStartPoint = currentPoint;
+                }
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (isDragging) {
+                    e.consume(); // Отменяем другие события если было перетаскивание
+                }
+            }
+        };
+
+        // Особый обработчик для текстового поля
+        nameEditField.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                // Разрешаем перетаскивание только если текст не выделен
+                if (nameEditField.getSelectedText() == null || nameEditField.getSelectedText().isEmpty()) {
+                    dragAdapter.mousePressed(e);
+                }
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                dragAdapter.mouseReleased(e);
+            }
+        });
+
+        nameEditField.addMouseMotionListener(dragAdapter);
+        saveNameButton.addMouseListener(dragAdapter);
+        saveNameButton.addMouseMotionListener(dragAdapter);
+
+        // Обработчик для двойного клика на заголовке
+        titleLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2 && currentObject instanceof Station) {
+                    startNameEditing((Station) currentObject);
+                }
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                dragAdapter.mousePressed(e);
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                dragAdapter.mouseReleased(e);
+            }
+        });
+
+        titleLabel.addMouseMotionListener(dragAdapter);
+        contentPanel.addMouseListener(dragAdapter);
+        contentPanel.addMouseMotionListener(dragAdapter);
+        headerPanel.addMouseListener(dragAdapter);
+        headerPanel.addMouseMotionListener(dragAdapter);
+
+        editNamePanel.add(nameEditField, BorderLayout.CENTER);
+        editNamePanel.add(saveNameButton, BorderLayout.EAST);
+    }
+    private Rectangle getAdjustedBounds(int x, int y) {
+        Window owner = getOwner();
+        if (owner == null) {
+            return new Rectangle(x, y, getWidth(), getHeight());
+        }
+
+        // Получаем границы MainFrame
+        Rectangle ownerBounds = owner.getBounds();
+        int maxX = ownerBounds.x + ownerBounds.width - getWidth();
+        int maxY = ownerBounds.y + ownerBounds.height - getHeight();
+
+        // Корректируем координаты
+        int adjustedX = Math.max(ownerBounds.x, Math.min(x, maxX));
+        int adjustedY = Math.max(ownerBounds.y, Math.min(y, maxY));
+
+        return new Rectangle(adjustedX, adjustedY, getWidth(), getHeight());
+    }
+    private void cancelNameEditing() {
+        JPanel titlePanel = (JPanel) editNamePanel.getParent();
+        titlePanel.remove(editNamePanel);
+        titlePanel.add(titleLabel, BorderLayout.CENTER);
+        editNamePanel.setVisible(false);
+        titlePanel.revalidate();
+        titlePanel.repaint();
+    }
+    private void startNameEditing(Station station) {
+        // Заменяем label на поле редактирования
+        JPanel titlePanel = (JPanel) titleLabel.getParent();
+        titlePanel.remove(titleLabel);
+        titlePanel.add(editNamePanel, BorderLayout.CENTER);
+
+        nameEditField.setText(station.getName());
+        editNamePanel.setVisible(true);
+        editNamePanel.setSize(0, titleLabel.getHeight());
+        editNamePanel.setVisible(true);
+
+        Timer animTimer = new Timer(10, new ActionListener() {
+            int width = 0;
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (width < titlePanel.getWidth()) {
+                    width += 20;
+                    editNamePanel.setSize(width, titleLabel.getHeight());
+                    titlePanel.revalidate();
+                } else {
+                    ((Timer)e.getSource()).stop();
+                }
+            }
+        });
+        animTimer.start();
+        titlePanel.revalidate();
+        titlePanel.repaint();
+
+        nameEditField.requestFocusInWindow();
+        nameEditField.selectAll();
+    }
+
+    private void saveStationName() {
+        if (!(currentObject instanceof Station)) return;
+
+        Station station = (Station) currentObject;
+        String newName = nameEditField.getText().trim();
+
+        if (!newName.isEmpty()) {
+            station.setName(newName);
+            titleLabel.setText(newName);
+
+            // Возвращаем label на место
+            JPanel titlePanel = (JPanel) editNamePanel.getParent();
+            titlePanel.remove(editNamePanel);
+            titlePanel.add(titleLabel, BorderLayout.CENTER);
+
+            editNamePanel.setVisible(false);
+            titlePanel.revalidate();
+            titlePanel.repaint();
+
+            // Обновляем информацию в окне
+            updateInfo();
+
+            // Обновляем экран
+            if (getOwner() instanceof MainFrame) {
+                ((MainFrame)getOwner()).getCurrentScreen().repaint();
+            }
+        }
     }
     public static void updateWindowsVisibility(MainFrame frame) {
         boolean shouldShow = frame.getCurrentScreen() instanceof WorldScreen ;
@@ -155,6 +364,9 @@ public class InfoWindow extends JWindow {
     }
     public void displayStationInfo(Station station, Point location) {
         this.currentObject = station;
+        if (editNamePanel.isVisible()) {
+            saveStationName();
+        }
         updateInfo();
         setLocation(location);
         setVisible(true);
@@ -179,8 +391,6 @@ public class InfoWindow extends JWindow {
             info.append(LngUtil.translatable("infoWnd.type") + " ").append(station.getType().getLocalizedName()).append("<br>");
             info.append(LngUtil.translatable("infoWnd.color") + " ").append(station.getStationColor().getLocalizedName()).append("<br>");
             info.append(LngUtil.translatable("infoWnd.cost") + " ").append(NumberFormat.getIntegerInstance().format(50000)).append(" ₽").append("<br>");
-
-
 
             infoLabel.setText(info.toString());
             updateProgress();
@@ -229,13 +439,15 @@ public class InfoWindow extends JWindow {
     }
 
     public void hideWindow() {
+        if (editNamePanel.isVisible()) {
+            saveStationName();
+        }
         currentObject = null;
         setVisible(false);
     }
 
     @Override
     public void setVisible(boolean visible) {
-
             if (visible) {
                 setAlwaysOnTop(true);
                 updateInfo();
