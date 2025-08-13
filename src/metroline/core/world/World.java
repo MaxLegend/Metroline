@@ -93,7 +93,6 @@ public class World implements Serializable {
         }
         // Генерация зон с использованием того же смешанного шума
         if(hasAbilityPay) {
-            System.out.println("hasAbilityPay");
             generatePaymentZones(perlin, voronoi);
          }
          if(hasPassengerCount) {
@@ -443,56 +442,7 @@ public class World implements Serializable {
         tunnel.getStart().disconnect(tunnel.getEnd());
         tunnel.getEnd().disconnect(tunnel.getStart());
     }
-    // Генерация органического шума для формы пятен
-    private float[][] generateOrganicNoise(int width, int height, float irregularity) {
-        Random rand = new Random();
-        float[][] noise = new float[width][height];
 
-        // Заполняем шумом
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                // Используем простой шум для демонстрации
-                noise[x][y] = rand.nextFloat() * irregularity;
-            }
-        }
-
-        // Применяем размытие для сглаживания
-        for (int i = 0; i < 2; i++) {
-            noise = applyBlur(noise);
-        }
-
-        return noise;
-    }
-
-    // Простое размытие
-    private float[][] applyBlur(float[][] input) {
-        int width = input.length;
-        int height = input[0].length;
-        float[][] output = new float[width][height];
-
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                float sum = 0;
-                int count = 0;
-
-                for (int dy = -1; dy <= 1; dy++) {
-                    for (int dx = -1; dx <= 1; dx++) {
-                        int nx = x + dx;
-                        int ny = y + dy;
-
-                        if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-                            sum += input[nx][ny];
-                            count++;
-                        }
-                    }
-                }
-
-                output[x][y] = sum / count;
-            }
-        }
-
-        return output;
-    }
 
     private WorldEdge getOppositeEdge(WorldEdge edge) {
         switch (edge) {

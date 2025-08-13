@@ -26,6 +26,28 @@ world.height=World Height
 world.cells=cells
 world.round_stations=Rounded Stations
 world.start_money=Start Money
+
+world.station_cost=Station Cost
+world.tunnel_segment_cost=Tunnel Cost
+world.station_revenue=Station Revenue
+world.station_upkeep=Station Upkeep
+world.tunnel_upkeep=Tunnel Upkeep
+world.gameplay_units=Gameplay Units
+world.economy_settings=Economy Settings
+world.start_money_desc=Start Money in your Metro
+
+world.gen_abilityPay_zone_desc =Generation of solvency zones that affect the revenue of stations.
+world.gen_passengerCount_zone_desc=Generation of passenger flows that affect station revenue.
+world.gen_landscape_desc=Generation of solid inclusions - the cost of building stations depends on the hardness of the rock (the harder the more expensive).
+world.gen_river_desc =Generation of rivers on which more expensive surface metro stations can be built, bringing in more money.
+world.round_stations_desc=Just drawing round stations instead of square ones.
+
+world.station_cost_desc=Base cost of the station.
+world.tunnel_segment_cost_desc=Base cost of the stage for one segment of the stage (between the centers of the cells).
+world.station_revenue_desc=Estimated revenue of the station, taking into account the complexity of construction, solvency and passenger traffic.
+world.station_upkeep_desc =Calculation of the cost of maintaining the station, taking into account the hardness of the rock.
+world.tunnel_upkeep_desc =Calculation of the cost of stage maintenance depending on the number of segments.
+world.gameplay_units_desc=The number of game points of interest (for example, museums, airports, etc.). A station built near the point of interest earns more money.
 st_name_1=Anacostia
 st_name_2=Second Avenue
 st_name_3=Third Avenue
@@ -97,7 +119,8 @@ infoWnd.passengerCount=Passengers Flow:
 infoWnd.revenue:Day Revenue:
 infoWnd.gUnits=Revenue Multiplier:
 infoWnd.label=Label
-infoWnd.upkeep:Unkeep:
+infoWnd.upkeep:Upkeep:
+tunnel.upkeep:Upkeep:
 units.house_culture=House of Culture
 units.church=Church
 units.airport=Airport

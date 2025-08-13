@@ -2,26 +2,21 @@ package metroline.screens.panel;
 
 import metroline.MainFrame;
 
-import metroline.input.WorldClickController;
-import metroline.objects.enums.StationColors;
 import metroline.objects.gameobjects.GameConstants;
 import metroline.objects.gameobjects.GameplayUnits;
 import metroline.objects.gameobjects.Station;
 import metroline.objects.gameobjects.Tunnel;
-import metroline.objects.enums.StationType;
-import metroline.objects.enums.TunnelType;
 import metroline.screens.worldscreens.WorldGameScreen;
-import metroline.screens.worldscreens.WorldSandboxScreen;
 import metroline.screens.worldscreens.WorldScreen;
 import metroline.util.LngUtil;
 import metroline.util.MathUtil;
-import metroline.util.StyleUtil;
+import metroline.util.ui.StyleUtil;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.*;
-import java.text.NumberFormat;
+
 import metroline.core.world.GameWorld;
 
 

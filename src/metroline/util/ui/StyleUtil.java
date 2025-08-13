@@ -1,11 +1,10 @@
-package metroline.util;
+package metroline.util.ui;
 
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicScrollBarUI;
 import javax.swing.plaf.basic.BasicSliderUI;
 import java.awt.*;
 import java.awt.event.*;
-import java.io.Serializable;
 
 public class StyleUtil {
 
@@ -74,14 +73,12 @@ public class StyleUtil {
         return slider;
     }
 
-    public static JCheckBox createMetrolineCheckBox(String text, boolean selected) {
-        JCheckBox checkBox = new JCheckBox(text, selected);
+    public static MetrolineCheckbox createMetrolineCheckBox(String text, String tooltipText) {
+        MetrolineCheckbox checkBox = new MetrolineCheckbox(text,tooltipText);
         checkBox.setBackground(StyleUtil.BACKGROUND_COLOR);
         checkBox.setForeground(StyleUtil.FOREGROUND_COLOR);
         checkBox.setFont(new Font("Sans Serif", Font.BOLD, 13));
         checkBox.setFocusPainted(false);
-        checkBox.setIcon(new StyleUtil.MetrolineCheckbox());
-        checkBox.setSelectedIcon(new StyleUtil.MetrolineCheckbox(true));
         return checkBox;
     }
     public static Color changeColorShade(Color changedColor, int value) {
@@ -174,6 +171,7 @@ public class StyleUtil {
             super(slider);
         }
 
+
         @Override
         protected Dimension getThumbSize() {
             return new Dimension(THUMB_WIDTH, THUMB_HEIGHT);
@@ -233,54 +231,7 @@ public class StyleUtil {
 
     }
 
-    public static class MetrolineCheckbox implements Icon, Serializable {
-        private static final long serialVersionUID = 1L;
-        private static final int SIZE = 16;
-        private static final int INNER_PADDING = 2;
-        private final boolean selected;
 
-        public MetrolineCheckbox() {
-            this(false);
-        }
-
-        public MetrolineCheckbox(boolean selected) {
-            this.selected = selected;
-        }
-
-        @Override
-        public void paintIcon(Component c, Graphics g, int x, int y) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-            // Внешний квадрат (фон)
-            g2.setColor(new Color(70, 70, 70)); // Темный серый
-            g2.fillRect(x, y, SIZE, SIZE);
-
-            // Граница
-            g2.setColor(new Color(100, 100, 100)); // Серый
-            g2.drawRect(x, y, SIZE, SIZE);
-
-            if (selected) {
-                // Внутренний квадрат (выбранное состояние)
-                g2.setColor(new Color(150, 150, 150)); // Светло-серый
-                g2.fillRect(x + INNER_PADDING, y + INNER_PADDING,
-                        SIZE - 2*INNER_PADDING, SIZE - 2*INNER_PADDING);
-            }
-            g2.dispose();
-        }
-
-
-
-        @Override
-        public int getIconWidth() {
-            return SIZE;
-        }
-
-        @Override
-        public int getIconHeight() {
-            return SIZE;
-        }
-    }
 
 
     public static class MetroScrollBarUI extends BasicScrollBarUI {

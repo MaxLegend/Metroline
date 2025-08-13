@@ -25,9 +25,32 @@ world.gen_abilityPay_zone=Зоны платежеспособности
 world.gen_passengerCount_zone=Зоны пассажиропотока
 world.width=Ширина мира
 world.height=Высота мира
+world.start_money_desc=Количество денег в начале игры.
+width_world_slider_desc=Устанавливает ширину мира в клетках.
+height_world_slider_desc=Устанавливает высоту мира в клетках.
+world.economy_settings=Настройки экономики
 world.cells=клеток
 world.round_stations=Круглые станции
 world.start_money=Начальный капитал
+world.station_cost=Стоимость станции
+world.tunnel_segment_cost=Стоимость перегона
+world.station_revenue=Доход станции
+world.station_upkeep=Обслуживание станции
+world.tunnel_upkeep=Обслуживание перегона
+world.gameplay_units=Игровые точки
+
+world.gen_abilityPay_zone_desc=Генерация зон платежеспособности, которые влияют на доход станций.
+world.gen_passengerCount_zone_desc=Генерация пассажиропотоков, которые влияют на доход станций.
+world.gen_landscape_desc=Генерация твердых включений - стоимость строительства станций зависит от твердости породы (чем тверже - тем дороже).
+world.gen_river_desc=Генерация рек, на которых можно строить более дорогие надводные станции метро, приносящие больше денег.
+world.round_stations_desc=Просто отрисовка круглых станций вместо квадратных.
+
+world.station_cost_desc=Базовая стоимость станции.
+world.tunnel_segment_cost_desc=Базовая стоимость перегона за один сегмент перегона (между центрами клеток).
+world.station_revenue_desc=Расчетный доход станции с учетом сложности строительства, платежеспособности и пассажиропотока.
+world.station_upkeep_desc=Расчет стоимости содержания станции с учетом твердости породы.
+world.tunnel_upkeep_desc=Расчет стоимости содержания перегона в зависимости от количества сегментов.
+world.gameplay_units_desc=Количество игровых точек интереса (например, музеи, аэропорты и.т.д). Построенная рядом с точкой интереса станция приносит больше денег.
 
 # Toolbar
 
@@ -138,6 +161,7 @@ infoWnd.revenue:Доход в сутки:
 infoWnd.gUnits=Множитель доходности:
 infoWnd.label=Метка
 infoWnd.upkeep:Расходы содержания:
+tunnel.upkeep:Расходы содержания:
 units.house_culture=Дом культуры
 units.church=Церковь
 units.airport=Аэропорт

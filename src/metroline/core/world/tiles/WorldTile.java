@@ -93,7 +93,7 @@ public class WorldTile extends Tile {
 
                 // Настройка прозрачности
         //        g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.4f));
-                int layerColor = 200 + (int)(55 * abilityPay);
+                int layerColor = 180 + (int)(55 * abilityPay);
                 // Отрисовка платежеспособности (красный)
                 if (MainFrame.showPaymentZones && abilityPay > 0) {
 

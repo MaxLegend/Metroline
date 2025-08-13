@@ -4,7 +4,7 @@ import metroline.MainFrame;
 import metroline.screens.worldscreens.WorldGameScreen;
 import metroline.screens.worldscreens.WorldSandboxScreen;
 import metroline.util.LngUtil;
-import metroline.util.StyleUtil;
+import metroline.util.ui.StyleUtil;
 
 import javax.swing.*;
 import java.awt.*;

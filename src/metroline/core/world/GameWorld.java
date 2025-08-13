@@ -185,22 +185,15 @@ public class GameWorld extends World {
         // Базовый доход
         float revenue = GameConstants.STATION_BASE_REVENUE;
 
-        // Модификаторы:
-        // 1. Учитываем permission (чем больше perm, тем больше доход)
-        //    Диапазон perm: 0-1, добавляем 1 чтобы избежать умножения на 0
-        float permModifier = 1 + (tile.getPerm()); // От 1.0 до 2.0
+        float permModifier = 1 + (tile.getPerm());
 
-        // 2. Учитываем платежеспособность (abilityPay)
-        //    Диапазон abilityPay: 0-1.5 (судя по generatePaymentZones)
-        float abilityPayModifier = 1 + (1/tile.getAbilityPay()); // От 1.0 до 2.5
+        float abilityPayModifier = 1 + (tile.getAbilityPay());
 
-        // 3. Учитываем пассажиропоток (passengerCount)
-        //    Нормализуем значение (предполагаем макс 2000 пассажиров)
-        float passengerModifier = 1 + (float) tile.getPassengerCount() / 2000; // От 1.0 до 2.0
+        float passengerModifier = 1 + (float) tile.getPassengerCount() / 2000;
 
         // Итоговый расчет
         revenue = revenue * permModifier * abilityPayModifier * passengerModifier;
-
+        float gameplayUnitsMultiplier = 1.0f;
         for (int dx = -1; dx <= 1; dx++) {
             for (int dy = -1; dy <= 1; dy++) {
                 if (dx == 0 && dy == 0) continue;
@@ -211,14 +204,15 @@ public class GameWorld extends World {
                 if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
                     GameObject obj = gameGrid[nx][ny].getContent();
                     if (obj instanceof GameplayUnits) {
-                        revenue *= ((GameplayUnits) obj).getType().getIncomeMultiplier();
+
+                        gameplayUnitsMultiplier *= ((GameplayUnits) obj).getType().getIncomeMultiplier();
+
+
                     }
                 }
             }
         }
-
-
-        return revenue;
+        return revenue * gameplayUnitsMultiplier;
     }
     public void updateStationsRevenue() {
         for (Station station : stations) {
@@ -255,8 +249,77 @@ public class GameWorld extends World {
         }
         return 0f;
     }
+    public void updateWorldState() {
+        // Очистка построенных станций
+        Iterator<Map.Entry<Station, Long>> buildIterator = stationBuildStartTimes.entrySet().iterator();
+        while (buildIterator.hasNext()) {
+            Map.Entry<Station, Long> entry = buildIterator.next();
+            Station station = entry.getKey();
+            long endTime = entry.getValue() + stationBuildDurations.get(station);
 
+            if (gameTime.getCurrentTimeMillis() >= endTime) {
+                station.setType(StationType.REGULAR); // Или другой конечный тип
+                buildIterator.remove();
+                stationBuildDurations.remove(station);
+                updateConnectedTunnels(station);
+            }
+        }
 
+        // Очистка разрушенных станций
+        Iterator<Map.Entry<Station, Long>> destroyIterator = stationDestructionStartTimes.entrySet().iterator();
+        while (destroyIterator.hasNext()) {
+            Map.Entry<Station, Long> entry = destroyIterator.next();
+            Station station = entry.getKey();
+            long endTime = entry.getValue() + stationDestructionDurations.get(station);
+
+            if (gameTime.getCurrentTimeMillis() >= endTime) {
+                // Удаляем станцию из всех коллекций
+                stations.remove(station);
+                gameGrid[station.getX()][station.getY()].setContent(null);
+
+                // Удаляем из мап строительства/разрушения
+                stationBuildStartTimes.remove(station);
+                stationBuildDurations.remove(station);
+                destroyIterator.remove();
+                stationDestructionDurations.remove(station);
+
+                // Удаляем связанные метки
+                labels.removeIf(label -> label.getParentGameObject() == station);
+            }
+        }
+
+        // Аналогично для туннелей
+        updateTunnelsState();
+    }
+    private void updateTunnelsState() {
+        // Очистка построенных туннелей
+        Iterator<Map.Entry<Tunnel, Long>> buildIterator = tunnelBuildStartTimes.entrySet().iterator();
+        while (buildIterator.hasNext()) {
+            Map.Entry<Tunnel, Long> entry = buildIterator.next();
+            Tunnel tunnel = entry.getKey();
+            long endTime = entry.getValue() + tunnelBuildDurations.get(tunnel);
+
+            if (gameTime.getCurrentTimeMillis() >= endTime) {
+                tunnel.setType(TunnelType.ACTIVE);
+                buildIterator.remove();
+                tunnelBuildDurations.remove(tunnel);
+            }
+        }
+
+        // Очистка разрушенных туннелей
+        Iterator<Map.Entry<Tunnel, Long>> destroyIterator = tunnelDestructionStartTimes.entrySet().iterator();
+        while (destroyIterator.hasNext()) {
+            Map.Entry<Tunnel, Long> entry = destroyIterator.next();
+            Tunnel tunnel = entry.getKey();
+            long endTime = entry.getValue() + tunnelDestructionDurations.get(tunnel);
+
+            if (gameTime.getCurrentTimeMillis() >= endTime) {
+                tunnels.remove(tunnel);
+                destroyIterator.remove();
+                tunnelDestructionDurations.remove(tunnel);
+            }
+        }
+    }
     public float getTunnelConstructionProgress(Tunnel tunnel) {
         if (!tunnelBuildStartTimes.containsKey(tunnel)) {
             return 1.0f;
@@ -298,8 +361,12 @@ public class GameWorld extends World {
         long startTime = gameTime.getCurrentTimeMillis();
         stationDestructionStartTimes.put(station, startTime);
         stationDestructionDurations.put(station, stationDestroyTime);
+        for (Tunnel tunnel : new ArrayList<>(tunnels)) {
+            if (tunnel.getStart() == station || tunnel.getEnd() == station) {
+                startDestroyingTunnel(tunnel);
+            }
+        }
 
-        MetroLogger.logInfo("Station destruction started: " + station.getName());
     }
 
     public List<GameplayUnits> getGameplayUnits() {
@@ -351,6 +418,7 @@ public class GameWorld extends World {
     public GameTime getGameTime() {
         return gameTime;
     }
+
     public void generateRandomGameplayUnits(int count) {
         Random random = new Random();
         GameplayUnitsType[] types = GameplayUnitsType.values();
@@ -407,15 +475,7 @@ public class GameWorld extends World {
         }
 
         // Дополнительно уменьшаем плотность, удаляя часть объектов
-        if (generatedCount > count * 0.7) {
-            int toRemove = generatedCount - (int)(count * 0.7);
-            for (int i = 0; i < toRemove && !gameplayUnits.isEmpty(); i++) {
-                int index = random.nextInt(gameplayUnits.size());
-                GameplayUnits obj = gameplayUnits.get(index);
-                removeGameplayUnits(obj);
-                generatedCount--;
-            }
-        }
+
     }
     /**
      * Рассчитывает стоимость содержания всех станций

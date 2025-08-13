@@ -73,7 +73,7 @@ public class WorldGameScreen extends WorldScreen {
         this.setWorld(new GameWorld(width, height,hasPassengerCount, hasAbilityPay, hasLandscape, hasRivers,worldColor, money));
         this.gameClickHandler = new WorldClickController( this);
         setupRepaintTimer();
-        ((GameWorld)getWorld()).generateRandomGameplayUnits(GameConstants.GAMEPLAY_UNITS_COUNT);
+        ((GameWorld)getWorld()).generateRandomGameplayUnits((int) GameConstants.GAMEPLAY_UNITS_COUNT);
         invalidateCache();
         repaint();
     }
@@ -159,9 +159,7 @@ public class WorldGameScreen extends WorldScreen {
             for (Tunnel tunnel : getWorld().getTunnels()) {
                 tunnel.draw(g, 0, 0, 1);
             }
-            for (GameplayUnits gUnits : ((GameWorld)getWorld()).getGameplayUnits()) {
-                gUnits.draw(g, 0, 0, 1);
-            }
+
             if(getWorld().isRoundStationsEnabled()) {
                 for (Station station : getWorld().getStations()) {
                     station.drawWorldColorRing(g, 0, 0, 1);
@@ -204,7 +202,9 @@ public class WorldGameScreen extends WorldScreen {
                     }
                 }
             }
-
+            for (GameplayUnits gUnits : ((GameWorld)getWorld()).getGameplayUnits()) {
+                gUnits.draw(g, 0, 0, 1);
+            }
 
             for (Label label : getWorld().getLabels()) {
                 label.draw(g2d, 0, 0, 1);

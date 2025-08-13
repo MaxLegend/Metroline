@@ -1,15 +1,12 @@
 package metroline.screens.panel;
 
-import metroline.MainFrame;
 import metroline.core.world.GameWorld;
 import metroline.objects.enums.StationColors;
-import metroline.screens.worldscreens.WorldScreen;
 import metroline.util.LngUtil;
-import metroline.util.StyleUtil;
+import metroline.util.ui.StyleUtil;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.plaf.basic.BasicScrollBarUI;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.HashMap;

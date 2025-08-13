@@ -22,7 +22,7 @@ import metroline.screens.worldscreens.WorldGameScreen;
 import metroline.screens.worldscreens.WorldSandboxScreen;
 import metroline.util.LngUtil;
 import metroline.util.MetroLogger;
-import metroline.util.StyleUtil;
+import metroline.util.ui.StyleUtil;
 
 /**
  * Main application frame that contains all game screens and toolbar
@@ -414,6 +414,7 @@ public class MainFrame extends JFrame {
 
                if (gameTime.checkMinutePassed()) {
                     world.updateStationsRevenue();
+                    world.updateWorldState();
                     world.deductUpkeepCosts();
                 }
                //

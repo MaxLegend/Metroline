@@ -2,9 +2,12 @@ package metroline.screens.worldscreens;
 
 import metroline.MainFrame;
 import metroline.core.world.GameWorld;
+import metroline.objects.gameobjects.GameConstants;
 import metroline.screens.GameScreen;
+import metroline.util.ui.FloatSlider;
 import metroline.util.LngUtil;
-import metroline.util.StyleUtil;
+import metroline.util.ui.MetrolineCheckbox;
+import metroline.util.ui.StyleUtil;
 
 import javax.swing.*;
 import java.awt.*;
@@ -18,199 +21,270 @@ public class WorldSettingsScreen extends GameScreen {
             new Color(150, 100, 80),  // Коричневый
             new Color(80, 100, 150)   // Голубоватый
     };
-    private JSlider moneySlider;
+    private FloatSlider moneySlider;
     private JLabel moneyValueLabel;
 
-    private JSlider widthSlider;
-    private JSlider heightSlider;
-    private JCheckBox landscapeCheck, abilityPayCheck, passengerCountCheck;
-    private JCheckBox riversCheck;
-    private JCheckBox roundStationsCheck;
+    private FloatSlider widthSlider;
+    private FloatSlider heightSlider;
+    private MetrolineCheckbox landscapeCheck, abilityPayCheck, passengerCountCheck;
+    private MetrolineCheckbox riversCheck;
+    private MetrolineCheckbox roundStationsCheck;
 
     private MainFrame parent;
     private JButton colorButton; // Кнопка для выбора цвета
     private Color worldColor = new Color(110, 110, 110); // Цвет по умолчанию
 
-    //just gebug only!
-    public static final boolean innerDebugUI = false;
+    // Новые слайдеры для экономических констант
+    private FloatSlider stationBaseCostSlider ;
+    private FloatSlider tunnelCostPerSegmentSlider;
+    private FloatSlider stationBaseRevenueSlider;
+    private FloatSlider baseStationUpkeepSlider;
+    private FloatSlider baseTunnelUpkeepSlider;
+    private FloatSlider gameplayUnitsCountSlider;
+
+    // Метки для новых слайдеров
+    private JLabel stationBaseCostValueLabel = new JLabel("M");
+    private JLabel tunnelCostPerSegmentValueLabel= new JLabel("M");
+    private JLabel stationBaseRevenueValueLabel= new JLabel("M");
+    private JLabel baseStationUpkeepValueLabel= new JLabel("M");
+    private JLabel baseTunnelUpkeepValueLabel= new JLabel("M");
+    private JLabel gameplayUnitsCountValueLabel= new JLabel("M");
 
     public WorldSettingsScreen(MainFrame parent) {
         super(parent);
         this.parent = parent;
         setBackground(StyleUtil.BACKGROUND_COLOR);
-        setLayout(new GridBagLayout());
+        setLayout(new BorderLayout(0, 0)); // Changed to BorderLayout with horizontal gap
         initUI();
     }
 
+
     private void initUI() {
-        // Основной контейнер для центрирования
-        JPanel centerPanel = new JPanel(new GridBagLayout());
+        // Create main container panel with GridLayout (1 row, 3 columns)
+        JPanel mainContainer = new JPanel(new GridLayout(1, 3));
+        mainContainer.setBackground(StyleUtil.BACKGROUND_COLOR);
+        mainContainer.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        // Left panel
+        JPanel leftPanel = createLeftPanel();
+
+        // Center panel
+        JPanel centerPanel = createCenterPanel();
+
+        // Right panel (economy)
+        JPanel rightPanel = createEconomyPanel();
+
+        // Add all panels to main container
+        mainContainer.add(leftPanel);
+        mainContainer.add(centerPanel);
+        mainContainer.add(rightPanel);
+
+        // Add main container to screen
+        add(mainContainer, BorderLayout.CENTER);
+    }
+
+    private JPanel createLeftPanel() {
+        JPanel leftPanel = new JPanel(new BorderLayout());
+        leftPanel.setBackground(StyleUtil.BACKGROUND_COLOR);
+        leftPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        // Add placeholder content
+        JLabel placeholder = new JLabel(LngUtil.translatable("world.left_panel_placeholder"), SwingConstants.CENTER);
+        placeholder.setForeground(StyleUtil.FOREGROUND_COLOR);
+        placeholder.setFont(new Font("Arial", Font.ITALIC, 16));
+        leftPanel.add(placeholder, BorderLayout.CENTER);
+
+        return leftPanel;
+    }
+
+    private JPanel createCenterPanel() {
+        JPanel centerPanel = new JPanel();
         centerPanel.setBackground(StyleUtil.BACKGROUND_COLOR);
-        if(innerDebugUI) {
-            centerPanel.setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createLineBorder(Color.RED, 2),
-                    BorderFactory.createEmptyBorder(50, 50, 50, 50)
-            ));
-        } else {
-            centerPanel.setBorder(BorderFactory.createEmptyBorder(50, 50, 50, 50));
-        }
-
-
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridwidth = GridBagConstraints.REMAINDER;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(10, 30, 10, 30);
-        gbc.weightx = 0;
+        centerPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
 
         // Title
         JLabel title = new JLabel(LngUtil.translatable("create_world_title"), SwingConstants.CENTER);
         title.setFont(new Font("Arial", Font.BOLD, 24));
         title.setForeground(StyleUtil.FOREGROUND_COLOR);
-        gbc.insets = new Insets(0, 30, 30, 30);
-        centerPanel.add(title, gbc);
+        title.setAlignmentX(Component.CENTER_ALIGNMENT);
+        centerPanel.add(title);
+        centerPanel.add(Box.createRigidArea(new Dimension(0, 20)));
 
-        // Reset insets for other components
-        gbc.insets = new Insets(10, 30, 10, 30);
+
+        widthSlider = new FloatSlider(LngUtil.translatable("width_world_slider_desc"), 20, 200, 40,10);
+        heightSlider = new FloatSlider(LngUtil.translatable("height_world_slider_desc"),20, 200, 40, 10);
+        widthSlider.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        heightSlider.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
         // World Size
         JPanel sizePanel = new JPanel(new GridLayout(2, 3, 10, 15));
-
         sizePanel.setBackground(StyleUtil.BACKGROUND_COLOR);
-        if(innerDebugUI) {
-            sizePanel.setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createLineBorder(Color.BLUE, 2),
-                    BorderFactory.createEmptyBorder(0, 0, 20, 0)
-            ));
-        } else {
-            sizePanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
-        }
+        sizePanel.setMaximumSize(new Dimension(600, 80));
+//
+//        JLabel widthValueLabel = new JLabel("wwl");
+//        widthValueLabel.setForeground(StyleUtil.FOREGROUND_COLOR);
+//        widthValueLabel.setFont(new Font("Sans Serif", Font.BOLD, 13));
+//
+//        JLabel heightValueLabel = new JLabel("hwl");
+//        heightValueLabel.setForeground(StyleUtil.FOREGROUND_COLOR);
+//        heightValueLabel.setFont(new Font("Sans Serif", Font.BOLD, 13));
 
-        // Метки для значений
-        JLabel widthValueLabel = new JLabel("wwl");
-        if(innerDebugUI) widthValueLabel.setBorder(BorderFactory.createLineBorder(Color.GREEN, 1));
-        widthValueLabel.setForeground(StyleUtil.FOREGROUND_COLOR);
-        widthValueLabel.setFont(new Font("Sans Serif", Font.BOLD, 13));
 
-        JLabel heightValueLabel = new JLabel("hwl");
-        if(innerDebugUI) heightValueLabel.setBorder(BorderFactory.createLineBorder(Color.GREEN, 1));
-        heightValueLabel.setForeground(StyleUtil.FOREGROUND_COLOR);
-        heightValueLabel.setFont(new Font("Sans Serif", Font.BOLD, 13));
-
-        widthSlider = StyleUtil.createMetrolineSlider(20, 200, 40, " " + LngUtil.translatable("world.cells"), widthValueLabel);
-        if(innerDebugUI)  widthSlider.setBorder(BorderFactory.createLineBorder(Color.YELLOW, 1)); // Желтая граница
-
-        heightSlider = StyleUtil.createMetrolineSlider(20, 200, 40, " " + LngUtil.translatable("world.cells"), heightValueLabel);
-        if(innerDebugUI) heightSlider.setBorder(BorderFactory.createLineBorder(Color.YELLOW, 1)); // Желтая граница
-
-        JLabel widthLabel = StyleUtil.createMetrolineLabel(LngUtil.translatable("world.width"), SwingConstants.RIGHT);
+        JLabel widthLabel = StyleUtil.createMetrolineLabel(LngUtil.translatable("world.width"), SwingConstants.CENTER);
+        widthLabel.setForeground(StyleUtil.FOREGROUND_COLOR);
         widthLabel.setFont(new Font("Sans Serif", Font.BOLD, 13));
-        if(innerDebugUI) widthLabel.setBorder(BorderFactory.createLineBorder(Color.CYAN, 1));
 
-        JLabel heightLabel = StyleUtil.createMetrolineLabel(LngUtil.translatable("world.height"), SwingConstants.RIGHT);
+        JLabel heightLabel = StyleUtil.createMetrolineLabel(LngUtil.translatable("world.height"), SwingConstants.CENTER);
+        widthLabel.setForeground(StyleUtil.FOREGROUND_COLOR);
         heightLabel.setFont(new Font("Sans Serif", Font.BOLD, 13));
-        if(innerDebugUI) heightLabel.setBorder(BorderFactory.createLineBorder(Color.CYAN, 1));
 
-        sizePanel.add(widthLabel);
-        sizePanel.add(widthSlider);
-        sizePanel.add(widthValueLabel);
-        sizePanel.add(heightLabel);
-        sizePanel.add(heightSlider);
-        sizePanel.add(heightValueLabel);
+        addRow(centerPanel, LngUtil.translatable("world.width"), widthSlider, widthLabel);
+        addRow(centerPanel, LngUtil.translatable("world.height"), heightSlider, heightLabel);
+//        sizePanel.add(widthLabel);
+//        sizePanel.add(widthSlider);
+//        sizePanel.add(widthValueLabel);
+//        sizePanel.add(heightLabel);
+//        sizePanel.add(heightSlider);
+//        sizePanel.add(heightValueLabel);
 
-        centerPanel.add(sizePanel, gbc);
+        centerPanel.add(sizePanel);
+        centerPanel.add(Box.createRigidArea(new Dimension(0, 20)));
 
-        // World Features
-        JPanel featuresPanel = new JPanel(new GridLayout(4, 1, 5, 0));
-        featuresPanel.setSize(100, 100);
-        featuresPanel.setBackground(StyleUtil.BACKGROUND_COLOR);
-      if(innerDebugUI) {
-          featuresPanel.setBorder(BorderFactory.createCompoundBorder(
-                  BorderFactory.createLineBorder(new Color(128, 0, 128), 2), // Фиолетовый
-                  BorderFactory.createEmptyBorder(0, 100, 0, 100)
-          ));
-      }
-        else {
-          featuresPanel.setBorder(BorderFactory.createEmptyBorder(0, 100, 0, 100));
-      }
-        // Кнопка выбора цвета
-        colorButton = StyleUtil.createMetrolineColorableButton(LngUtil.translatable("world.color"), e -> showWindowColorSelection(), worldColor);
-
-        abilityPayCheck = StyleUtil.createMetrolineCheckBox(LngUtil.translatable("world.gen_abilityPay_zone"), true);
-        passengerCountCheck = StyleUtil.createMetrolineCheckBox(LngUtil.translatable("world.gen_passengerCount_zone"), true);
-
-        landscapeCheck = StyleUtil.createMetrolineCheckBox(LngUtil.translatable("world.gen_landscape"), true);
-
-        riversCheck = StyleUtil.createMetrolineCheckBox(LngUtil.translatable("world.gen_river"), true);
-        roundStationsCheck = StyleUtil.createMetrolineCheckBox(LngUtil.translatable("world.round_stations"), false);
-
-        JPanel moneyPanel = new JPanel(new GridLayout(1, 3, 10, 0));
+        // Money settings
+        JPanel moneyPanel = new JPanel();
         moneyPanel.setBackground(StyleUtil.BACKGROUND_COLOR);
-        if(innerDebugUI) {
-            moneyPanel.setBorder(BorderFactory.createLineBorder(Color.PINK, 2));
-        }
+        moneyPanel.setLayout(new BoxLayout(moneyPanel, BoxLayout.X_AXIS));
+        moneyPanel.setMaximumSize(new Dimension(600, 50));
+
         moneyValueLabel = new JLabel("10000");
         moneyValueLabel.setForeground(StyleUtil.FOREGROUND_COLOR);
         moneyValueLabel.setFont(new Font("Sans Serif", Font.BOLD, 13));
-        moneySlider = StyleUtil.createMetrolineSlider(
-                50,
-                1000,
-                200,
-                "",
-                moneyValueLabel
-        );
-        JLabel moneyTextLabel = StyleUtil.createMetrolineLabel(
-                LngUtil.translatable("world.start_money"),
-                SwingConstants.RIGHT
-        );
-        moneyTextLabel.setFont(new Font("Sans Serif", Font.BOLD, 13));
-        moneyPanel.add(moneyTextLabel);
-        moneyPanel.add(moneySlider);
-        moneyPanel.add(moneyValueLabel);
 
-        moneySlider.addChangeListener(e -> {
-            int value = moneySlider.getValue();
-            String formatted = String.format("%,d ₽", value);
-            moneyValueLabel.setText(formatted);
-        });
+        moneySlider = new FloatSlider(LngUtil.translatable("world.start_money_desc"),50, 10000, 2000, 100);
+        JLabel moneyTextLabel = StyleUtil.createMetrolineLabel(LngUtil.translatable("world.start_money"), SwingConstants.RIGHT);
+        moneyTextLabel.setFont(new Font("Sans Serif", Font.BOLD, 13));
+        addRow(centerPanel, LngUtil.translatable("world.start_money"), moneySlider, moneyTextLabel);
+        centerPanel.add(moneyPanel);
+//        moneyPanel.add(moneyTextLabel);
+//        moneyPanel.add(Box.createRigidArea(new Dimension(10, 0)));
+//        moneyPanel.add(moneySlider);
+//        moneyPanel.add(Box.createRigidArea(new Dimension(10, 0)));
+//        moneyPanel.add(moneyValueLabel);
+
+//        moneySlider.addChangeListener(e -> {
+//            float value = moneySlider.getValue();
+//            String formatted = String.format("%,.0f M", value * 100);
+//            moneyValueLabel.setText(formatted);
+//        });
+
+    //    centerPanel.add(moneyPanel);
+        centerPanel.add(Box.createRigidArea(new Dimension(0, 20)));
+
+        // Features checkboxes
+        JPanel featuresPanel = new JPanel();
+        featuresPanel.setBackground(StyleUtil.BACKGROUND_COLOR);
+        featuresPanel.setLayout(new BoxLayout(featuresPanel, BoxLayout.Y_AXIS));
+        featuresPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        featuresPanel.setMaximumSize(new Dimension(400, Integer.MAX_VALUE));
+
+        colorButton = StyleUtil.createMetrolineColorableButton(LngUtil.translatable("world.color"), e -> showWindowColorSelection(), worldColor);
+        abilityPayCheck = StyleUtil.createMetrolineCheckBox(LngUtil.translatable("world.gen_abilityPay_zone"), LngUtil.translatable("world.gen_abilityPay_zone_desc"));
+        passengerCountCheck = StyleUtil.createMetrolineCheckBox(LngUtil.translatable("world.gen_passengerCount_zone"),LngUtil.translatable("world.gen_passengerCount_zone_desc"));
+        landscapeCheck = StyleUtil.createMetrolineCheckBox(LngUtil.translatable("world.gen_landscape"),LngUtil.translatable("world.gen_landscape_desc"));
+        riversCheck = StyleUtil.createMetrolineCheckBox(LngUtil.translatable("world.gen_river"),LngUtil.translatable("world.gen_river_desc"));
+        roundStationsCheck = StyleUtil.createMetrolineCheckBox(LngUtil.translatable("world.round_stations"),LngUtil.translatable("world.round_stations_desc"));
 
         featuresPanel.add(passengerCountCheck);
         featuresPanel.add(abilityPayCheck);
         featuresPanel.add(landscapeCheck);
         featuresPanel.add(riversCheck);
         featuresPanel.add(roundStationsCheck);
+        featuresPanel.add(Box.createRigidArea(new Dimension(0, 10)));
         featuresPanel.add(colorButton);
 
-        centerPanel.add(moneyPanel, gbc);
-        centerPanel.add(featuresPanel, gbc);
+        centerPanel.add(featuresPanel);
+        centerPanel.add(Box.createRigidArea(new Dimension(0, 30)));
 
-        // Buttons
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
+        // Buttons panel
+        JPanel buttonPanel = new JPanel();
         buttonPanel.setBackground(StyleUtil.BACKGROUND_COLOR);
-        if(innerDebugUI) {
-            buttonPanel.setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createLineBorder(Color.ORANGE, 2),
-                    BorderFactory.createEmptyBorder(20, 0, 0, 0)
-            ));
-        } else {
-            buttonPanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
-        }
+        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.X_AXIS));
+        buttonPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-
-        JButton createSBButton = StyleUtil.createMetrolineButton(LngUtil.translatable("world.create_sandbox"),e -> createWorld(true));
-        JButton createGameButton = StyleUtil.createMetrolineButton(LngUtil.translatable("world.create_standart"),e -> createWorld(false)); //createWorld(false)
-
-        JButton backButton = StyleUtil.createMetrolineButton(LngUtil.translatable("world.back"),e -> parent.switchScreen("menu"));
+        JButton backButton = StyleUtil.createMetrolineButton(LngUtil.translatable("world.back"), e -> parent.switchScreen("menu"));
+        JButton createSBButton = StyleUtil.createMetrolineButton(LngUtil.translatable("world.create_sandbox"), e -> createWorld(true));
+        JButton createGameButton = StyleUtil.createMetrolineButton(LngUtil.translatable("world.create_standart"), e -> createWorld(false));
 
         buttonPanel.add(backButton);
+        buttonPanel.add(Box.createRigidArea(new Dimension(20, 0)));
         buttonPanel.add(createSBButton);
+        buttonPanel.add(Box.createRigidArea(new Dimension(20, 0)));
         buttonPanel.add(createGameButton);
 
-        centerPanel.add(buttonPanel, gbc);
+        centerPanel.add(buttonPanel);
 
-        // Добавляем центральную панель в основной экран
-        add(centerPanel);
+        return centerPanel;
     }
 
+    private JPanel createEconomyPanel() {
+        JPanel economyPanel = new JPanel();
+        economyPanel.setBackground(StyleUtil.BACKGROUND_COLOR);
+        economyPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        economyPanel.setLayout(new BoxLayout(economyPanel, BoxLayout.Y_AXIS));
+
+        // Title
+        JLabel title = new JLabel(LngUtil.translatable("world.economy_settings"), SwingConstants.CENTER);
+        title.setFont(new Font("Arial", Font.BOLD, 20));
+        title.setForeground(StyleUtil.FOREGROUND_COLOR);
+        title.setAlignmentX(Component.CENTER_ALIGNMENT);
+        economyPanel.add(title);
+        economyPanel.add(Box.createRigidArea(new Dimension(0, 20)));
+
+        // Create economic sliders
+        stationBaseCostSlider = new FloatSlider(LngUtil.translatable("world.station_cost_desc"), 0.1f, 20, 2, 0.1f);
+        tunnelCostPerSegmentSlider = new FloatSlider(LngUtil.translatable("world.tunnel_segment_cost_desc"),0.1f, 10, 2, 0.1f);
+        stationBaseRevenueSlider = new FloatSlider(LngUtil.translatable("world.station_revenue_desc"),0.1f, 5, 2, 0.1f);
+        baseStationUpkeepSlider = new FloatSlider(LngUtil.translatable("world.station_upkeep_desc"),0.1f, 8, 4, 0.1f);
+        baseTunnelUpkeepSlider = new FloatSlider(LngUtil.translatable("world.tunnel_upkeep_desc"),0.1f, 2, 2, 0.1f);
+        gameplayUnitsCountSlider = new FloatSlider(LngUtil.translatable("world.gameplay_units_desc"),5f, 100, 20, 1f);
+
+        // Add economic sliders to panel
+        addRow(economyPanel, LngUtil.translatable("world.station_cost"), stationBaseCostSlider, stationBaseCostValueLabel);
+        addRow(economyPanel, LngUtil.translatable("world.tunnel_segment_cost"), tunnelCostPerSegmentSlider, tunnelCostPerSegmentValueLabel);
+        addRow(economyPanel, LngUtil.translatable("world.station_revenue"), stationBaseRevenueSlider, stationBaseRevenueValueLabel);
+        addRow(economyPanel, LngUtil.translatable("world.station_upkeep"), baseStationUpkeepSlider, baseStationUpkeepValueLabel);
+        addRow(economyPanel, LngUtil.translatable("world.tunnel_upkeep"), baseTunnelUpkeepSlider, baseTunnelUpkeepValueLabel);
+        addRow(economyPanel, LngUtil.translatable("world.gameplay_units"), gameplayUnitsCountSlider, gameplayUnitsCountValueLabel);
+
+        return economyPanel;
+    }
+
+    private void addRow(JPanel panel, String labelText, FloatSlider slider, JLabel valueLabel) {
+        JPanel rowPanel = new JPanel(new BorderLayout(10, 0));
+        rowPanel.setBackground(StyleUtil.BACKGROUND_COLOR);
+        rowPanel.setMaximumSize(new Dimension(400, 50));
+
+        JLabel label = StyleUtil.createMetrolineLabel(labelText, SwingConstants.LEFT);
+        label.setFont(new Font("Sans Serif", Font.BOLD, 13));
+
+        valueLabel.setForeground(StyleUtil.FOREGROUND_COLOR);
+        valueLabel.setFont(new Font("Sans Serif", Font.BOLD, 13));
+        valueLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+
+        // Устанавливаем связь между слайдером и меткой
+        slider.setValueLabel(valueLabel, " M ");
+
+        JPanel sliderPanel = new JPanel(new BorderLayout());
+        sliderPanel.setBackground(StyleUtil.BACKGROUND_COLOR);
+        sliderPanel.add(label, BorderLayout.WEST);
+        sliderPanel.add(slider, BorderLayout.CENTER);
+        sliderPanel.add(valueLabel, BorderLayout.EAST);
+        rowPanel.add(sliderPanel, BorderLayout.CENTER);
+
+        panel.add(rowPanel);
+        panel.add(Box.createRigidArea(new Dimension(0, 10)));
+    }
     private void showWindowColorSelection() {
         // Создаем диалоговое окно
         JDialog colorDialog = new JDialog(SwingUtilities.getWindowAncestor(this));
@@ -290,32 +364,51 @@ public class WorldSettingsScreen extends GameScreen {
     }
 
     private void createWorld(boolean isSandbox) {
-        int width = widthSlider.getValue();
-        int height = heightSlider.getValue();
+        float width = widthSlider.getValue();
+        float height = heightSlider.getValue();
         boolean hasPassengerCount = passengerCountCheck.isSelected();
         boolean hasAbilityPay = abilityPayCheck.isSelected();
         boolean hasLandscape = landscapeCheck.isSelected();
         boolean hasRivers = riversCheck.isSelected();
         boolean roundStations = roundStationsCheck.isSelected();
-        int startMoney = moneySlider.getValue();
+        float startMoney = moneySlider.getValue();
+        float stationBaseCost = stationBaseCostSlider.getValue();
+        float tunnelCostPerSegment = tunnelCostPerSegmentSlider.getValue();
+        float stationBaseRevenue = stationBaseRevenueSlider.getValue();
+        float baseStationUpkeep = baseStationUpkeepSlider.getValue();
+        float baseTunnelUpkeep = baseTunnelUpkeepSlider.getValue();
+        float gameplayUnitsCount = gameplayUnitsCountSlider.getValue();
 
+        // Установка значений в GameConstants
+        GameConstants.STATION_BASE_COST = stationBaseCost;
+        GameConstants.TUNNEL_COST_PER_SEGMENT = tunnelCostPerSegment;
+        GameConstants.STATION_BASE_REVENUE = stationBaseRevenue;
+        GameConstants.BASE_STATION_UPKEEP = baseStationUpkeep;
+        GameConstants.BASE_TUNNEL_UPKEEP_PER_SEGMENT = baseTunnelUpkeep;
+        GameConstants.GAMEPLAY_UNITS_COUNT = gameplayUnitsCount;
         if(isSandbox) {
             parent.switchScreen(MainFrame.SANDBOX_SCREEN_NAME);
             WorldSandboxScreen gameScreen = (WorldSandboxScreen) parent.getCurrentScreen();
-            gameScreen.createNewWorld(width, height, hasLandscape, hasRivers, worldColor);
+            gameScreen.createNewWorld((int) width, (int) height, hasLandscape, hasRivers, worldColor);
             gameScreen.getWorld().setRoundStationsEnabled(roundStations);
         } else {
             parent.switchScreen(MainFrame.GAME_SCREEN_NAME);
             WorldGameScreen gameScreen = (WorldGameScreen) parent.getCurrentScreen();
-            gameScreen.createNewWorld(width, height,hasPassengerCount,hasAbilityPay,  hasLandscape, hasRivers, worldColor, startMoney);
+            gameScreen.createNewWorld((int) width, (int) height,hasPassengerCount,hasAbilityPay,  hasLandscape, hasRivers, worldColor, (int) startMoney);
             gameScreen.getWorld().setRoundStationsEnabled(roundStations);
-            ((GameWorld)gameScreen.getWorld()).setMoney(startMoney); // Устанавливаем начальные деньги
+            ((GameWorld)gameScreen.getWorld()).setMoney((int) startMoney); // Устанавливаем начальные деньги
             gameScreen.updateMoneyDisplay(); // Обновляем отображение
         }
     }
 
     @Override
     public void onActivate() {
+        stationBaseCostSlider.setValue(GameConstants.STATION_BASE_COST);
+        tunnelCostPerSegmentSlider.setValue(GameConstants.TUNNEL_COST_PER_SEGMENT);
+        stationBaseRevenueSlider.setValue(GameConstants.STATION_BASE_REVENUE);
+        baseStationUpkeepSlider.setValue(GameConstants.BASE_STATION_UPKEEP);
+        baseTunnelUpkeepSlider.setValue(GameConstants.BASE_TUNNEL_UPKEEP_PER_SEGMENT);
+        gameplayUnitsCountSlider.setValue(GameConstants.GAMEPLAY_UNITS_COUNT);
         widthSlider.setValue(100);
         heightSlider.setValue(100);
         passengerCountCheck.setSelected(false);

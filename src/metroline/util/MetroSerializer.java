@@ -451,8 +451,9 @@ public class MetroSerializer {
                 yield new PathPoint(x, y);
             }
             case "gameplay_units" -> {
+                long unitsId = Long.parseLong(value);
                 for (GameplayUnits gUnits : world.getGameplayUnits()) {
-                    if (gUnits.getName().equals(value)) {
+                    if (gUnits.getUniqueId() == unitsId) {
                         yield gUnits;
                     }
                 }

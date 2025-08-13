@@ -8,15 +8,15 @@ import java.awt.*;
 public class GameConstants {
 
     // Константы стоимости
-    public static final float STATION_BASE_COST = 100;
-    public static final float TUNNEL_COST_PER_SEGMENT = 10;
+    public static  float STATION_BASE_COST = 100;
+    public static  float TUNNEL_COST_PER_SEGMENT = 10;
 
-    public static final float STATION_BASE_REVENUE = 2;
+    public static float STATION_BASE_REVENUE = 2;
 
-    public static final float BASE_STATION_UPKEEP = 8.0f; // Базовое содержание станции
-    public static final float BASE_TUNNEL_UPKEEP_PER_SEGMENT = 2.0f; // Базовое содержание за сегмент туннеля
+    public static  float BASE_STATION_UPKEEP = 8.0f; // Базовое содержание станции
+    public static  float BASE_TUNNEL_UPKEEP_PER_SEGMENT = 2.0f; // Базовое содержание за сегмент туннеля
 
-    public static final int GAMEPLAY_UNITS_COUNT = 40;
+    public static  float GAMEPLAY_UNITS_COUNT = 40;
 
     public static final String[] NAME_PARTS = {
             LngUtil.translatable("st_name_1"),
