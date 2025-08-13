@@ -412,7 +412,7 @@ public class MainFrame extends JFrame {
                 if (world != null && world.getGameTime() != null) newTime = world.getGameTime().getDateTimeString();
                 GameTime gameTime = world.getGameTime();
 
-               if (gameTime.checkMinutePassed()) {
+               if (gameTime.checkHourPassed()) {
                     world.updateStationsRevenue();
                     world.updateWorldState();
                     world.deductUpkeepCosts();

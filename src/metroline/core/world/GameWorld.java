@@ -22,6 +22,7 @@ import java.awt.*;
 import java.io.*;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * TODO ПОПРАВИТЬ ВОЗМОЖНОСТЬ РАСПОЛОЖЕНИЯ МЕТОК
@@ -32,10 +33,10 @@ public class GameWorld extends World {
     private static String SAVE_FILE = "game_save.metro";
     public float money;
 
-    private long stationDestroyTime = 100000; // Время разрушения станции
-    private long tunnelDestroyTime = 100000;
-    private long stationBuildTime = 100000;
-    private long tunnelBuildTime = 100000;
+    private long stationDestroyTime = 1000000; // Время разрушения станции
+    private long tunnelDestroyTime = 1000000;
+    private long stationBuildTime = 1000000;
+    private long tunnelBuildTime = 1000000;
 
     private List<GameplayUnits> gameplayUnits = new ArrayList<>();
 
@@ -420,62 +421,43 @@ public class GameWorld extends World {
     }
 
     public void generateRandomGameplayUnits(int count) {
-        Random random = new Random();
         GameplayUnitsType[] types = GameplayUnitsType.values();
-
-        // Разбиваем карту на секции для равномерного распределения
-        int sectionsX = (int) Math.sqrt(count) + 1;
-        int sectionsY = (int) Math.sqrt(count) + 1;
-        int sectionWidth = width / sectionsX;
-        int sectionHeight = height / sectionsY;
-
-        int objectsPerSection = count / (sectionsX * sectionsY) + 1;
         int generatedCount = 0;
+        int attempts = 0;
+        int maxAttempts = count * 10; // Максимальное количество попыток
 
-        for (int sx = 0; sx < sectionsX && generatedCount < count; sx++) {
-            for (int sy = 0; sy < sectionsY && generatedCount < count; sy++) {
-                // Генерируем объекты в текущей секции
-                for (int i = 0; i < objectsPerSection && generatedCount < count; i++) {
-                    int attempts = 0;
-                    boolean placed = false;
+        while (generatedCount < count && attempts < maxAttempts) {
+            attempts++;
 
-                    // Делаем несколько попыток разместить объект в секции
-                    while (!placed && attempts < 10) {
-                        attempts++;
+            // Случайные координаты по всей карте
+            int x = ThreadLocalRandom.current().nextInt(width);
+            int y = ThreadLocalRandom.current().nextInt(height);
 
-                        // Случайные координаты в пределах секции
-                        int x = sx * sectionWidth + random.nextInt(sectionWidth);
-                        int y = sy * sectionHeight + random.nextInt(sectionHeight);
+            // Проверяем, что клетка свободна
+            if (!gameGrid[x][y].isEmpty()) continue;
 
-                        // Проверяем границы
-                        if (x >= width || y >= height) continue;
+            WorldTile worldTile = getWorldTile(x, y);
+            GameplayUnitsType type = types[ThreadLocalRandom.current().nextInt(types.length)];
 
-                        // Проверяем, что клетка свободна
-                        if (!gameGrid[x][y].isEmpty()) continue;
-
-                        WorldTile worldTile = getWorldTile(x, y);
-                        GameplayUnitsType type = types[random.nextInt(types.length)];
-
-                        // Особые условия для портов
-                        if (type == GameplayUnitsType.PORT) {
-                            if (!hasWaterNeighbor(x, y)) {
-                                // Если порт не может быть здесь, выбираем другой тип
-                                type = types[(random.nextInt(types.length - 1))];
-                            }
-                        }
-
-                        // Создаем и размещаем объект
-                        GameplayUnits obj = new GameplayUnits(this, x, y, type);
-                        if(!worldTile.isWater()) addGameplayUnits(obj);
-                        generatedCount++;
-                        placed = true;
-                    }
+            // Особые условия для портов
+            if (type == GameplayUnitsType.PORT) {
+                if (!hasWaterNeighbor(x, y)) {
+                    // Если порт не может быть здесь, выбираем другой тип
+                    type = types[ThreadLocalRandom.current().nextInt(types.length - 1)];
                 }
+            }
+
+            // Создаем и размещаем объект (только на суше)
+            if (!worldTile.isWater()) {
+                GameplayUnits obj = new GameplayUnits(this, x, y, type);
+                addGameplayUnits(obj);
+                generatedCount++;
             }
         }
 
-        // Дополнительно уменьшаем плотность, удаляя часть объектов
-
+        if (generatedCount < count) {
+            System.out.println("Не удалось разместить все объекты. Размещено: " + generatedCount + " из " + count);
+        }
     }
     /**
      * Рассчитывает стоимость содержания всех станций

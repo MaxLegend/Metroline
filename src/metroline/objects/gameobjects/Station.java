@@ -234,14 +234,18 @@ public class Station extends GameObject {
 
         if (hasDifferentColorNeighbor) {
             newType = StationType.TRANSFER;
-        } else if (connections.size() == 0) {
+        }
+        else if (connections.size() == 0) {
             newType = StationType.REGULAR;
         } else if (connections.size() == 1 ) {
             newType = StationType.TERMINAL;
         } else if (connections.size() == 2 ) {
             newType = StationType.TRANSIT;
+        } else  if(isOnWater()) {
+            newType = StationType.ON_WATER;
         }
         if(this.type != StationType.PLANNED) {
+
             if (this.type != newType) {
 
          //   MetroLogger.logInfo("Auto-updating station " + getName() + " type from " + this.type + " to " + newType);
@@ -256,7 +260,7 @@ public class Station extends GameObject {
 @Override
 public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
     if (getWorld().isRoundStationsEnabled()) {
-        if (isOnWater()) {
+        if (this.getType() == StationType.ON_WATER) {
             drawWaterStation(g, offsetX, offsetY, zoom);
             if (selected) drawRoundSelection(g, offsetX, offsetY, zoom);
         } else {

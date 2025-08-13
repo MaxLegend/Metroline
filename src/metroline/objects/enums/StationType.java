@@ -13,7 +13,8 @@ public enum StationType {
     REGULAR("stype.regular"),
     TRANSFER("stype.transfer"),
     TERMINAL("stype.terminal"),
-    TRANSIT("stype.transit");
+    TRANSIT("stype.transit"),
+    ON_WATER("stype.onwater");
 
     private final String name;
     StationType(String name) {

@@ -31,7 +31,7 @@ public class GameTime implements Serializable {
     // Сериализуемые поля (сохраняются в файл)
     // Сериализуемые поля
     private long epochMillis;        // текущее игровое время (мс с эпохи)
-    private double timeScale = 12.0; // ускорение (1.0 = реальное время)
+    private double timeScale = 180.0; // ускорение (1.0 = реальное время)
     private boolean paused = true;   // флаг паузы
 
     // transient поля
@@ -39,6 +39,7 @@ public class GameTime implements Serializable {
     private transient long lastRealMillis; // момент последнего обновления
     private transient int lastMinute = -1;
     private transient int lastDay = -1;
+    private transient int lastHour = -1;
 
     private static final int TICK_MS = 50; // частота тиков (мс)
     private static final DateTimeFormatter DISPLAY_FMT = DateTimeFormatter.ofPattern("HH:mm dd.MM.yyyy");
@@ -105,6 +106,10 @@ public class GameTime implements Serializable {
      */
     public synchronized long getCurrentTimeMillis() { return epochMillis; }
 
+    public synchronized void setCurrentTimeMillis(long time) {
+         epochMillis = time;
+    }
+
     /**
      * Возвращает Instant текущего игрового времени.
      */
@@ -127,6 +132,16 @@ public class GameTime implements Serializable {
 
         if (currentMinute != lastMinute) {
             lastMinute = currentMinute;
+            return true;
+        }
+        return false;
+    }
+    public synchronized boolean checkHourPassed() {
+        Instant instant = Instant.ofEpochMilli(epochMillis);
+        int currentHour = instant.atZone(ZoneId.systemDefault()).getHour();
+
+        if (currentHour != lastHour) {
+            lastHour = currentHour;
             return true;
         }
         return false;
