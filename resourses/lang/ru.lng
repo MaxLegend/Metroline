@@ -135,6 +135,18 @@ infoWnd.tunnel_title=Перегон
 infoWnd.abilityPay=Платежеспособность:
 infoWnd.passengerCount=Пассажиропоток:
 infoWnd.revenue:Доход в сутки:
+infoWnd.gUnits=Множитель доходности:
+infoWnd.label=Метка
+infoWnd.upkeep:Расходы содержания:
+units.house_culture=Дом культуры
+units.church=Церковь
+units.airport=Аэропорт
+units.port=Порт
+units.cityhall=Управа
+units.shop=Магазин
+units.factory=Завод
+units.museum=Музей
+
 # Line Legend
 legend.title=Линии метро
 legend.button=Линии метро

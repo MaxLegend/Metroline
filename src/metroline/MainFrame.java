@@ -10,6 +10,7 @@ import java.util.Map;
 import metroline.core.time.GameTime;
 import metroline.core.world.GameWorld;
 import metroline.core.world.SandboxWorld;
+import metroline.objects.gameobjects.GameplayUnits;
 import metroline.objects.gameobjects.Station;
 import metroline.objects.gameobjects.Tunnel;
 import metroline.screens.GameScreen;
@@ -411,8 +412,9 @@ public class MainFrame extends JFrame {
                 if (world != null && world.getGameTime() != null) newTime = world.getGameTime().getDateTimeString();
                 GameTime gameTime = world.getGameTime();
 
-                if (gameTime.checkMinutePassed()) {
+               if (gameTime.checkMinutePassed()) {
                     world.updateStationsRevenue();
+                    world.deductUpkeepCosts();
                 }
                //
 
@@ -496,6 +498,10 @@ public class MainFrame extends JFrame {
                 newWindow.displayStationInfo((Station) selectedObject, windowPoint);
             } else if (selectedObject instanceof Tunnel) {
                 newWindow.displayTunnelInfo((Tunnel) selectedObject, windowPoint);
+            }else if (selectedObject instanceof Label) {
+                newWindow.displayLabelInfo((Label) selectedObject, windowPoint);
+            }else if (selectedObject instanceof GameplayUnits) {
+                newWindow.displayGameplayUnitsInfo((GameplayUnits) selectedObject, windowPoint);
             }
 
             // Добавляем обработчик закрытия для удаления окна из списка

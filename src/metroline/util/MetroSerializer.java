@@ -1,14 +1,11 @@
 package metroline.util;
 
-import metroline.objects.enums.Direction;
-import metroline.objects.enums.StationColors;
+import metroline.objects.enums.*;
 import metroline.objects.gameobjects.*;
 import metroline.core.time.GameTime;
 import metroline.core.world.GameWorld;
 import metroline.core.world.tiles.GameTile;
 import metroline.core.world.tiles.WorldTile;
-import metroline.objects.enums.StationType;
-import metroline.objects.enums.TunnelType;
 import metroline.objects.gameobjects.Label;
 
 import java.awt.*;
@@ -18,9 +15,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-// TODO LABEL нужно сериализовать и привязывать к хеш коду станции, а не к названию (т.к могут быть одинаковыми)
-//
-// TODO ОБНУЛЯЮТСЯ CONNECTIONS - их надо тоже сохранять будет!
+
 public class MetroSerializer {
     private static final String VERSION = "1.0";
     private static final String SAVE_FOLDER = "saves";
@@ -31,35 +26,7 @@ public class MetroSerializer {
                 color.getBlue());
     }
 
-//    private GameObject parseGameObject(String contentStr, GameWorld world, Map<String, Station> stationMap, Map<Integer, Station> stationHashMap) {
-//        String[] parts = contentStr.split(":");
-//        String type = parts[0];
-//        String value = parts[1];
-//
-//        return switch (type) {
-//            case "station" -> {
-//                String stationName = unescapeString(value);
-//                Station station = stationMap.get(stationName);
-//                yield station;
-//            }
-//            case "label" -> {
-//                String labelText = unescapeString(value);
-//                for (Label label : world.getLabels()) {
-//                    if (label.getText().equals(labelText)) {
-//                        yield label;
-//                    }
-//                }
-//                yield null;
-//            }
-//            case "pathpoint" -> {
-//                String[] coords = value.split(",");
-//                int x = Integer.parseInt(coords[0]);
-//                int y = Integer.parseInt(coords[1]);
-//                yield new PathPoint(x, y);
-//            }
-//            default -> null;
-//        };
-//    }
+
 
     public void saveWorld(GameWorld world, String filename) throws IOException {
         File saveDir = new File(SAVE_FOLDER);
@@ -90,10 +57,12 @@ public class MetroSerializer {
                 for (int x = 0; x < world.getWidth(); x++) {
                     WorldTile tile = world.getWorldTile(x, y);
                     writer.write(String.format(Locale.US,
-                            "{x:%d,y:%d,perm:%.2f,color:%s}",
+                            "{x:%d,y:%d,perm:%.2f,isWater:%b,abilityPay:%.2f,passengerCount:%d,color:%s}",
                             x, y,
                             tile.getPerm(),
-
+                            tile.isWater(),
+                            tile.getAbilityPay(),
+                            tile.getPassengerCount(),
                             colorToHex(tile.getCurrentColor())
                     ) + "\n");
                 }
@@ -141,6 +110,20 @@ public class MetroSerializer {
             }
             writer.write("]\n");
 
+            //gameplay units
+            writer.write("gameplay_units:[\n");
+            for (GameplayUnits gUnits : world.getGameplayUnits()) {
+                writer.write(String.format(
+                        "{id:%d,name:%s,x:%d,y:%d,type:%s}",
+                        gUnits.getUniqueId(),
+                        escapeString(gUnits.getName()),
+                        gUnits.getX(),
+                        gUnits.getY(),
+                        gUnits.getType().name()
+                ) + "\n");
+            }
+            writer.write("]\n");
+
             //path points
             writer.write("pathPoints:[\n");
             for (Tunnel tunnel : world.getTunnels()) {
@@ -171,7 +154,7 @@ public class MetroSerializer {
                         escapeString(label.getText()),
                         label.getX(),
                         label.getY(),
-                        label.getParentStation().getUniqueId()
+                        label.getParentGameObject().getUniqueId()
                 ) + "\n");
             }
             writer.write("]\n");
@@ -306,12 +289,18 @@ public class MetroSerializer {
                             int x = Integer.parseInt(extractValue(parts[0], "x"));
                             int y = Integer.parseInt(extractValue(parts[1], "y"));
                             float perm = Float.parseFloat(extractValue(parts[2], "perm"));
-                            Color color = parseColor(extractValue(parts[3], "color"));
+                            boolean isWater = Boolean.parseBoolean(extractValue(parts[3], "isWater"));
+                            float abilityPay = Float.parseFloat(extractValue(parts[4], "abilityPay"));
+                            float passengerCount = Float.parseFloat(extractValue(parts[5], "passengerCount"));
+                            Color color = parseColor(extractValue(parts[6], "color"));
 
                             WorldTile tile = world.getWorldTile(x, y);
                             if (tile != null) {
                                 tile.setPerm(perm);
                                 tile.setBaseTileColor(color);
+                                tile.setAbilityPay(abilityPay);
+                                tile.setWater(isWater);
+                                tile.setPassengerCount((int) passengerCount);
 
                             }
 
@@ -348,6 +337,18 @@ public class MetroSerializer {
                         }
                     }
                 }
+                else if (line.equals("gameplay_units:[")) {
+
+                    // Чтение меток
+                    while (!(line = reader.readLine()).equals("]")) {
+                        GameplayUnits gUnits = parseGameplayUnit(line, world);
+                        if (gUnits != null) {
+                            world.getGameplayUnits().add(gUnits);
+                        }
+                    }
+
+                }
+
                 else if (line.equals("pathPoints:[")) {
                     // Чтение путевых точек для туннелей
                     while (!(line = reader.readLine()).equals("]")) {
@@ -449,7 +450,14 @@ public class MetroSerializer {
                 int y = Integer.parseInt(coords[1]);
                 yield new PathPoint(x, y);
             }
-
+            case "gameplay_units" -> {
+                for (GameplayUnits gUnits : world.getGameplayUnits()) {
+                    if (gUnits.getName().equals(value)) {
+                        yield gUnits;
+                    }
+                }
+                yield null;
+            }
             default -> null;
         };
     }
@@ -463,6 +471,9 @@ public class MetroSerializer {
         } else if (obj instanceof PathPoint) {
             PathPoint pathPoint = (PathPoint) obj;
             return String.format("pathpoint:%d,%d", pathPoint.getX(), pathPoint.getY());
+        } else    if (obj instanceof GameplayUnits) {
+            GameplayUnits gUnits = (GameplayUnits) obj;
+            return String.format("gameplay_units:%d", gUnits.getUniqueId());
         }
         return "null";
     }
@@ -480,6 +491,46 @@ public class MetroSerializer {
         if (station != null && connectedTo != null) {
             station.getConnections().put(direction, connectedTo);
         }
+    }
+    private GameplayUnits parseGameplayUnit(String line, GameWorld world) {
+        String[] parts = line.substring(1, line.length()-1).split(",");
+
+        long id = -1;
+        String name = "";
+        int x = 0, y = 0;
+        GameplayUnitsType type = GameplayUnitsType.FACTORY;
+
+        for (String part : parts) {
+            String[] keyValue = part.split(":", 2);
+            String key = keyValue[0].trim();
+            String value = keyValue.length > 1 ? keyValue[1].trim() : "";
+
+            switch (key) {
+                case "id":
+                    id = Long.parseLong(value);
+                    break;
+                case "name":
+                    name = unescapeString(value);
+                    break;
+                case "x":
+                    x = Integer.parseInt(value);
+                    break;
+                case "y":
+                    y = Integer.parseInt(value);
+                    break;
+                case "type":
+                    type = GameplayUnitsType.valueOf(value);
+                    break;
+            }
+        }
+
+        // Здесь нужно создать соответствующий тип GameplayUnits
+        // В зависимости от вашей реализации, это может быть:
+        GameplayUnits gUnits = new GameplayUnits(world, x, y, type);
+        if (id != -1) {
+            gUnits.setUniqueId(id);
+        }
+        return gUnits;
     }
     private Station parseStation(String line, GameWorld world) {
         // Пример строки: {id:123,name:"Station 1",x:10,y:20,color:rgb(255,0,0),type:REGULAR}

@@ -1,5 +1,6 @@
 package metroline.objects.gameobjects;
 
+import metroline.core.world.GameWorld;
 import metroline.core.world.World;
 
 import java.awt.*;
@@ -9,7 +10,7 @@ import java.awt.*;
  */
 public class Label extends GameObject {
     private String text;
-    private Station parentStation;
+    private GameObject parentStation;
 
 
 
@@ -17,7 +18,7 @@ public class Label extends GameObject {
         super(0, 0);
     }
 
-    public Label(World world, int x, int y, String text, Station parentStation) {
+    public Label(World world, int x, int y, String text, GameObject parentStation) {
         super(x, y);
         this.setWorld(world);
         this.text = text;
@@ -32,14 +33,14 @@ public class Label extends GameObject {
         this.text = text;
     }
 
-    public Station getParentStation() {
+    public GameObject getParentGameObject() {
         return parentStation;
     }
     public long getParentStationId() {
         return parentStation != null ? parentStation.getUniqueId() : -1;
     }
     public boolean tryMoveTo(int newX, int newY) {
-        Station parent = getParentStation();
+        GameObject parent = getParentGameObject();
         World world = getWorld();
 
         // Разрешаем перемещение в любую позицию рядом со станцией (не только ортогонально)
@@ -52,12 +53,13 @@ public class Label extends GameObject {
                 // Проверяем, что клетка свободна (нет других станций или меток)
                 if (world.getStationAt(newX, newY) == null &&
                         (world.getLabelAt(newX, newY) == null || world.getLabelAt(newX, newY) == this)) {
-
+                    if(((GameWorld)getWorld()).getGameplayUnitsAt(newX, newY) == null) {
                     world.getGameGrid()[getX()][getY()].setContent(null);
                     this.x = newX;
                     this.y = newY;
                     world.getGameGrid()[newX][newY].setContent(this);
                     return true;
+                    }
                 }
             }
         }

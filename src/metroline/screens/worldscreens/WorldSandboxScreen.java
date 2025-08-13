@@ -225,9 +225,9 @@ public class WorldSandboxScreen extends WorldScreen {
             yPos += 15;
             g.drawString("Position: (" + label.getX() + "," + label.getY() + ")", 10, yPos);
             yPos += 15;
-            g.drawString("Parent Station: " + label.getParentStation().getName() +
-                    " (" + label.getParentStation().getX() + "," +
-                    label.getParentStation().getY() + ")", 10, yPos);
+            g.drawString("Parent Station: " + label.getParentGameObject().getName() +
+                    " (" + label.getParentGameObject().getX() + "," +
+                    label.getParentGameObject().getY() + ")", 10, yPos);
             yPos += 15;
         }
         // Информация о выбранном туннеле

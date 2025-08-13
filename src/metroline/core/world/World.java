@@ -1,14 +1,11 @@
 package metroline.core.world;
 
-import metroline.objects.gameobjects.GameObject;
+import metroline.objects.gameobjects.*;
 import metroline.core.time.GameTime;
 import metroline.core.world.tiles.GameTile;
 import metroline.core.world.tiles.WorldTile;
-import metroline.objects.gameobjects.Label;
-import metroline.objects.gameobjects.PathPoint;
-import metroline.objects.gameobjects.Station;
-import metroline.objects.gameobjects.Tunnel;
 import metroline.objects.enums.Direction;
+import metroline.objects.gameobjects.Label;
 import metroline.screens.worldscreens.WorldGameScreen;
 import metroline.screens.worldscreens.WorldScreen;
 import metroline.util.*;
@@ -63,7 +60,7 @@ public class World implements Serializable {
         if(!hasLandscape) {
             for (int y = 0; y < height; y++) {
                 for (int x = 0; x < width; x++) {
-                    worldGrid[x][y] = new WorldTile(x, y, 0f);
+                    worldGrid[x][y] = new WorldTile(x, y, 0f, false, 0,0, Color.DARK_GRAY);
                     worldGrid[x][y].setBaseTileColor(worldColor);
                     gameGrid[x][y] = new GameTile(x, y);
                 }
@@ -86,7 +83,7 @@ public class World implements Serializable {
                     float perm = transformNoiseToPerm(noiseValue);
 
                     // Создаем тайл
-                    worldGrid[x][y] = new WorldTile(x, y, perm);
+                    worldGrid[x][y] = new WorldTile(x, y, perm, false, 0,0, Color.WHITE);
                     worldGrid[x][y].setBaseTileColor(worldColor);
                     gameGrid[x][y] = new GameTile(x, y);
 
@@ -96,6 +93,7 @@ public class World implements Serializable {
         }
         // Генерация зон с использованием того же смешанного шума
         if(hasAbilityPay) {
+            System.out.println("hasAbilityPay");
             generatePaymentZones(perlin, voronoi);
          }
          if(hasPassengerCount) {
@@ -146,12 +144,11 @@ public class World implements Serializable {
                 // Больше вороного для четких зон
                 float perlinValue = perlin.noise(nx, ny, 0);
                 float voronoiValue = voronoi.evaluate(nx, ny);
-                float value = mixNoises(perlinValue, voronoiValue, 0.3f); // 70% вороного
 
-                value = 1f - value; // Инвертируем
+             //   value = 1f - value; // Инвертируем
 
-                if (value > 0.4f) { // Более высокий порог
-                    worldGrid[x][y].setAbilityPay((int)(value * 1.5)); // Усиливаем значения
+                if (voronoiValue > 0.4f) { // Более высокий порог
+                    worldGrid[x][y].setAbilityPay((float) (voronoiValue * 1.5)); // Усиливаем значения
                 }
             }
         }
@@ -193,11 +190,18 @@ public class World implements Serializable {
 
 
 
-
+    public Label getLabelForGameObject(GameObject station) {
+        for (Label label : labels) {
+            if (label.getParentGameObject() == station) {
+                return label;
+            }
+        }
+        return null;
+    }
 
     public Label getLabelForStation(Station station) {
         for (Label label : labels) {
-            if (label.getParentStation() == station) {
+            if (label.getParentGameObject() == station) {
                 return label;
             }
         }
@@ -215,7 +219,7 @@ public class World implements Serializable {
             int ny = y + dir.getDy();
 
             if (nx >= 0 && nx < width && ny >= 0 && ny < height &&
-                    getStationAt(nx, ny) == null && getLabelAt(nx, ny) == null) {
+                    getStationAt(nx, ny) == null && getLabelAt(nx, ny) == null&& getLabelAt(nx, ny) == null) {
 
                 // Проверяем, что текст не будет перекрывать станцию
                 if (isTextPositionGood(dir, name)) {
@@ -227,7 +231,7 @@ public class World implements Serializable {
         return null;
     }
 
-    private boolean isTextPositionGood(Direction dir, String name) {
+    boolean isTextPositionGood(Direction dir, String name) {
         // Для коротких названий любая позиция подходит
         if (name.length() <= 6) return true;
 
@@ -282,7 +286,7 @@ public class World implements Serializable {
         // Возвращает метки для конкретной станции
         List<Label> stationLabels = new ArrayList<>();
         for (Label label : getLabels()) {
-            if (label.getParentStation().equals(station)) {
+            if (label.getParentGameObject().equals(station)) {
                 stationLabels.add(label);
             }
         }

@@ -23,10 +23,13 @@ public class WorldTile extends Tile {
     public WorldTile(int x, int y) {
         super(x, y, 16);
     }
-    public WorldTile(int x, int y, float perm) {
+    public WorldTile(int x, int y, float perm, boolean isWater, float abilityPay, int passengerCount, Color color) {
         super(x, y, 16);
         this.perm = perm;
-        this.baseTileColor = new Color(110, 110, 110);
+        this.isWater = isWater;
+        this.abilityPay = abilityPay;
+        this.passengerCount = passengerCount;
+        this.baseTileColor = color;
     }
 
     public WorldTile getWorldTile() {
@@ -67,12 +70,13 @@ public class WorldTile extends Tile {
     public void setPassengerCount(int passengerCount) { this.passengerCount = passengerCount; }
     @Override
     public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
-        super.draw(g, offsetX, offsetY, zoom);
+  //      super.draw(g, offsetX, offsetY, zoom);
 
         int drawSize = (int)(size * zoom);
         int drawX = (int)((x * size + offsetX) * zoom);
         int drawY = (int)((y * size + offsetY) * zoom);
-
+        Graphics2D g2d = (Graphics2D)g;
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         int range = 50;
 
         int red = Math.max(0, Math.min(255, baseTileColor.getRed() - (int)(perm * range)));
@@ -85,32 +89,25 @@ public class WorldTile extends Tile {
                 new Color(red, green, blue);
 
         g.setColor(baseColor);
+        g2d.fillRect(drawX, drawY, drawSize, drawSize);
 
-        // Рисуем плитку с небольшим перекрытием
-        g.fillRect(drawX - 1, drawY - 1, drawSize + 2, drawSize + 2);
-        if (MainFrame.showPaymentZones || MainFrame.showPassengerZones) {
-            Graphics2D g2d = (Graphics2D)g.create();
-
-            try {
                 // Настройка прозрачности
-                g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.4f));
+        //        g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.4f));
                 int layerColor = 200 + (int)(55 * abilityPay);
                 // Отрисовка платежеспособности (красный)
                 if (MainFrame.showPaymentZones && abilityPay > 0) {
 
                     g2d.setColor(new Color(layerColor, 0, 0, 180));
-                    g2d.fillRect(drawX-1, drawY-1, drawSize+2, drawSize+2);
+                    g2d.fillRect(drawX, drawY, drawSize, drawSize);
                 }
 
                 // Отрисовка пассажиропотока (зеленый)
                 if (MainFrame.showPassengerZones && passengerCount > 0) {
                     g2d.setColor(new Color(0, layerColor, 0, 180));
-                    g2d.fillRect(drawX-1, drawY-1, drawSize+2, drawSize+2);
+                    g2d.fillRect(drawX, drawY, drawSize, drawSize);
                 }
-            } finally {
-                g2d.dispose();
-            }
-        }
+
+
     }
 
 }

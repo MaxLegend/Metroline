@@ -6,15 +6,12 @@ import metroline.objects.enums.StationType;
 import metroline.objects.enums.TunnelType;
 import metroline.objects.gameobjects.*;
 import metroline.objects.gameobjects.Label;
-import metroline.screens.panel.LinesLegendWindow;
 import metroline.screens.worldscreens.WorldGameScreen;
 import metroline.util.MetroLogger;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
@@ -62,7 +59,7 @@ public class WorldClickController {
     }
     public void handleAltShiftClick(int x, int y) {
         Station station = WorldGameScreen.getInstance().getWorld().getStationAt(x, y);
-        if (station != null && (station.getType() != StationType.PLANNED || station.getType() != StationType.BUILDING) ) {
+        if (station != null && (station.getType() != StationType.DESTROYED ||station.getType() != StationType.PLANNED || station.getType() != StationType.BUILDING) ) {
             GameWorld gameWorld = (GameWorld) WorldGameScreen.getInstance().getWorld();
             gameWorld.startDestroyingStation(station);
             WorldGameScreen.getInstance().repaint();
@@ -144,10 +141,14 @@ public class WorldClickController {
         deselectAll();
 
         // Проверяем объекты в порядке приоритета
+        if(tryGameplayObject(x, y)) return;
         if (trySelectLabel(x, y)) return;
         if (trySelectStation(x, y)) return;
         if (trySelectTunnel(x, y)) return;
+
+
     }
+
 
     /**
      * Обработка перетаскивания
@@ -197,6 +198,10 @@ public class WorldClickController {
      * Создание новой станции
      */
     private void handleNewStation(int x, int y) {
+        if (!isPositionValidForStation(x, y)) {
+            return; // Нельзя строить - выходим
+        }
+
         if (WorldGameScreen.getInstance().isCPressed) {
             // Ctrl+C - выбор цвета
             showColorSelectionPopup(x, y);
@@ -290,7 +295,14 @@ public class WorldClickController {
 
         WorldGameScreen.getInstance().repaint();
     }
-
+    private boolean tryGameplayObject(int x, int y) {
+        GameplayUnits gameplayUnits = ((GameWorld)WorldGameScreen.getInstance().getWorld()).getGameplayUnitsAt(x, y);
+        if (gameplayUnits != null) {
+            selectObject(gameplayUnits, x, y);
+            return true;
+        }
+        return false;
+    }
     /**
      * Попытка выбрать метку
      */
@@ -355,9 +367,9 @@ public class WorldClickController {
      * Проверка визуальной области метки
      */
     private boolean isClickOnLabelVisualArea(Label label, int clickX, int clickY) {
-        if (label.getParentStation() == null) return false;
+        if (label.getParentGameObject() == null) return false;
 
-        Station parent = label.getParentStation();
+        GameObject parent = label.getParentGameObject();
         int relX = label.getX() - parent.getX();
         int relY = label.getY() - parent.getY();
 
@@ -397,10 +409,18 @@ public class WorldClickController {
      * Проверка валидности позиции для станции
      */
     private boolean isPositionValidForStation(int x, int y) {
-        return x >= 0 && x < WorldGameScreen.getInstance().getWorld().getWidth() &&
-                y >= 0 && y < WorldGameScreen.getInstance().getWorld().getHeight() &&
-                WorldGameScreen.getInstance().getWorld().getStationAt(x, y) == null;
+        GameWorld world = (GameWorld) WorldGameScreen.getInstance().getWorld();
+
+        // Проверяем границы мира
+        if (x < 0 || x >= world.getWidth() || y < 0 || y >= world.getHeight()) {
+            return false;
+        }
+
+        // Проверяем, что клетка свободна (нет станции и нет GameplayUnits)
+        return world.getStationAt(x, y) == null &&
+                world.getGameplayUnitsAt(x, y) == null;
     }
+
 
     /*********************************
      * СЛУЖЕБНЫЕ МЕТОДЫ
@@ -423,7 +443,9 @@ public class WorldClickController {
         for (Tunnel tunnel : world.getTunnels()) {
             tunnel.setSelected(false);
         }
-
+        for (GameplayUnits unit : world.getGameplayUnits()) {
+            unit.setSelected(false);
+        }
         selectedObject = null;
         selectedStation = null;
     }
@@ -541,7 +563,7 @@ public class WorldClickController {
                 totalCost += tunnel.getLength() * GameConstants.TUNNEL_COST_PER_SEGMENT;
             }
         }
-        System.out.println("totalCost " + totalCost);
+
         return totalCost;
     }
 
@@ -643,39 +665,5 @@ public class WorldClickController {
         return colorBtn;
     }
 
-    /**
-     * Создание кнопки цвета
-     */
-//    private JButton createColorButton(Color colorButton, int x, int y, JDialog dialog) {
-//        JButton colorBtn = new JButton();
-//        colorBtn.setBackground(colorButton);
-//        colorBtn.setPreferredSize(new Dimension(30, 30));
-//        colorBtn.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-//        colorBtn.setContentAreaFilled(false);
-//        colorBtn.setOpaque(true);
-//        colorBtn.setFocusPainted(false);
-//
-//        colorBtn.addActionListener(e -> {
-//            currentStationColor = StationColors.fromColor(colorButton);
-//            Station newStation = new Station(
-//                    WorldGameScreen.getInstance().getWorld(),
-//                    x, y, StationColors.fromColor(colorButton), StationType.PLANNED
-//            );
-//            WorldGameScreen.getInstance().getWorld().addStation(newStation);
-//            WorldGameScreen.getInstance().repaint();
-//            dialog.dispose();
-//        });
-//
-//        colorBtn.addMouseListener(new MouseAdapter() {
-//            public void mouseEntered(MouseEvent e) {
-//                colorBtn.setBorder(BorderFactory.createLineBorder(Color.WHITE, 2));
-//            }
-//            public void mouseExited(MouseEvent e) {
-//                colorBtn.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-//            }
-//        });
-//
-//        return colorBtn;
-//    }
 
 }

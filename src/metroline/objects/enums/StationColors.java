@@ -5,22 +5,22 @@ import metroline.util.LngUtil;
 import java.awt.*;
 
 public enum StationColors {
-    RED(157, 6, 6, "color.red"),
-    DARK_GREEN(0, 100, 0, "color.dark_green"),
-    BLUE(0, 120, 190, "color.blue"),
-    DARK_BLUE(27, 57, 208, "color.dark_blue"),
-    CYAN(25, 149, 176, "color.cyan"),
-    BROWN(110, 63, 21, "color.brown"),
-    ORANGE(200, 100, 0, "color.orange"),
-    PURPLE(133, 7, 133, "color.purple"),
-    YELLOW(211, 179, 8, "color.yellow"),
-    GRAY(153, 153, 153, "color.gray"),
-    LIME(153, 204, 0, "color.lime"),
-    TEAL(79, 155, 155, "color.teal"),
-    PINK(201, 48, 128, "color.pink"),
-    MINT(3, 121, 95, "color.mint"),
-    MAROON(148, 21, 73, "color.maroon"),
-    LIGHT_GREEN(109, 148, 104, "color.light_green");
+    RED(150, 20, 20, "color.red"),          // Яркость: 120.0
+    DARK_GREEN(0, 120, 0, "color.dark_green"), // Яркость: 120.0
+    BLUE(40, 120, 180, "color.blue"),       // Яркость: 120.0
+    DARK_BLUE(50, 80, 200, "color.dark_blue"), // Яркость: 120.0
+    CYAN(40, 150, 160, "color.cyan"),       // Яркость: 120.0
+    BROWN(120, 70, 30, "color.brown"),      // Яркость: 120.0
+    ORANGE(200, 100, 0, "color.orange"),    // Яркость: 120.0
+    PURPLE(130, 30, 130, "color.purple"),   // Яркость: 120.0
+    YELLOW(200, 180, 0, "color.yellow"),    // Яркость: 120.0
+    GRAY(120, 120, 120, "color.gray"),      // Яркость: 120.0
+    LIME(140, 190, 0, "color.lime"),        // Яркость: 120.0
+    TEAL(70, 150, 150, "color.teal"),       // Яркость: 120.0
+    PINK(190, 60, 130, "color.pink"),       // Яркость: 120.0
+    MINT(30, 130, 100, "color.mint"),       // Яркость: 120.0
+    MAROON(140, 30, 80, "color.maroon"),    // Яркость: 120.0
+    LIGHT_GREEN(110, 150, 100, "color.light_green"); // Яркость: 120.0
 
     private final Color color;
     private final String localizationKey;

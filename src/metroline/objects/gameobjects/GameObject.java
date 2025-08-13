@@ -17,7 +17,7 @@ public abstract class GameObject implements Serializable {
     public int y;
     public boolean selected = false;
     private World world;
-
+    public String name;
     // Генератор уникальных ID для всех объектов
     private static final AtomicLong idGenerator = new AtomicLong(0);
 
@@ -40,6 +40,18 @@ public abstract class GameObject implements Serializable {
         this.x = x;
         this.y = y;
         this.uniqueId = idGenerator.incrementAndGet();
+    }
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+        // Обновляем метку, если она существует
+        Label label = getWorld().getLabelForGameObject(this);
+        if (label != null) {
+            label.setText(name);
+        }
     }
     /**
      * Получает уникальный идентификатор объекта

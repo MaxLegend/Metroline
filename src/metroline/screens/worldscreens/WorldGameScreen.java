@@ -1,26 +1,19 @@
 package metroline.screens.worldscreens;
 
 import metroline.core.world.GameWorld;
-import metroline.core.world.tiles.WorldTile;
 import metroline.input.WorldClickController;
-import metroline.objects.gameobjects.Label;
-import metroline.objects.gameobjects.PathPoint;
-import metroline.objects.gameobjects.Station;
-import metroline.objects.gameobjects.Tunnel;
+import metroline.objects.gameobjects.*;
 import metroline.objects.enums.Direction;
 import metroline.MainFrame;
+import metroline.objects.gameobjects.Label;
 import metroline.screens.panel.InfoWindow;
 import metroline.screens.panel.LinesLegendWindow;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Map;
 import java.util.List;
 
@@ -80,6 +73,7 @@ public class WorldGameScreen extends WorldScreen {
         this.setWorld(new GameWorld(width, height,hasPassengerCount, hasAbilityPay, hasLandscape, hasRivers,worldColor, money));
         this.gameClickHandler = new WorldClickController( this);
         setupRepaintTimer();
+        ((GameWorld)getWorld()).generateRandomGameplayUnits(GameConstants.GAMEPLAY_UNITS_COUNT);
         invalidateCache();
         repaint();
     }
@@ -165,6 +159,9 @@ public class WorldGameScreen extends WorldScreen {
             for (Tunnel tunnel : getWorld().getTunnels()) {
                 tunnel.draw(g, 0, 0, 1);
             }
+            for (GameplayUnits gUnits : ((GameWorld)getWorld()).getGameplayUnits()) {
+                gUnits.draw(g, 0, 0, 1);
+            }
             if(getWorld().isRoundStationsEnabled()) {
                 for (Station station : getWorld().getStations()) {
                     station.drawWorldColorRing(g, 0, 0, 1);
@@ -232,8 +229,8 @@ public class WorldGameScreen extends WorldScreen {
     }
         private void updateWorldCache() {
             if (worldCache == null ||
-                    worldCache.getWidth() != widthWorld * 32 ||
-                    worldCache.getHeight() != heightWorld * 32) {
+                    worldCache.getWidth() != widthWorld * 16 ||
+                    worldCache.getHeight() != heightWorld * 16) {
                 initWorldCache();
             }
 
@@ -340,9 +337,9 @@ public class WorldGameScreen extends WorldScreen {
                 yPos += 15;
                 g.drawString("Position: (" + label.getX() + "," + label.getY() + ")", 10, yPos);
                 yPos += 15;
-                g.drawString("Parent Station: " + label.getParentStation().getName() +
-                        " (" + label.getParentStation().getX() + "," +
-                        label.getParentStation().getY() + ")", 10, yPos);
+                g.drawString("Parent Station: " + label.getParentGameObject().getName() +
+                        " (" + label.getParentGameObject().getX() + "," +
+                        label.getParentGameObject().getY() + ")", 10, yPos);
                 yPos += 15;
             }
             // Информация о выбранном туннеле

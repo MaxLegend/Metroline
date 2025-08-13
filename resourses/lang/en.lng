@@ -95,6 +95,17 @@ infoWnd.tunnel_title=Tunnel
 infoWnd.abilityPay=Ability Pay:
 infoWnd.passengerCount=Passengers Flow:
 infoWnd.revenue:Day Revenue:
+infoWnd.gUnits=Revenue Multiplier:
+infoWnd.label=Label
+infoWnd.upkeep:Unkeep:
+units.house_culture=House of Culture
+units.church=Church
+units.airport=Airport
+units.port=Port
+units.cityhall=Cityhall
+units.shop=Shop
+units.factory=Factory
+units.museum=Museum
 legend.title=Metro Lines
 legend.button=Metro Lines
 line.red=Red Line

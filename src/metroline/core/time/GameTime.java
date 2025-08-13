@@ -38,6 +38,7 @@ public class GameTime implements Serializable {
     private transient Timer timer;         // Swing таймер
     private transient long lastRealMillis; // момент последнего обновления
     private transient int lastMinute = -1;
+    private transient int lastDay = -1;
 
     private static final int TICK_MS = 50; // частота тиков (мс)
     private static final DateTimeFormatter DISPLAY_FMT = DateTimeFormatter.ofPattern("HH:mm dd.MM.yyyy");
@@ -126,6 +127,16 @@ public class GameTime implements Serializable {
 
         if (currentMinute != lastMinute) {
             lastMinute = currentMinute;
+            return true;
+        }
+        return false;
+    }
+    public synchronized boolean checkDayPassed() {
+        Instant instant = Instant.ofEpochMilli(epochMillis);
+        int currentDay = instant.atZone(ZoneId.systemDefault()).getDayOfMonth();
+
+        if (currentDay != lastDay) {
+            lastDay = currentDay;
             return true;
         }
         return false;

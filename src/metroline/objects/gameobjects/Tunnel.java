@@ -305,14 +305,14 @@ public class Tunnel extends GameObject {
         GeneralPath tunnelPath = new GeneralPath();
 
         PathPoint first = path.get(0);
-        int startX = (int)((first.getX() * 32 + offsetX + 15) * zoom);
-        int startY = (int)((first.getY() * 32 + offsetY + 15) * zoom);
+        int startX = (int)((first.getX() * 32 + offsetX + 16) * zoom);
+        int startY = (int)((first.getY() * 32 + offsetY + 16) * zoom);
         tunnelPath.moveTo(startX, startY);
 
         for (int i = 1; i < path.size(); i++) {
             PathPoint current = path.get(i);
-            int x = (int)((current.getX() * 32 + offsetX + 15) * zoom);
-            int y = (int)((current.getY() * 32 + offsetY + 15) * zoom);
+            int x = (int)((current.getX() * 32 + offsetX + 16) * zoom);
+            int y = (int)((current.getY() * 32 + offsetY + 16) * zoom);
             tunnelPath.lineTo(x, y);
         }
 

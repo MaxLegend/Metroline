@@ -22,7 +22,7 @@ import java.util.Random;
 public class Station extends GameObject {
 
 
-    private String name;
+
     private Map<Direction, Station> connections = new EnumMap<>(Direction.class);
 
 
@@ -279,8 +279,8 @@ public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
 
         // Размеры и позиция
         int drawSize = (int)(24 * zoom);
-        int cellCenterX = (int)((getX() * 32 + offsetX + 15) * zoom);
-        int cellCenterY = (int)((getY() * 32 + offsetY + 15) * zoom);
+        int cellCenterX = (int)((getX() * 32 + offsetX + 16) * zoom);
+        int cellCenterY = (int)((getY() * 32 + offsetY + 16) * zoom);
         int drawX = cellCenterX - drawSize/2;
         int drawY = cellCenterY - drawSize/2;
 
@@ -305,8 +305,8 @@ public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
     }
     public void drawWorldColorRing(Graphics g, int offsetX, int offsetY, float zoom) {
         int drawSize = (int) (24 * zoom);
-        int cellCenterX = (int) ((getX() * 32 + offsetX + 15) * zoom);
-        int cellCenterY = (int) ((getY() * 32 + offsetY + 15) * zoom);
+        int cellCenterX = (int) ((getX() * 32 + offsetX + 16) * zoom);
+        int cellCenterY = (int) ((getY() * 32 + offsetY + 16) * zoom);
         int drawX = cellCenterX - drawSize / 2;
         int drawY = cellCenterY - drawSize / 2;
         int holeSize = (int) (30 * zoom);
@@ -319,8 +319,8 @@ public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
     }
     public void drawRoundSelection(Graphics g, int offsetX, int offsetY, float zoom) {
         int drawSize = (int) (24 * zoom);
-        int cellCenterX = (int) ((getX() * 32 + offsetX + 15) * zoom);
-        int cellCenterY = (int) ((getY() * 32 + offsetY + 15) * zoom);
+        int cellCenterX = (int) ((getX() * 32 + offsetX + 16) * zoom);
+        int cellCenterY = (int) ((getY() * 32 + offsetY + 16) * zoom);
         int drawX = cellCenterX - drawSize / 2;
         int drawY = cellCenterY - drawSize / 2;
         Graphics2D g2d = (Graphics2D) g;
@@ -331,8 +331,8 @@ public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
     }
 
     public void drawRoundTransfer(Graphics g, int offsetX, int offsetY, float zoom) {
-        int cellCenterX = (int) ((getX() * 32 + offsetX + 15) * zoom);
-        int cellCenterY = (int) ((getY() * 32 + offsetY + 15) * zoom);
+        int cellCenterX = (int) ((getX() * 32 + offsetX + 16) * zoom);
+        int cellCenterY = (int) ((getY() * 32 + offsetY + 16) * zoom);
         Graphics2D g2d = (Graphics2D) g;
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         Map<Direction, Station> adjacentStations = new EnumMap<>(Direction.class);
@@ -352,8 +352,8 @@ public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
                 Station neighbor = entry.getValue();
 
                 if (!neighbor.getColor().equals(this.getColor())) {
-                    int nx = neighbor.getX() * 32 + offsetX + 15;
-                    int ny = neighbor.getY() * 32 + offsetY + 15;
+                    int nx = neighbor.getX() * 32 + offsetX + 16;
+                    int ny = neighbor.getY() * 32 + offsetY + 16;
 
                     drawTransferConnection(g2d, cellCenterX, cellCenterY, nx, ny, dir, zoom);
 
@@ -382,8 +382,8 @@ public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
     }
     public void drawRoundStation(Graphics g, int offsetX, int offsetY, float zoom) {
         int drawSize = (int) (24 * zoom);
-        int cellCenterX = (int) ((getX() * 32 + offsetX + 15) * zoom);
-        int cellCenterY = (int) ((getY() * 32 + offsetY + 15) * zoom);
+        int cellCenterX = (int) ((getX() * 32 + offsetX + 16) * zoom);
+        int cellCenterY = (int) ((getY() * 32 + offsetY + 16) * zoom);
         int drawX = cellCenterX - drawSize / 2;
         int drawY = cellCenterY - drawSize / 2;
         Graphics2D g2d = (Graphics2D) g;
@@ -487,8 +487,8 @@ public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
     }
     public void drawWorldColorSquare(Graphics g, int offsetX, int offsetY, float zoom) {
         int drawSize = (int)(20 * zoom);
-        int drawX = (int)((getX() * 32 + offsetX +5) * zoom);
-        int drawY = (int)((getY() * 32 + offsetY +5) * zoom);
+        int drawX = (int)((getX() * 32 + offsetX +6) * zoom);
+        int drawY = (int)((getY() * 32 + offsetY +6) * zoom);
         int arcSize = (int)(drawSize * 0.35);
         Graphics2D g2d = (Graphics2D)g;
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -498,8 +498,8 @@ public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
     }
     public void drawSquareSelection(Graphics g, int offsetX, int offsetY, float zoom) {
         int drawSize = (int)(20 * zoom);
-        int drawX = (int)((getX() * 32 + offsetX +5) * zoom);
-        int drawY = (int)((getY() * 32 + offsetY +5) * zoom);
+        int drawX = (int)((getX() * 32 + offsetX +6) * zoom);
+        int drawY = (int)((getY() * 32 + offsetY +6) * zoom);
         int arcSize = (int)(drawSize * 0.35);
         Graphics2D g2d = (Graphics2D)g;
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -509,8 +509,8 @@ public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
     }
     public void drawSquareStation(Graphics g, int offsetX, int offsetY, float zoom) {
         int drawSize = (int)(20 * zoom);
-        int drawX = (int)((getX() * 32 + offsetX +5) * zoom);
-        int drawY = (int)((getY() * 32 + offsetY +5) * zoom);
+        int drawX = (int)((getX() * 32 + offsetX +6) * zoom);
+        int drawY = (int)((getY() * 32 + offsetY +6) * zoom);
         int arcSize = (int)(drawSize * 0.35);
         Graphics2D g2d = (Graphics2D)g;
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);

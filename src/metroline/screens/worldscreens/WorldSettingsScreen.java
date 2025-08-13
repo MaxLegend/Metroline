@@ -152,9 +152,9 @@ public class WorldSettingsScreen extends GameScreen {
         moneyValueLabel.setForeground(StyleUtil.FOREGROUND_COLOR);
         moneyValueLabel.setFont(new Font("Sans Serif", Font.BOLD, 13));
         moneySlider = StyleUtil.createMetrolineSlider(
+                50,
                 1000,
-                20000,
-                5000,
+                200,
                 "",
                 moneyValueLabel
         );
