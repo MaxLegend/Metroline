@@ -64,10 +64,6 @@ public class MetroSerializer {
             // Время игры
             writer.write("gameTime:" + world.getGameTime().getCurrentTimeMillis() + "\n");
 
-            // Инициализация сеток перед сохранением (если это необходимо для получения данных)
-            // world.initWorldGrid(); // Предполагается, что сетки уже инициализированы до вызова saveWorld
-            // world.initGameGrid();
-
             // Мир (worldGrid)
             writer.write("worldGrid:[\n");
             for (int y = 0; y < world.getHeight(); y++) {

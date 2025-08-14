@@ -14,7 +14,10 @@ public enum StationType {
     TRANSFER("stype.transfer"),
     TERMINAL("stype.terminal"),
     TRANSIT("stype.transit"),
-    ON_WATER("stype.onwater");
+    ABANDONED("stype.abandoned"),
+    DROWNED("stype.drowned"),
+    RUINED("stype.ruined"),
+    BURNED("stype.burned");
 
     private final String name;
     StationType(String name) {

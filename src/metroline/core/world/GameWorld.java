@@ -605,77 +605,7 @@ public class GameWorld extends World {
         }
         return 0f;
     }
-    public void updateWorldState() {
-        // Очистка построенных станций
-        Iterator<Map.Entry<Station, Long>> buildIterator = stationBuildStartTimes.entrySet().iterator();
-        while (buildIterator.hasNext()) {
-            Map.Entry<Station, Long> entry = buildIterator.next();
-            Station station = entry.getKey();
-            long endTime = entry.getValue() + stationBuildDurations.get(station);
 
-            if (gameTime.getCurrentTimeMillis() >= endTime) {
-                station.updateType();// Или другой конечный тип
-                buildIterator.remove();
-                stationBuildDurations.remove(station);
-                updateConnectedTunnels(station);
-            }
-        }
-
-        // Очистка разрушенных станций
-        Iterator<Map.Entry<Station, Long>> destroyIterator = stationDestructionStartTimes.entrySet().iterator();
-        while (destroyIterator.hasNext()) {
-            Map.Entry<Station, Long> entry = destroyIterator.next();
-            Station station = entry.getKey();
-            long endTime = entry.getValue() + stationDestructionDurations.get(station);
-
-            if (gameTime.getCurrentTimeMillis() >= endTime) {
-                // Удаляем станцию из всех коллекций
-                stations.remove(station);
-                gameGrid[station.getX()][station.getY()].setContent(null);
-
-                // Удаляем из мап строительства/разрушения
-                stationBuildStartTimes.remove(station);
-                stationBuildDurations.remove(station);
-                destroyIterator.remove();
-                stationDestructionDurations.remove(station);
-
-                // Удаляем связанные метки
-                labels.removeIf(label -> label.getParentGameObject() == station);
-            }
-        }
-
-        // Аналогично для туннелей
-        updateTunnelsState();
-    }
-    private void updateTunnelsState() {
-        // Очистка построенных туннелей
-        Iterator<Map.Entry<Tunnel, Long>> buildIterator = tunnelBuildStartTimes.entrySet().iterator();
-        while (buildIterator.hasNext()) {
-            Map.Entry<Tunnel, Long> entry = buildIterator.next();
-            Tunnel tunnel = entry.getKey();
-            long endTime = entry.getValue() + tunnelBuildDurations.get(tunnel);
-
-            if (gameTime.getCurrentTimeMillis() >= endTime) {
-                tunnel.setType(TunnelType.ACTIVE);
-                buildIterator.remove();
-                tunnelBuildDurations.remove(tunnel);
-            }
-        }
-
-        // Очистка разрушенных туннелей
-        Iterator<Map.Entry<Tunnel, Long>> destroyIterator = tunnelDestructionStartTimes.entrySet().iterator();
-        while (destroyIterator.hasNext()) {
-            Map.Entry<Tunnel, Long> entry = destroyIterator.next();
-            Tunnel tunnel = entry.getKey();
-            long endTime = entry.getValue() + tunnelDestructionDurations.get(tunnel);
-
-            if (gameTime.getCurrentTimeMillis() >= endTime) {
-                tunnels.remove(tunnel);
-                destroyIterator.remove();
-                tunnelDestructionDurations.remove(tunnel);
-            }
-        }
-    }
     public float getTunnelConstructionProgress(Tunnel tunnel) {
         if (!tunnelBuildStartTimes.containsKey(tunnel)) {
             return 1.0f;

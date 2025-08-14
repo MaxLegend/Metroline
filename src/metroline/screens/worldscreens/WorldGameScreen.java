@@ -10,6 +10,7 @@ import metroline.MainFrame;
 import metroline.objects.gameobjects.Label;
 import metroline.screens.panel.InfoWindow;
 import metroline.screens.panel.LinesLegendWindow;
+import metroline.screens.render.StationRender;
 import metroline.util.PerlinNoise;
 import metroline.util.VoronoiNoise;
 
@@ -131,7 +132,6 @@ public class WorldGameScreen extends WorldScreen {
         return INSTANCE;
     }
         private void initWorldCache() {
-            // Создаем кеш достаточного размера
             int cacheWidth = widthWorld * 32;
             int cacheHeight = heightWorld * 32;
             worldCache = new BufferedImage(cacheWidth, cacheHeight, BufferedImage.TYPE_INT_ARGB);
@@ -141,24 +141,23 @@ public class WorldGameScreen extends WorldScreen {
         }
 
         @Override
-        protected void paintComponent(Graphics g) {
-            super.paintComponent(g);
-      //      updateInfoPanelPosition();
-            gameClickHandler.checkConstructionProgress();
-            Graphics2D g2d = (Graphics2D)g;
+        protected void paintComponent(Graphics gr) {
+            super.paintComponent(gr);
 
-            // Обновляем кеш при необходимости
+            gameClickHandler.checkConstructionProgress();
+            Graphics2D g = (Graphics2D)gr;
+
             if (!cacheValid) {
                 updateWorldCache();
             }
 
             // Применяем трансформации
-            AffineTransform oldTransform = g2d.getTransform();
-            g2d.scale(zoom, zoom);
-            g2d.translate(offsetX, offsetY);
+            AffineTransform oldTransform = g.getTransform();
+            g.scale(zoom, zoom);
+            g.translate(offsetX, offsetY);
 
             // Рисуем кешированный мир
-            g2d.drawImage(worldCache, 0, 0, null);
+            g.drawImage(worldCache, 0, 0, null);
 
 
             for (Tunnel tunnel : getWorld().getTunnels()) {
@@ -167,43 +166,43 @@ public class WorldGameScreen extends WorldScreen {
 
             if(getWorld().isRoundStationsEnabled()) {
                 for (Station station : getWorld().getStations()) {
-                    station.drawWorldColorRing(g, 0, 0, 1);
+                    StationRender.drawWorldColorRing(station,g, 0, 0, 1);
                 }
                 // 1. Сначала рисуем все соединения всех станций
                 for (Station station : getWorld().getStations()) {
-                    station.drawRoundTransfer(g, 0, 0, 1);
+                    StationRender.drawRoundTransfer(station, g, 0, 0, 1);
                 }
 
                 // 2. Затем рисуем все станции
                 for (Station station : getAllStationsSorted()) {
-                    station.drawRoundStation(g, 0, 0, 1);
+                    StationRender.drawRoundStation(station, g, 0, 0, 1);
                 }
 
                 // 3. В конце рисуем выделения
                 for (Station station : getWorld().getStations()) {
                     if (station.isSelected()) {
-                        station.drawRoundSelection(g, 0, 0, 1);
+                        StationRender.drawRoundSelection(station, g, 0, 0, 1);
                     }
                 }
             } else {
 
                 for (Station station : getWorld().getStations()) {
-                    station.drawWorldColorSquare(g, 0, 0, 1);
+                    StationRender.drawWorldColorSquare(station, g, 0, 0, 1);
                 }
 
                 for (Station station : getWorld().getStations()) {
-                    station.drawRoundTransfer(g, 0, 0, 1);
+                    StationRender.drawRoundTransfer(station, g, 0, 0, 1);
                 }
 
                 // 2. Затем рисуем все станции
                 for (Station station : getAllStationsSorted()) {
-                    station.drawSquareStation(g, 0, 0, 1);
+                    StationRender.drawSquareStation(station, g, 0, 0, 1);
                 }
 
                 // 3. В конце рисуем выделения
                 for (Station station : getWorld().getStations()) {
                     if (station.isSelected()) {
-                        station.drawSquareSelection(g, 0, 0, 1);
+                        StationRender.drawSquareSelection(station, g, 0, 0, 1);
                     }
                 }
             }
@@ -212,15 +211,15 @@ public class WorldGameScreen extends WorldScreen {
             }
 
             for (Label label : getWorld().getLabels()) {
-                label.draw(g2d, 0, 0, 1);
+                label.draw(g, 0, 0, 1);
             }
 
             // Восстанавливаем трансформации
-            g2d.setTransform(oldTransform);
+            g.setTransform(oldTransform);
 
             // Рисуем debug-информацию
             if (debugMode) {
-                drawDebugInfo(g2d);
+                drawDebugInfo(g);
             }
         }
     private List<Station> getAllStationsSorted() {

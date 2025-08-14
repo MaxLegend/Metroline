@@ -5,6 +5,7 @@ import metroline.objects.enums.TunnelType;
 import metroline.screens.worldscreens.WorldSandboxScreen;
 
 import java.awt.*;
+import java.awt.geom.Area;
 import java.awt.geom.GeneralPath;
 import java.util.ArrayList;
 import java.util.List;
@@ -224,6 +225,26 @@ public class Tunnel extends GameObject {
         if (path.size() < 2) return 0;
         return path.size() - 1; // Количество сегментов между точками
     }
+    private Shape createStrokedShape(List<PathPoint> path, int offsetX, int offsetY, float zoom, float width) {
+        GeneralPath pathShape = new GeneralPath();
+
+        // Начинаем с первой точки
+        PathPoint first = path.get(0);
+        int startX = (int)((first.getX() * 32 + offsetX + 16) * zoom);
+        int startY = (int)((first.getY() * 32 + offsetY + 16) * zoom);
+        pathShape.moveTo(startX, startY);
+
+        // Добавляем промежуточные точки
+        for (int i = 1; i < path.size(); i++) {
+            PathPoint current = path.get(i);
+            int x = (int)((current.getX() * 32 + offsetX + 16) * zoom);
+            int y = (int)((current.getY() * 32 + offsetY + 16) * zoom);
+            pathShape.lineTo(x, y);
+        }
+
+        // Создаем контур с заданной толщиной
+        return new BasicStroke(width, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1.0f).createStrokedShape(pathShape);
+    }
     @Override
     public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
         if (path.size() < 2) return;
@@ -234,51 +255,72 @@ public class Tunnel extends GameObject {
         // Общие настройки для всех типов туннелей
         float baseWidth = 12 * zoom; // Базовая толщина
         float innerWidth = baseWidth - 4 * zoom;
-
+        Area tunnelArea;
         switch (type) {
             case PLANNED:
-                // Планируемый туннель - двойная линия (контур)
+                GeneralPath tunnelPath = new GeneralPath(GeneralPath.WIND_EVEN_ODD);
+
+                // Внешний контур (толстый)
+                tunnelArea = new Area(createStrokedShape(path, offsetX, offsetY, zoom, baseWidth));
+                Area innerArea = new Area(createStrokedShape(path, offsetX, offsetY, zoom, innerWidth));
+
+                // Вычитаем внутреннюю часть
+                tunnelArea.subtract(innerArea);
+
+                // Рисуем получившуюся фигуру
                 g2d.setColor(start.getColor());
-                g2d.setStroke(new BasicStroke(baseWidth, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-                drawTunnelPath(g2d, offsetX, offsetY, zoom);
-
-                // Внутренняя линия цветом фона
-                g2d.setColor(getWorld().getWorldColorAt(start.getX(), start.getY()));
-                g2d.setStroke(new BasicStroke(innerWidth, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-                drawTunnelPath(g2d, offsetX, offsetY, zoom);
+                g2d.fill(tunnelArea);
                 break;
-
             case BUILDING:
-                // Строящийся туннель - пунктирный контур (как у станции)
+
                 float dashLength = 4.0f * zoom;
                 float gapLength = 4.0f * zoom;
 
-                // Внешний контур (пунктир)
-                g2d.setColor(start.getColor());
-                g2d.setStroke(new BasicStroke(
+                // 1. Создаем внешний пунктирный контур
+                BasicStroke dashedStroke = new BasicStroke(
                         baseWidth,
                         BasicStroke.CAP_BUTT,
                         BasicStroke.JOIN_ROUND,
                         10f,
                         new float[]{dashLength, gapLength},
                         0f
-                ));
-                drawTunnelPath(g2d, offsetX, offsetY, zoom);
+                );
 
-                // Внутренняя линия цветом фона (сплошная)
-                g2d.setColor(getWorld().getWorldColorAt(start.getX(), start.getY()));
-                g2d.setStroke(new BasicStroke(innerWidth, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-                drawTunnelPath(g2d, offsetX, offsetY, zoom);
+                Shape outerDashedShape = dashedStroke.createStrokedShape(
+                        createPathShape(path, offsetX, offsetY, zoom)
+                );
+
+                // 2. Создаем внутренний сплошной контур для вырезания
+                Shape innerSolidShape = new BasicStroke(innerWidth, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND)
+                        .createStrokedShape(createPathShape(path, offsetX, offsetY, zoom));
+
+                // 3. Вычитаем внутреннюю часть
+                tunnelArea = new Area(outerDashedShape);
+                tunnelArea.subtract(new Area(innerSolidShape));
+
+                // 4. Рисуем результат
+                g2d.setColor(start.getColor());
+                g2d.fill(tunnelArea);
                 break;
 
             case DESTROYED:
-                // Разрушаемый туннель
+                // 1. Внешний контур (цвет станции)
+                Shape outerShape = createStrokedShape(path, offsetX, offsetY, zoom, baseWidth);
                 g2d.setColor(start.getColor());
-                g2d.setStroke(new BasicStroke(baseWidth, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-                drawTunnelPath(g2d, offsetX, offsetY, zoom);
+                g2d.fill(outerShape);
 
+                // 2. Прозрачная "вырезка" (внутренняя часть)
+                Shape middleShape = createStrokedShape(path, offsetX, offsetY, zoom, innerWidth);
+                Area destroyedArea = new Area(outerShape);
+                destroyedArea.subtract(new Area(middleShape));
+                g2d.setComposite(AlphaComposite.Clear);
+                g2d.fill(destroyedArea);
+                g2d.setComposite(AlphaComposite.SrcOver);
+
+                // 3. Внутренняя черная полоса (уже узкая)
+                float coreWidth = innerWidth - 2 * zoom; // Ещё уже
                 g2d.setColor(Color.BLACK);
-                g2d.setStroke(new BasicStroke(innerWidth, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                g2d.setStroke(new BasicStroke(coreWidth, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
                 drawTunnelPath(g2d, offsetX, offsetY, zoom);
                 break;
 
@@ -300,7 +342,21 @@ public class Tunnel extends GameObject {
         }
     }
 
+    private GeneralPath createPathShape(List<PathPoint> path, int offsetX, int offsetY, float zoom) {
+        GeneralPath pathShape = new GeneralPath();
+        PathPoint first = path.get(0);
+        int startX = (int)((first.getX() * 32 + offsetX + 16) * zoom);
+        int startY = (int)((first.getY() * 32 + offsetY + 16) * zoom);
+        pathShape.moveTo(startX, startY);
 
+        for (int i = 1; i < path.size(); i++) {
+            PathPoint current = path.get(i);
+            int x = (int)((current.getX() * 32 + offsetX + 16) * zoom);
+            int y = (int)((current.getY() * 32 + offsetY + 16) * zoom);
+            pathShape.lineTo(x, y);
+        }
+        return pathShape;
+    }
     private void drawTunnelPath(Graphics2D g2d, int offsetX, int offsetY, float zoom) {
         GeneralPath tunnelPath = new GeneralPath();
 
