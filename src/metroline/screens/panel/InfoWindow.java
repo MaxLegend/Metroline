@@ -2,6 +2,8 @@ package metroline.screens.panel;
 
 import metroline.MainFrame;
 
+import metroline.core.time.GameTime;
+import metroline.core.world.tiles.WorldTile;
 import metroline.objects.gameobjects.GameConstants;
 import metroline.objects.gameobjects.GameplayUnits;
 import metroline.objects.gameobjects.Station;
@@ -32,6 +34,8 @@ public class InfoWindow extends JWindow {
     private JPanel editNamePanel;
     private JTextField nameEditField;
     private JButton saveNameButton;
+    private JButton repairButton;
+    private JLabel wearInfoLabel;
 
     public InfoWindow(Window owner) {
         super(owner); // Создаем окно без владельца
@@ -121,7 +125,7 @@ public class InfoWindow extends JWindow {
         updateTimer.start();
 
         initNameEditComponents();
-
+   //     initWearComponents();
         // Установка начального размера
         pack();
         KeyboardFocusManager.getCurrentKeyboardFocusManager()
@@ -402,6 +406,13 @@ public class InfoWindow extends JWindow {
         if (currentObject instanceof Station) {
             Station station = (Station) currentObject;
 
+            GameTime gameTime = world.getGameTime();
+            long constructionDate = station.getConstructionDate();
+            long currentTime = gameTime.getCurrentTimeMillis();
+            long age = currentTime - constructionDate;
+
+
+
             Color stationColor = station.getStationColor().getColor();
             titleLabel.setText("<html><font color='" +
                     String.format("#%06X", stationColor.getRGB() & 0xFFFFFF) + "'>" +
@@ -413,10 +424,21 @@ public class InfoWindow extends JWindow {
             info.append(LngUtil.translatable("infoWnd.color") + " ").append(station.getStationColor().getLocalizedName()).append("<br>");
             info.append(LngUtil.translatable("infoWnd.abilityPay") + " ").append("" + MathUtil.round(world.getWorldTile(station.getX(), station.getY()).getAbilityPay(), 2)).append("<br>");
             info.append(LngUtil.translatable("infoWnd.passengerCount") + " ").append("" + world.getWorldTile(station.getX(), station.getY()).getPassengerCount()).append("<br>");
-            info.append(LngUtil.translatable("infoWnd.revenue") + " ").append("" + MathUtil.round(world.calculateStationRevenue(station), 2)).append(" M").append("<br>");
+
+            info.append(LngUtil.translatable("infoWnd.revenue") + " ")
+                .append(MathUtil.round(world.calculateStationRevenue(station), 2))
+                .append(" M (")
+                .append(MathUtil.round((1 - station.getWearLevel()) * 100, 0))
+                .append("%)<br>");
             info.append(LngUtil.translatable("infoWnd.cost") + " ").append(MathUtil.round(GameConstants.STATION_BASE_COST* WorldGameScreen.getInstance().getWorld().getWorldTile(station.getX(), station.getY()).getPerm(),2)).append(" M").append("<br>");
             info.append(LngUtil.translatable("infoWnd.upkeep") + " ").append(MathUtil.round(world.calculateStationsUpkeep(),2)).append(" M").append("<br>");
 
+        //   System.out.println("INFO BUILDING DATE :  " + world.getConstructionProcessor().getConstructionDate());
+            info.append(String.format("<html>%s: %s<br>%s: %s</html>",
+                    LngUtil.translatable("station.build_date"),
+                    gameTime.formatDate(constructionDate),
+                    LngUtil.translatable("station.wear_level"),
+                    String.format("%.0f%%", station.getWearLevel() * 100)));
             infoLabel.setText(info.toString());
             updateProgress();
         } else if (currentObject instanceof Tunnel) {
@@ -457,7 +479,7 @@ public class InfoWindow extends JWindow {
     private void updateProgress() {
         if (currentObject instanceof Station) {
             Station station = (Station) currentObject;
-            float progress = ((GameWorld) WorldGameScreen.getInstance().getWorld()).getStationConstructionProgress(station);
+            float progress = ((GameWorld) WorldGameScreen.getInstance().getWorld()).getConstructionProcessor().getStationConstructionProgress(station);
             if (progress > 0 && progress < 1) {
                 progressBar.setVisible(true);
                 progressBar.setValue((int)(progress * 100));
@@ -467,7 +489,7 @@ public class InfoWindow extends JWindow {
             }
         } else if (currentObject instanceof Tunnel) {
             Tunnel tunnel = (Tunnel) currentObject;
-            float progress = ((GameWorld)WorldGameScreen.getInstance().getWorld()).getTunnelConstructionProgress(tunnel);
+            float progress = ((GameWorld)WorldGameScreen.getInstance().getWorld()).getConstructionProcessor().getTunnelConstructionProgress(tunnel);
             if (progress > 0 && progress < 1) {
                 progressBar.setVisible(true);
                 progressBar.setValue((int)(progress * 100));
@@ -495,4 +517,86 @@ public class InfoWindow extends JWindow {
             }
             super.setVisible(visible && getOwner().isVisible());
         }
+
+    private void initWearComponents() {
+        // Панель для информации об износе
+        JPanel wearPanel = new JPanel(new BorderLayout());
+        wearPanel.setOpaque(false);
+        wearPanel.setBorder(new EmptyBorder(5, 0, 5, 0));
+
+        wearInfoLabel = new JLabel();
+        wearInfoLabel.setFont(StyleUtil.getMetrolineFont(12));
+        wearInfoLabel.setForeground(new Color(200, 200, 200));
+
+        repairButton = new JButton(LngUtil.translatable("station.repair"));
+        repairButton.setFont(StyleUtil.getMetrolineFont(12));
+        repairButton.setForeground(new Color(100, 200, 100));
+        repairButton.setContentAreaFilled(false);
+        repairButton.setBorderPainted(false);
+        repairButton.setFocusPainted(false);
+        repairButton.setVisible(false);
+        repairButton.addActionListener(e -> repairStation());
+
+        wearPanel.add(wearInfoLabel, BorderLayout.CENTER);
+        wearPanel.add(repairButton, BorderLayout.SOUTH);
+
+        contentPanel.add(wearPanel, BorderLayout.SOUTH);
     }
+
+    private void repairStation() {
+        if (currentObject instanceof Station) {
+            Station station = (Station) currentObject;
+            GameWorld world = (GameWorld) WorldGameScreen.getInstance().getWorld();
+
+            float repairCost = calculateRepairCost(station);
+            if (world.canAfford(repairCost)) {
+                world.removeMoney(repairCost);
+                station.repair();
+                updateInfo();
+                WorldGameScreen.getInstance().repaint();
+            } else {
+                JOptionPane.showMessageDialog(this,
+                        LngUtil.translatable("station.not_enough_money"),
+                        LngUtil.translatable("error"),
+                        JOptionPane.WARNING_MESSAGE);
+            }
+        }
+    }
+
+    private float calculateRepairCost(Station station) {
+        WorldTile tile = ((GameWorld)WorldGameScreen.getInstance().getWorld())
+                .getWorldTile(station.getX(), station.getY());
+        return GameConstants.STATION_REPAIR_BASE_COST * (1 + tile.getPerm());
+    }
+
+//    private void updateWearInfo(Station station) {
+//        GameWorld world = (GameWorld) WorldGameScreen.getInstance().getWorld();
+//        GameTime gameTime = world.getGameTime();
+//
+//        long constructionDate = station.getConstructionDate();
+//        long currentTime = gameTime.getCurrentTimeMillis();
+//        long age = currentTime - constructionDate;
+//
+//        String buildDate = gameTime.formatDate(constructionDate);
+//        String wearPercent = String.format("%.0f%%", station.getWearLevel() * 100);
+//
+//        String wearText = String.format("<html>%s: %s<br>%s: %s</html>",
+//                LngUtil.translatable("station.build_date"),
+//                buildDate,
+//                LngUtil.translatable("station.wear_level"),
+//                wearPercent);
+//
+//        wearInfoLabel.setText(wearText);
+//
+//        // Показываем кнопку ремонта если станция может быть отремонтирована
+//        repairButton.setVisible(station.canRepair());
+//        if (station.canRepair()) {
+//            float cost = calculateRepairCost(station);
+//            repairButton.setText(String.format("%s: %.1f M",
+//                    LngUtil.translatable("station.repair"),
+//                    cost));
+//        }
+//    }
+    }
+
+

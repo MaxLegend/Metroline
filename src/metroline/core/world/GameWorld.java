@@ -1,5 +1,6 @@
 package metroline.core.world;
 
+import metroline.core.time.ConstructionTimeProcessor;
 import metroline.core.time.GameTime;
 import metroline.core.world.tiles.GameTile;
 
@@ -29,39 +30,25 @@ public class GameWorld extends World {
     private transient MainFrame mainFrame;
     private static String SAVE_FILE = "game_save.metro";
     public float money;
-
-    private long stationDestroyTime = 1000000; // Время разрушения станции
-    private long tunnelDestroyTime = 1000000;
-    private long stationBuildTime = 1000000;
-    private long tunnelBuildTime = 1000000;
+    private MetroSerializer worldSerializer;
+    private ConstructionTimeProcessor processor;
 
     private List<GameplayUnits> gameplayUnits = new ArrayList<>();
-
-    public transient Map<Station, Long> stationDestructionStartTimes = new HashMap<>();
-    public transient Map<Station, Long> stationDestructionDurations = new HashMap<>();
-    public transient Map<Tunnel, Long> tunnelDestructionStartTimes = new HashMap<>();
-    public transient Map<Tunnel, Long> tunnelDestructionDurations = new HashMap<>();
-
-    public transient Map<Station, Long> stationBuildStartTimes = new HashMap<>();
-    public transient Map<Station, Long> stationBuildDurations = new HashMap<>();
-    public transient Map<Tunnel, Long> tunnelBuildStartTimes = new HashMap<>();
-    public transient Map<Tunnel, Long> tunnelBuildDurations = new HashMap<>();
-
 
     public transient LinesLegendWindow legendWindow;
     public GameWorld() {
         super();
-        initTransientFields();
+
     }
 
     public GameWorld(int width, int height,boolean hasPassengerCount, boolean hasAbilityPay,  boolean hasLandscape, boolean hasRivers, Color worldColor, int money) {
         super(null, width, height, hasPassengerCount, hasAbilityPay, hasLandscape,hasRivers,worldColor, SAVE_FILE);
         this.mainFrame = MainFrame.getInstance();
         this.money = money;
-
+        this.gameTime = new GameTime();
+        processor = new ConstructionTimeProcessor(gameTime);
+        processor.initTransientFields();
         generateWorld(hasPassengerCount, hasAbilityPay, hasLandscape, hasRivers, worldColor);
-
-        initTransientFields();
 
     }
     /**
@@ -73,228 +60,16 @@ public class GameWorld extends World {
      */
     public GameWorld(BufferedReader reader) throws IOException {
         super(); // Вызываем базовый конструктор World()
+
         this.mainFrame = MainFrame.getInstance();
-        initTransientFields(); // Инициализируем transient поля
+        processor = new ConstructionTimeProcessor(gameTime);
+        processor.initTransientFields(); // Инициализируем transient поля
+        worldSerializer = new MetroSerializer();
+        worldSerializer.recreateWorld(reader, this);
 
-        String version = null;
-        String line;
-        // Map<String, Station> stationMap = new HashMap<>(); // Для обратной совместимости по имени, больше не используется
-        Map<Long, Station> stationIdMap = new HashMap<>();
 
-        while ((line = reader.readLine()) != null) {
-            line = line.trim(); // Убираем пробелы в начале и конце
-
-            if (line.isEmpty()) continue; // Пропускаем пустые строки
-
-            if (line.startsWith("version:")) {
-                version = line.substring("version:".length());
-                continue;
-            }
-            if (line.startsWith("width:")) {
-                this.width = Integer.parseInt(line.substring("width:".length()));
-                continue; // Продолжаем, чтобы не попасть в else if
-            }
-            if (line.startsWith("height:")) {
-                this.height = Integer.parseInt(line.substring("height:".length()));
-                // Как только получили width и height, инициализируем сетки
-                if (this.width > 0 && this.height > 0) {
-                    initWorldGrid(); // Инициализируем worldGrid
-                    initGameGrid();  // Инициализируем gameGrid
-                }
-                continue;
-            }
-            if (line.startsWith("money:")) {
-                this.money = (int) Float.parseFloat(line.substring("money:".length()));
-                continue;
-            }
-            if (line.startsWith("roundStations:")) {
-                this.roundStationsEnabled = Boolean.parseBoolean(line.substring("roundStations:".length()));
-                continue;
-            }
-            if (line.startsWith("gameTime:")) {
-                long time = Long.parseLong(line.substring("gameTime:".length()));
-                this.gameTime = new GameTime();
-                // Предполагается, что GameTime может быть инициализирован напрямую или имеет сеттер
-                // gameTime.setCurrentTime(time); // Если такой метод существует
-                continue;
-            }
-
-            // --- Обработка секций данных ---
-
-            if (line.equals("worldGrid:[")) {
-                // Чтение worldGrid
-                while (!(line = reader.readLine()).equals("]")) {
-                    line = line.trim();
-                    if (!line.startsWith("{") || !line.endsWith("}")) continue;
-                    String content = line.substring(1, line.length() - 1);
-
-                    // Используем регулярное выражение для корректного разбиения
-                    String[] parts = content.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
-                    if (parts.length < 6) {
-                        System.err.println("Недостаточно частей при парсинге worldGrid: " + line);
-                        continue;
-                    }
-
-                    try {
-                        int x = Integer.parseInt(ParsingUtils.extractValue(parts[0], "x"));
-                        int y = Integer.parseInt(ParsingUtils.extractValue(parts[1], "y"));
-                        float perm = Float.parseFloat(ParsingUtils.extractValue(parts[2], "perm"));
-                        boolean isWater = Boolean.parseBoolean(ParsingUtils.extractValue(parts[3], "isWater"));
-                        float abilityPay = Float.parseFloat(ParsingUtils.extractValue(parts[4], "abilityPay"));
-                        int passengerCount = Integer.parseInt(ParsingUtils.extractValue(parts[5], "passengerCount").split("\\.")[0]); // Убираем .00
-
-                        WorldTile tile = this.getWorldTile(x, y);
-                        if (tile != null) {
-                            tile.setPerm(perm);
-                            tile.setAbilityPay(abilityPay);
-                            tile.setWater(isWater);
-                            tile.setPassengerCount(passengerCount);
-                            // tile.setBaseTileColor(color); // Если цвет сохраняется
-                        }
-                    } catch (Exception e) {
-                        System.err.println("Ошибка при парсинге worldGrid: " + line);
-                        e.printStackTrace();
-                    }
-                }
-                continue;
-            }
-
-            if (line.equals("stations:[")) {
-                // Чтение станций
-                while (!(line = reader.readLine()).equals("]")) {
-                    Station station = ParsingUtils.parseStation(line, this); // Используем вспомогательный метод
-                    if (station != null) {
-                        // stationMap.put(station.getName(), station); // Больше не используется
-                        stationIdMap.put(station.getUniqueId(), station);
-                        this.stations.add(station); // Добавляем в список станций мира
-                    }
-                }
-                continue;
-            }
-
-            if (line.equals("connections:[")) {
-                // Чтение соединений
-                while (!(line = reader.readLine()).equals("]")) {
-                    ParsingUtils.parseConnection(line, this, stationIdMap); // Используем вспомогательный метод
-                }
-                continue;
-            }
-
-            if (line.equals("tunnels:[")) {
-                // Чтение туннелей
-                while (!(line = reader.readLine()).equals("]")) {
-                    Tunnel tunnel = ParsingUtils.parseTunnel(line, this, stationIdMap); // Используем вспомогательный метод
-                    if (tunnel != null) {
-                        this.tunnels.add(tunnel); // Добавляем в список туннелей мира
-                    }
-                }
-                continue;
-            }
-
-            if (line.equals("gameplay_units:[")) {
-                // Чтение игровых юнитов
-                while (!(line = reader.readLine()).equals("]")) {
-                    GameplayUnits gUnits = ParsingUtils.parseGameplayUnit(line, this); // Используем вспомогательный метод
-                    if (gUnits != null) {
-                        this.gameplayUnits.add(gUnits); // Добавляем в список юнитов мира
-                        // Также нужно установить контент в gameGrid, если это необходимо
-                        // gameGrid[gUnits.getX()][gUnits.getY()].setContent(gUnits);
-                    }
-                }
-                continue;
-            }
-
-            if (line.equals("pathPoints:[")) {
-                // Чтение путевых точек для туннелей
-                while (!(line = reader.readLine()).equals("]")) {
-                    ParsingUtils.parsePathPoints(line, this, stationIdMap); // Используем вспомогательный метод
-                }
-                continue;
-            }
-
-            if (line.equals("labels:[")) {
-                // Чтение меток
-                while (!(line = reader.readLine()).equals("]")) {
-                    Label label = ParsingUtils.parseLabel(line, this, stationIdMap); // Используем вспомогательный метод
-                    if (label != null) {
-                        this.labels.add(label); // Добавляем в список меток мира
-                        // Также нужно установить контент в gameGrid, если это необходимо
-                        // gameGrid[label.getX()][label.getY()].setContent(label);
-                    }
-                }
-                continue;
-            }
-
-            if (line.equals("stationBuild:[")) {
-                // Чтение данных о строительстве станций
-                while (!(line = reader.readLine()).equals("]")) {
-                    ParsingUtils.parseConstructionData(line, this, stationIdMap, true, false); // Используем вспомогательный метод
-                }
-                continue;
-            }
-
-            if (line.equals("stationDestroy:[")) {
-                // Чтение данных о разрушении станций
-                while (!(line = reader.readLine()).equals("]")) {
-                    ParsingUtils.parseConstructionData(line, this, stationIdMap, true, true); // Используем вспомогательный метод
-                }
-                continue;
-            }
-
-            if (line.equals("tunnelBuild:[")) {
-                // Чтение данных о строительстве туннелей
-                while (!(line = reader.readLine()).equals("]")) {
-                    ParsingUtils.parseConstructionData(line, this, stationIdMap, false, false); // Используем вспомогательный метод
-                }
-                continue;
-            }
-
-            if (line.equals("tunnelDestroy:[")) {
-                // Чтение данных о разрушении туннелей
-                while (!(line = reader.readLine()).equals("]")) {
-                    ParsingUtils.parseConstructionData(line, this, stationIdMap, false, true); // Используем вспомогательный метод
-                }
-                continue;
-            }
-
-            if (line.equals("gameGrid:[")) {
-                // Чтение gameGrid (содержимое клеток)
-                while (!(line = reader.readLine()).equals("]")) {
-                    line = line.trim();
-                    if (!line.startsWith("{") || !line.endsWith("}")) continue;
-                    String content = line.substring(1, line.length() - 1);
-                    String[] parts = content.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
-                    if (parts.length < 3) {
-                        System.err.println("Недостаточно частей при парсинге gameGrid: " + line);
-                        continue;
-                    }
-
-                    try {
-                        int x = Integer.parseInt(ParsingUtils.extractValue(parts[0], "x"));
-                        int y = Integer.parseInt(ParsingUtils.extractValue(parts[1], "y"));
-                        String contentStr = ParsingUtils.extractValue(parts[2], "content");
-
-                        if (!contentStr.equals("null")) {
-                            GameObject obj = ParsingUtils.parseGameObject(contentStr, this, stationIdMap); // Используем вспомогательный метод
-                            if (obj != null && this.gameGrid != null && x < this.width && y < this.height) {
-                                this.gameGrid[x][y].setContent(obj);
-                            }
-                        }
-                    } catch (Exception e) {
-                        System.err.println("Ошибка при парсинге gameGrid: " + line);
-                        e.printStackTrace();
-                    }
-                }
-                continue;
-            }
-        }
-
-        // Восстанавливаем связи между объектами, если это необходимо
-        restoreStationConnections();
-        // initTransientFields(); // Уже вызвано в начале
-
-        MetroLogger.logInfo("GameWorld successfully constructed from reader.");
     }
+
     public void generateWorld(boolean hasPassengerCount, boolean hasAbilityPay, boolean hasLandscape, boolean hasRivers, Color worldColor) {
         //Create world grid
         System.out.println("Generating world...");
@@ -420,32 +195,7 @@ public class GameWorld extends World {
         }
     }
 
-    public void initTransientFields() {
-        if (stationDestructionStartTimes == null) {
-            stationDestructionStartTimes = new HashMap<>();
-        }
-        if (stationDestructionDurations == null) {
-            stationDestructionDurations = new HashMap<>();
-        }
-        if (tunnelDestructionStartTimes == null) {
-            tunnelDestructionStartTimes = new HashMap<>();
-        }
-        if (tunnelDestructionDurations == null) {
-            tunnelDestructionDurations = new HashMap<>();
-        }
-        if (stationBuildStartTimes == null) {
-            stationBuildStartTimes = new HashMap<>();
-        }
-        if (stationBuildDurations == null) {
-            stationBuildDurations = new HashMap<>();
-        }
-        if (tunnelBuildStartTimes == null) {
-            tunnelBuildStartTimes = new HashMap<>();
-        }
-        if (tunnelBuildDurations == null) {
-            tunnelBuildDurations = new HashMap<>();
-        }
-    }
+
     public void setLegendWindow(LinesLegendWindow legendWindow) {
         this.legendWindow = legendWindow;
     }
@@ -483,15 +233,15 @@ public class GameWorld extends World {
 
         if (station.getType() == StationType.BUILDING) {
             // Проверяем, не добавлена ли уже станция
-            if (!stationBuildStartTimes.containsKey(station)) {
+            if (!getConstructionProcessor().getStationBuildStartTimes().containsKey(station)) {
                 long startTime = gameTime.getCurrentTimeMillis();
-                stationBuildStartTimes.put(station, startTime);
-                stationBuildDurations.put(station, stationBuildTime);
+                getConstructionProcessor().getStationBuildStartTimes().put(station, startTime);
+                getConstructionProcessor().getStationBuildDurations().put(station, getConstructionProcessor().getStationBuildTime());
 
                 if(startTime % 2000 == 0) MetroLogger.logInfo("Station construction REGISTERED: " + station.getName() +
                         " | Start: " + startTime +
-                        " | Duration: " + stationBuildTime + "ms" +
-                        " | Expected finish: " + (startTime + stationBuildTime));
+                        " | Duration: " + getConstructionProcessor().getStationBuildTime() + "ms" +
+                        " | Expected finish: " + (startTime + getConstructionProcessor().getStationBuildTime()));
             } else {
                 MetroLogger.logWarning("Station already in construction: " + station.getName());
             }
@@ -507,24 +257,24 @@ public class GameWorld extends World {
             super.addTunnel(tunnel);
 
         // Инициализируем карты, если они null
-        if (tunnelBuildStartTimes == null) {
+        if (getConstructionProcessor().getTunnelBuildStartTimes() == null) {
 
-            tunnelBuildStartTimes = new HashMap<>();
+            getConstructionProcessor().setTunnelBuildStartTimes(new HashMap<>());
         }
-        if (tunnelBuildDurations == null) {
+        if (getConstructionProcessor().getTunnelBuildDurations() == null) {
 
-            tunnelBuildDurations = new HashMap<>();
+            getConstructionProcessor().setTunnelBuildDurations(new HashMap<>());
         }
 
         if (tunnel.getType() == TunnelType.BUILDING) {
 
             long startTime = gameTime.getCurrentTimeMillis();
-            tunnelBuildStartTimes.put(tunnel, startTime);
-            tunnelBuildDurations.put(tunnel, tunnelBuildTime);
+            getConstructionProcessor().getTunnelBuildStartTimes().put(tunnel, startTime);
+            getConstructionProcessor().getTunnelBuildDurations().put(tunnel, getConstructionProcessor().getTunnelBuildTime());
 
             // Устанавливаем стоимость строительства в зависимости от длины
             int lengthBasedCost = tunnel.getLength() * 10; // Например, 10 за сегмент
-            tunnelBuildTime = Math.max(50000, lengthBasedCost * 1000); // Минимум 50 секунд
+            getConstructionProcessor().setTunnelBuildTime(Math.max(50000, lengthBasedCost * 1000)); // Минимум 50 секунд
 
         }
 
@@ -534,92 +284,9 @@ public class GameWorld extends World {
         GameObject obj = gameGrid[x][y].getContent();
         return obj instanceof GameplayUnits ? (GameplayUnits)obj : null;
     }
-    public float calculateStationRevenue(Station station) {
-        // Получаем тайл, на котором стоит станция
-        WorldTile tile = getWorldTile(station.getX(), station.getY());
-
-        // Базовый доход
-        float revenue = GameConstants.STATION_BASE_REVENUE;
-
-        float permModifier = 1 + (tile.getPerm());
-
-        float abilityPayModifier = 1 + (tile.getAbilityPay());
-
-        float passengerModifier = 1 + (float) tile.getPassengerCount() / 2000;
-
-        // Итоговый расчет
-        revenue = revenue * permModifier * abilityPayModifier * passengerModifier;
-        float gameplayUnitsMultiplier = 1.0f;
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dy = -1; dy <= 1; dy++) {
-                if (dx == 0 && dy == 0) continue;
-
-                int nx = station.getX() + dx;
-                int ny = station.getY() + dy;
-
-                if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-                    GameObject obj = gameGrid[nx][ny].getContent();
-                    if (obj instanceof GameplayUnits) {
-
-                        gameplayUnitsMultiplier *= ((GameplayUnits) obj).getType().getIncomeMultiplier();
 
 
-                    }
-                }
-            }
-        }
-        return revenue * gameplayUnitsMultiplier;
-    }
-    public void updateStationsRevenue() {
-        for (Station station : stations) {
-            // Пропускаем станции, которые строятся или разрушаются
-            if (station.getType() == StationType.BUILDING ||
-                    station.getType() == StationType.CLOSED ||
-                    station.getType() == StationType.DESTROYED ||
-                    station.getType() == StationType.PLANNED) {
-                continue;
-            }
 
-            float revenue = calculateStationRevenue(station);
-            addMoney(revenue);
-        }
-    }
-    private float calculateProgress(long startTime, long duration) {
-        long currentTime = gameTime.getCurrentTimeMillis();
-        if (startTime > currentTime) {
-            return 0f;
-        }
-        return Math.min(1.0f, (float)(currentTime - startTime) / duration);
-    }
-    public float getStationConstructionProgress(Station station) {
-        if (!stationBuildStartTimes.containsKey(station)) {
-            return 0f; // Возвращаем 0 вместо 1, чтобы было заметно
-        }
-
-        if (station.getType() == StationType.BUILDING && stationBuildStartTimes.containsKey(station)) {
-
-            return calculateProgress(stationBuildStartTimes.get(station), stationBuildDurations.get(station));
-        } else if (station.getType() == StationType.DESTROYED && stationDestructionStartTimes.containsKey(station)) {
-
-            return 1.0f - calculateProgress(stationDestructionStartTimes.get(station), stationDestructionDurations.get(station));
-        }
-        return 0f;
-    }
-
-    public float getTunnelConstructionProgress(Tunnel tunnel) {
-        if (!tunnelBuildStartTimes.containsKey(tunnel)) {
-            return 1.0f;
-        }
-
-        if (tunnel.getType() == TunnelType.BUILDING && tunnelBuildStartTimes.containsKey(tunnel)) {
-            return calculateProgress(tunnelBuildStartTimes.get(tunnel),
-                    tunnelBuildDurations.get(tunnel));
-        } else if (tunnel.getType() == TunnelType.DESTROYED && tunnelDestructionStartTimes.containsKey(tunnel)) {
-            return 1.0f - calculateProgress(tunnelDestructionStartTimes.get(tunnel),
-                    tunnelDestructionDurations.get(tunnel));
-        }
-        return 1.0f;
-    }
     public void startDestroyingTunnel(Tunnel tunnel) {
         if (tunnel.getType() != TunnelType.ACTIVE) {
             MetroLogger.logWarning("Cannot destroy tunnel of type " + tunnel.getType());
@@ -628,8 +295,8 @@ public class GameWorld extends World {
 
         tunnel.setType(TunnelType.DESTROYED);
         long startTime = gameTime.getCurrentTimeMillis();
-        tunnelDestructionStartTimes.put(tunnel, startTime);
-        tunnelDestructionDurations.put(tunnel, tunnelDestroyTime);
+        getConstructionProcessor().getTunnelDestructionStartTimes().put(tunnel, startTime);
+        getConstructionProcessor().getTunnelDestructionDurations().put(tunnel, getConstructionProcessor().getTunnelDestroyTime());
 
         MetroLogger.logInfo("Tunnel destruction started");
     }
@@ -645,8 +312,9 @@ public class GameWorld extends World {
 
         station.setType(StationType.DESTROYED);
         long startTime = gameTime.getCurrentTimeMillis();
-        stationDestructionStartTimes.put(station, startTime);
-        stationDestructionDurations.put(station, stationDestroyTime);
+        getConstructionProcessor().getStationDestructionStartTimes().put(station, startTime);
+
+        getConstructionProcessor().getStationDestructionDurations().put(station, getConstructionProcessor().getStationDestroyTime());
         for (Tunnel tunnel : new ArrayList<>(tunnels)) {
             if (tunnel.getStart() == station || tunnel.getEnd() == station) {
                 startDestroyingTunnel(tunnel);
@@ -690,58 +358,95 @@ public class GameWorld extends World {
         // Если ничего не найдено
         return null;
     }
-    public void addGameplayUnits(GameplayUnits obj) {
-        gameplayUnits.add(obj);
-        gameGrid[obj.getX()][obj.getY()].setContent(obj);
-        WorldGameScreen.getInstance().invalidateCache();
-    }
 
-    public void removeGameplayUnits(GameplayUnits obj) {
-        gameplayUnits.remove(obj);
-        gameGrid[obj.getX()][obj.getY()].setContent(null);
-        WorldGameScreen.getInstance().invalidateCache();
-    }
     public GameTime getGameTime() {
         return gameTime;
     }
 
-    public void generateRandomGameplayUnits(int count) {
-        GameplayUnitsType[] types = GameplayUnitsType.values();
-        int generatedCount = 0;
-        int attempts = 0;
-        int maxAttempts = count * 10; // Максимальное количество попыток
 
-        while (generatedCount < count && attempts < maxAttempts) {
-            attempts++;
 
-            // Случайные координаты по всей карте
-            int x = ThreadLocalRandom.current().nextInt(width);
-            int y = ThreadLocalRandom.current().nextInt(height);
 
-            // Проверяем, что клетка свободна
-            if (!gameGrid[x][y].isEmpty()) continue;
+    public ConstructionTimeProcessor getConstructionProcessor() {
+        return processor;
+    }
 
-            WorldTile worldTile = getWorldTile(x, y);
-            GameplayUnitsType type = types[ThreadLocalRandom.current().nextInt(types.length)];
 
-            // Особые условия для портов
-            if (type == GameplayUnitsType.PORT) {
-                if (!hasWaterNeighbor(x, y)) {
-                    // Если порт не может быть здесь, выбираем другой тип
-                    type = types[ThreadLocalRandom.current().nextInt(types.length - 1)];
+    /*********************
+     * ECONOMIC SECTION
+     *********************/
+    public float calculateStationRevenue(Station station) {
+        // Получаем тайл, на котором стоит станция
+        WorldTile tile = getWorldTile(station.getX(), station.getY());
+
+        // Базовый доход
+        float revenue = GameConstants.STATION_BASE_REVENUE;
+
+        float permModifier = 1 + (tile.getPerm());
+
+        float abilityPayModifier = 1 + (tile.getAbilityPay());
+
+        float passengerModifier = 1 + (float) tile.getPassengerCount() / 2000;
+
+        // Итоговый расчет
+        revenue = revenue * permModifier * abilityPayModifier * passengerModifier;
+        float gameplayUnitsMultiplier = 1.0f;
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                if (dx == 0 && dy == 0) continue;
+
+                int nx = station.getX() + dx;
+                int ny = station.getY() + dy;
+
+                if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                    GameObject obj = gameGrid[nx][ny].getContent();
+                    if (obj instanceof GameplayUnits) {
+                        gameplayUnitsMultiplier *= ((GameplayUnits) obj).getType().getIncomeMultiplier();
+
+
+                    }
                 }
-            }
-
-            // Создаем и размещаем объект (только на суше)
-            if (!worldTile.isWater()) {
-                GameplayUnits obj = new GameplayUnits(this, x, y, type);
-                addGameplayUnits(obj);
-                generatedCount++;
             }
         }
 
-        if (generatedCount < count) {
-            System.out.println("Не удалось разместить все объекты. Размещено: " + generatedCount + " из " + count);
+        float wearModifier = 1f - station.getWearLevel() * 0.5f; // Доход падает до 50% при максимальном износе
+
+        if (station.getType() == StationType.DROWNED ||
+                station.getType() == StationType.ABANDONED ||
+                station.getType() == StationType.BURNED ||
+                station.getType() == StationType.RUINED ||
+                station.getType() == StationType.BUILDING ||
+                station.getType() == StationType.CLOSED ||
+                station.getType() == StationType.DESTROYED ||
+                station.getType() == StationType.PLANNED) {
+            return 0;
+        }
+        return revenue * gameplayUnitsMultiplier * wearModifier;
+    }
+    public float getDemolitionCost(Station station) {
+        float baseCost = GameConstants.BASE_STATION_DEMOLITION_COST;
+
+        if (station.getType() == StationType.RUINED ||
+                station.getType() == StationType.ABANDONED) {
+            return baseCost * (1 + station.getWearLevel()) * 3f; // В 3 раза дороже
+        }
+
+        return baseCost * (1 + station.getWearLevel());
+    }
+    public void updateStationsWear() {
+        for (Station station : stations) {
+            station.updateWear();
+        }
+    }
+    public void updateStationsRevenue() {
+        for (Station station : stations) {
+            // Пропускаем станции, которые строятся или разрушаются
+            if (station.isLowIncomeStations()) {
+                addMoney(0);
+                return;
+            }
+
+            float revenue = calculateStationRevenue(station);
+            addMoney(revenue);
         }
     }
     /**
@@ -752,10 +457,12 @@ public class GameWorld extends World {
         float totalUpkeep = 0;
 
         for (Station station : stations) {
-            // Пропускаем строящиеся/разрушающиеся станции
             if (station.getType() == StationType.BUILDING ||station.getType() == StationType.PLANNED ||
-                    station.getType() == StationType.DESTROYED) {
-                continue;
+                    station.getType() == StationType.DESTROYED||station.getType() == StationType.CLOSED
+                    ||station.getType() == StationType.ABANDONED ||station.getType() == StationType.DROWNED
+                    ||station.getType() == StationType.RUINED ||station.getType() == StationType.BURNED) {
+                return 0;
+             //   continue;
             }
 
             WorldTile tile = getWorldTile(station.getX(), station.getY());
@@ -768,7 +475,6 @@ public class GameWorld extends World {
 
         return totalUpkeep;
     }
-
     /**
      * Рассчитывает стоимость содержания всех туннелей
      * @return Общая стоимость содержания туннелей
@@ -805,28 +511,6 @@ public class GameWorld extends World {
         float tunnelsCost = calculateTunnelsUpkeep();
         float totalCost = stationsCost + tunnelsCost;
         return removeMoney(totalCost);
-    }
-    // Проверяет, есть ли вода в соседних клетках
-    private boolean hasWaterNeighbor(int x, int y) {
-        for (int dy = -1; dy <= 1; dy++) {
-            for (int dx = -1; dx <= 1; dx++) {
-                if (dx == 0 && dy == 0) continue; // Пропускаем центральную клетку
-
-                int nx = x + dx;
-                int ny = y + dy;
-
-                if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-                    if (getWorldTile(nx, ny).isWater()) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
-    @Override
-    public World getWorld() {
-        return this;
     }
     public float getMoney() {
         return money;
@@ -866,6 +550,80 @@ public class GameWorld extends World {
             MainFrame.getInstance().updateMoneyDisplay(money);
         }
     }
+
+
+
+
+    // Проверяет, есть ли вода в соседних клетках
+    private boolean hasWaterNeighbor(int x, int y) {
+        for (int dy = -1; dy <= 1; dy++) {
+            for (int dx = -1; dx <= 1; dx++) {
+                if (dx == 0 && dy == 0) continue; // Пропускаем центральную клетку
+
+                int nx = x + dx;
+                int ny = y + dy;
+
+                if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                    if (getWorldTile(nx, ny).isWater()) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+    public void generateRandomGameplayUnits(int count) {
+        GameplayUnitsType[] types = GameplayUnitsType.values();
+        int generatedCount = 0;
+        int attempts = 0;
+        int maxAttempts = count * 10; // Максимальное количество попыток
+
+        while (generatedCount < count && attempts < maxAttempts) {
+            attempts++;
+
+            // Случайные координаты по всей карте
+            int x = ThreadLocalRandom.current().nextInt(width);
+            int y = ThreadLocalRandom.current().nextInt(height);
+
+            // Проверяем, что клетка свободна
+            if (!gameGrid[x][y].isEmpty()) continue;
+
+            WorldTile worldTile = getWorldTile(x, y);
+            GameplayUnitsType type = types[ThreadLocalRandom.current().nextInt(types.length)];
+
+            // Особые условия для портов
+            if (type == GameplayUnitsType.PORT) {
+                if (!hasWaterNeighbor(x, y)) {
+                    // Если порт не может быть здесь, выбираем другой тип
+                    type = types[ThreadLocalRandom.current().nextInt(types.length - 1)];
+                }
+            }
+
+            // Создаем и размещаем объект (только на суше)
+            if (!worldTile.isWater()) {
+                GameplayUnits obj = new GameplayUnits(this, x, y, type);
+                addGameplayUnits(obj);
+                generatedCount++;
+            }
+        }
+
+    }
+    public void addGameplayUnits(GameplayUnits obj) {
+        gameplayUnits.add(obj);
+        gameGrid[obj.getX()][obj.getY()].setContent(obj);
+        WorldGameScreen.getInstance().invalidateCache();
+    }
+
+    public void removeGameplayUnits(GameplayUnits obj) {
+        gameplayUnits.remove(obj);
+        gameGrid[obj.getX()][obj.getY()].setContent(null);
+        WorldGameScreen.getInstance().invalidateCache();
+    }
+    @Override
+    public World getWorld() {
+        return this;
+    }
+
     public void updateConnectedTunnels(Station station) {
         List<Tunnel> tunnelsToUpdate = new ArrayList<>(this.getTunnels());
 
@@ -940,18 +698,16 @@ public class GameWorld extends World {
             station.updateType();
         }
     }
-public void initWorldGrid() {
-        System.out.println("Init world grid");
-
-    this.worldGrid = new WorldTile[width][height];
-    this.gameGrid = new GameTile[width][height];
-    for (int x = 0; x < width; x++) {
-        for (int y = 0; y < height; y++) {
-            worldGrid[x][y] = new WorldTile(x,y);
-            gameGrid[x][y] = new GameTile(x,y);
+    public void initWorldGrid() {
+        this.worldGrid = new WorldTile[width][height];
+        this.gameGrid = new GameTile[width][height];
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                worldGrid[x][y] = new WorldTile(x,y);
+                gameGrid[x][y] = new GameTile(x,y);
+            }
         }
     }
-}
     public void initGameGrid() {
         this.gameGrid = new GameTile[width][height];
         for (int x = 0; x < width; x++) {
@@ -1005,16 +761,16 @@ public void initWorldGrid() {
             this.labels = loadedWorld.labels;       // Ссылка
             this.gameTime = loadedWorld.gameTime;   // Ссылка
             this.roundStationsEnabled = loadedWorld.roundStationsEnabled;
-
+            this.processor = new ConstructionTimeProcessor(this.gameTime);
             // Копируем transient поля
-            this.stationBuildStartTimes = new HashMap<>(loadedWorld.stationBuildStartTimes);
-            this.stationBuildDurations = new HashMap<>(loadedWorld.stationBuildDurations);
-            this.tunnelBuildStartTimes = new HashMap<>(loadedWorld.tunnelBuildStartTimes);
-            this.tunnelBuildDurations = new HashMap<>(loadedWorld.tunnelBuildDurations);
-            this.stationDestructionStartTimes = new HashMap<>(loadedWorld.stationDestructionStartTimes);
-            this.stationDestructionDurations = new HashMap<>(loadedWorld.stationDestructionDurations);
-            this.tunnelDestructionStartTimes = new HashMap<>(loadedWorld.tunnelDestructionStartTimes);
-            this.tunnelDestructionDurations = new HashMap<>(loadedWorld.tunnelDestructionDurations);
+            getConstructionProcessor().stationBuildStartTimes = new HashMap<>(loadedWorld.getConstructionProcessor().stationBuildStartTimes);
+            getConstructionProcessor().stationBuildDurations = new HashMap<>(loadedWorld.getConstructionProcessor().stationBuildDurations);
+            getConstructionProcessor().tunnelBuildStartTimes = new HashMap<>(loadedWorld.getConstructionProcessor().tunnelBuildStartTimes);
+            getConstructionProcessor().tunnelBuildDurations = new HashMap<>(loadedWorld.getConstructionProcessor().tunnelBuildDurations);
+            getConstructionProcessor().stationDestructionStartTimes = new HashMap<>(loadedWorld.getConstructionProcessor().stationDestructionStartTimes);
+            getConstructionProcessor().stationDestructionDurations = new HashMap<>(loadedWorld.getConstructionProcessor().stationDestructionDurations);
+            getConstructionProcessor().tunnelDestructionStartTimes = new HashMap<>(loadedWorld.getConstructionProcessor().tunnelDestructionStartTimes);
+            getConstructionProcessor().tunnelDestructionDurations = new HashMap<>(loadedWorld.getConstructionProcessor().tunnelDestructionDurations);
 
             // Восстанавливаем связи между объектами
             restoreStationConnections();
@@ -1044,71 +800,6 @@ public void initWorldGrid() {
         }
         return false;
     }
-//    public boolean loadWorld() {
-//        try {
-//            MetroSerializer serializer = new MetroSerializer();
-//            GameWorld loaded = serializer.loadWorld(SAVE_FILE);
-//
-//
-//
-//            // Копируем данные из загруженного мира
-//            this.width = loaded.width;
-//            this.height = loaded.height;
-//
-//            this.money = loaded.money;
-//            this.worldGrid = loaded.worldGrid;
-//
-//       //     this.gameGrid = loaded.gameGrid;
-//
-//            this.stations = loaded.stations;
-//            this.gameplayUnits = loaded.gameplayUnits;
-//
-//
-//            this.tunnels = loaded.tunnels;
-//            this.labels = loaded.labels;
-//            this.gameTime = loaded.gameTime;
-//            this.roundStationsEnabled = loaded.roundStationsEnabled;
-//
-//            // Восстанавливаем временные данные
-//            this.stationBuildStartTimes = loaded.stationBuildStartTimes;
-//            this.stationBuildDurations = loaded.stationBuildDurations;
-//            this.tunnelBuildStartTimes = loaded.tunnelBuildStartTimes;
-//            this.tunnelBuildDurations = loaded.tunnelBuildDurations;
-//            this.stationDestructionStartTimes = loaded.stationDestructionStartTimes;
-//            this.stationDestructionDurations = loaded.stationDestructionDurations;
-//            this.tunnelDestructionStartTimes = loaded.tunnelDestructionStartTimes;
-//            this.tunnelDestructionDurations = loaded.tunnelDestructionDurations;
-//
-//            restoreStationConnections();
-//
-//            // Запускаем игровое время
-//            if (this.gameTime != null) {
-//                this.gameTime.start();
-//            } else {
-//                this.gameTime = new GameTime();
-//                this.gameTime.start();
-//            }
-//
-//            if (this.screen != null) {
-//                this.screen.reinitializeControllers();
-//            }
-//            for (int y = 0; y < height; y++) {
-//                for (int x = 0; x < width; x++) {
-//                    gameGrid[x][y].restoreContent(this);
-//                }
-//            }
-//            MetroLogger.logInfo("World successfully loaded");
-//            MessageUtil.showTimedMessage(LngUtil.translatable("world.loaded"), false, 2000);
-//            return true;
-//        } catch (FileNotFoundException ex) {
-//            // Файл не найден - это нормально при первом запуске
-//            return false;
-//        } catch (Exception ex) {
-//            ex.printStackTrace();
-//            MetroLogger.logError("Failed to load world", ex);
-//            MessageUtil.showTimedMessage(LngUtil.translatable("world.not_loaded") + ex.getMessage(), true, 2000);
-//        }
-//        return false;
-//    }
+
 
 }

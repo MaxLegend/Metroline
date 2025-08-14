@@ -17,6 +17,7 @@ public enum StationType {
     ABANDONED("stype.abandoned"),
     DROWNED("stype.drowned"),
     RUINED("stype.ruined"),
+    REPAIR("stype.repair"),
     BURNED("stype.burned");
 
     private final String name;

@@ -84,6 +84,7 @@ public class WorldClickController {
                 world.addMoney(-stationCost);
                 station.setType(StationType.BUILDING);
                 world.addStation(station);
+                station.setConstructionDate(world.getGameTime().getCurrentTimeMillis());
             }
         }
         WorldGameScreen.getInstance().repaint();
@@ -492,7 +493,7 @@ public class WorldClickController {
         for (Station station : stationsToCheck) {
             try {
                 if (station.getType() == StationType.BUILDING || station.getType() == StationType.DESTROYED) {
-                    float progress = world.getStationConstructionProgress(station);
+                    float progress = world.getConstructionProcessor().getStationConstructionProgress(station);
                     if (station.getType() == StationType.BUILDING && progress >= 1.0f) {
                         completeConstruction(station);
                     } else if (station.getType() == StationType.DESTROYED && progress <= 0f) {
@@ -509,7 +510,7 @@ public class WorldClickController {
         for (Tunnel tunnel : tunnelsToCheck) {
             try {
                 if (tunnel.getType() == TunnelType.BUILDING || tunnel.getType() == TunnelType.DESTROYED) {
-                    float progress = world.getTunnelConstructionProgress(tunnel);
+                    float progress = world.getConstructionProcessor().getTunnelConstructionProgress(tunnel);
                     if (tunnel.getType() == TunnelType.BUILDING && progress >= 1.0f) {
                         completeConstruction(tunnel);
                     } else if (tunnel.getType() == TunnelType.DESTROYED && progress <= 0f) {

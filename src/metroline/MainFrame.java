@@ -414,7 +414,7 @@ public class MainFrame extends JFrame {
 
                if (gameTime.checkHourPassed()) {
                     world.updateStationsRevenue();
-
+                    world.updateStationsWear();
                     world.deductUpkeepCosts();
                 }
                //

@@ -1,5 +1,6 @@
 package metroline.objects.gameobjects;
 
+import metroline.core.time.GameTime;
 import metroline.core.world.GameWorld;
 import metroline.core.world.World;
 import metroline.core.world.tiles.WorldTile;
@@ -13,6 +14,7 @@ import java.awt.geom.Point2D;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -21,7 +23,13 @@ import java.util.Random;
  */
 public class Station extends GameObject {
 
+    private long constructionDate; // дата постройки в миллисекундах
 
+    private float wearLevel = 0f; // степень износа (0..1)
+    private boolean wasRepaired = false; // была ли станция отремонтирована
+    private static final long MAX_LIFETIME = TimeUnit.DAYS.toMillis(20 * 365); // 20 лет
+    private static final long REPAIR_THRESHOLD = TimeUnit.DAYS.toMillis(15 * 365); // 15 лет
+    private static final long ABANDONED_THRESHOLD = TimeUnit.DAYS.toMillis(4 * 365); // 4 года для закрытых станций
 
     private Map<Direction, Station> connections = new EnumMap<>(Direction.class);
 
@@ -39,8 +47,26 @@ public class Station extends GameObject {
         this.color = color;
         this.type = type;
         this.name = generateRandomName();
+        this.constructionDate = world.getGameTime().getCurrentTimeMillis();
     }
 
+    public boolean isConstructionDateVisible() {
+       // setConstructionDate(getWorld().getGameTime().getCurrentTimeMillis());
+        return getType() != StationType.PLANNED;
+    }
+
+
+
+    public boolean isLowIncomeStations() {
+         return this.getType() == StationType.DROWNED ||
+                 this.getType() == StationType.ABANDONED ||
+                 this.getType() == StationType.BURNED ||
+                 this.getType() == StationType.RUINED ||
+                 this.getType() == StationType.BUILDING ||
+                 this.getType() == StationType.CLOSED ||
+                 this.getType() == StationType.DESTROYED ||
+                 this.getType() == StationType.PLANNED;
+    }
     /**
      * Gets connected stations with their directions
      * @return Map of directions to connected stations
@@ -54,6 +80,7 @@ public class Station extends GameObject {
     public String getName() {
         return name;
     }
+
 
     public void setName(String name) {
         this.name = name;
@@ -100,12 +127,18 @@ public class Station extends GameObject {
      * @return Station type
      */
     public StationType getType() { return type; }
-
+    public void setConstructionDate(long constructionDate) {
+        this.constructionDate = constructionDate;
+    }
+    public long getConstructionDate() {
+        return constructionDate;
+    }
     /**
      * Sets the station type
      * @param newType New station type
      */
     public void setType(StationType newType) {
+
         // Запрещаем недопустимые переходы между типами
         if (this.type == StationType.PLANNED && newType != StationType.BUILDING) {
     //        MetroLogger.logWarning("Attempt to change PLANNED station to " + newType +" - only BUILDING is allowed");
@@ -144,6 +177,10 @@ public class Station extends GameObject {
 
         this.type = newType;
 
+
+        System.out.println("SET TIME INIT IN:  " + getWorld().getGameTime().getDateTimeString());
+        System.out.println("SET TIME INIT WITH:  " + this.type.getLocalizedName());
+
         // Обновляем метку, если она существует
         Label label = getWorld().getLabelForStation(this);
         if (label != null) {
@@ -173,6 +210,7 @@ public class Station extends GameObject {
         other.connections.put(dir, this);
 
         // Update types for both stations
+
         if (this.type != StationType.PLANNED && this.type != StationType.BUILDING) {
             this.updateType();
         }
@@ -208,10 +246,6 @@ public class Station extends GameObject {
      * Automatically determines and updates station type based on connections
      */
     public void updateType() {
-        // Сохраняем особые типы
-//        if (this.type == StationType.PLANNED || this.type == StationType.BUILDING) {
-//            return;
-//        }
 
         // Проверяем соседей
         boolean hasSameColorNeighbor = false;
@@ -300,6 +334,51 @@ public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
         return Direction.NORTH; // default
     }
 
+    public void updateWear() {
+        long currentTime = getWorld().getGameTime().getCurrentTimeMillis();
+
+        long age = currentTime - getConstructionDate();
+
+        if (type == StationType.CLOSED) {
+            // Закрытые станции изнашиваются быстрее
+            wearLevel = Math.min(1f, (float)age / ABANDONED_THRESHOLD);
+
+            if (age >= ABANDONED_THRESHOLD) {
+                setType(StationType.ABANDONED);
+            }
+        } else if (type != StationType.ABANDONED &&
+                type != StationType.DESTROYED &&
+                type != StationType.BUILDING &&
+                type != StationType.PLANNED) {
+            // Обычные станции
+            wearLevel = Math.min(1f, (float)age / MAX_LIFETIME);
+
+            if (age >= MAX_LIFETIME) {
+                // Станция становится разрушенной
+                setType(StationType.RUINED);
+            }
+        }
+    }
+
+    public boolean canRepair() {
+        long age = getWorld().getGameTime().getCurrentTimeMillis() - getConstructionDate();
+        return age >= REPAIR_THRESHOLD && wearLevel < 1f &&
+                type != StationType.ABANDONED &&
+                type != StationType.RUINED &&
+                type != StationType.DESTROYED;
+    }
+
+    public void repair() {
+        if (canRepair()) {
+            wearLevel = 0.2f; // После ремонта износ снижается, но не до нуля
+            setConstructionDate(getWorld().getGameTime().getCurrentTimeMillis());
+            wasRepaired = true;
+        }
+    }
+
+    public float getWearLevel() {
+        return wearLevel;
+    }
 }
 
 

@@ -17,6 +17,8 @@ public class GameConstants {
     public static  float BASE_TUNNEL_UPKEEP_PER_SEGMENT = 2.0f; // Базовое содержание за сегмент туннеля
 
     public static  float GAMEPLAY_UNITS_COUNT = 40;
+    public static  float BASE_STATION_DEMOLITION_COST = 10;
+    public static  float STATION_REPAIR_BASE_COST = 10;
 
     public static final String[] NAME_PARTS = {
             LngUtil.translatable("st_name_1"),

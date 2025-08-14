@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Class for controllin game time
@@ -31,7 +32,7 @@ public class GameTime implements Serializable {
     // Сериализуемые поля (сохраняются в файл)
     // Сериализуемые поля
     private long epochMillis;        // текущее игровое время (мс с эпохи)
-    private double timeScale = 180.0; // ускорение (1.0 = реальное время)
+    private double timeScale = 50200.0; // ускорение (1.0 = реальное время)
     private boolean paused = true;   // флаг паузы
 
     // transient поля
@@ -43,7 +44,9 @@ public class GameTime implements Serializable {
 
     private static final int TICK_MS = 50; // частота тиков (мс)
     private static final DateTimeFormatter DISPLAY_FMT = DateTimeFormatter.ofPattern("HH:mm dd.MM.yyyy");
-
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm dd.MM.yyyy");
+    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
     /**
      * Конструктор: ставим игровую дату по умолчанию — 1 января 1930 00:00 (локальная зона).
@@ -100,7 +103,15 @@ public class GameTime implements Serializable {
 
     public synchronized double getTimeScale() { return timeScale; }
     public synchronized boolean isPaused() { return paused; }
-
+//    public String formatDate(long timeMillis) {
+//        // Конвертируем игровое время в читаемую дату
+//        long days = TimeUnit.MILLISECONDS.toDays(timeMillis);
+//        int year = (int)(days / 365) + 1;
+//        int month = (int)((days % 365) / 30) + 1;
+//        int day = (int)(days % 30) + 1;
+//
+//        return String.format("%02d.%02d.%02d", day, month, year);
+//    }
     /**
      * Возвращает текущее игровое время в миллисекундах (epoch).
      */
@@ -118,10 +129,10 @@ public class GameTime implements Serializable {
     /**
      * Форматированная строка времени для HUD.
      */
-    public synchronized String getDateTimeString() {
-        Instant inst = Instant.ofEpochMilli(epochMillis);
-        return LocalDateTime.ofInstant(inst, ZoneId.systemDefault()).format(DISPLAY_FMT);
-    }
+//    public synchronized String getDateTimeString() {
+//        Instant inst = Instant.ofEpochMilli(epochMillis);
+//        return LocalDateTime.ofInstant(inst, ZoneId.systemDefault()).format(DISPLAY_FMT);
+//    }
     /**
      * Проверяет, наступила ли новая игровая минута
      * @return true если минута изменилась с последней проверки
@@ -191,7 +202,92 @@ public class GameTime implements Serializable {
             epochMillis += gameDelta;
         }
     }
+    /**
+     * Возвращает текущую игровую дату и время в формате "HH:mm dd.MM.yyyy"
+     */
+    public synchronized String getDateTimeString() {
+        return LocalDateTime.ofInstant(Instant.ofEpochMilli(epochMillis), ZoneId.systemDefault())
+                            .format(DATE_TIME_FORMATTER);
+    }
 
+    /**
+     * Возвращает только время в формате "HH:mm"
+     */
+    public synchronized String getTimeString() {
+        return LocalDateTime.ofInstant(Instant.ofEpochMilli(epochMillis), ZoneId.systemDefault())
+                            .format(TIME_FORMATTER);
+    }
+
+    /**
+     * Возвращает только дату в формате "dd.MM.yyyy"
+     */
+    public synchronized String getDateString() {
+        return LocalDateTime.ofInstant(Instant.ofEpochMilli(epochMillis), ZoneId.systemDefault())
+                            .format(DATE_FORMATTER);
+    }
+
+    /**
+     * Возвращает год (4 цифры)
+     */
+    public synchronized int getYear() {
+        return LocalDateTime.ofInstant(Instant.ofEpochMilli(epochMillis), ZoneId.systemDefault())
+                            .getYear();
+    }
+
+    /**
+     * Возвращает месяц (1-12)
+     */
+    public synchronized int getMonth() {
+        return LocalDateTime.ofInstant(Instant.ofEpochMilli(epochMillis), ZoneId.systemDefault())
+                            .getMonthValue();
+    }
+
+    /**
+     * Возвращает день месяца (1-31)
+     */
+    public synchronized int getDayOfMonth() {
+        return LocalDateTime.ofInstant(Instant.ofEpochMilli(epochMillis), ZoneId.systemDefault())
+                            .getDayOfMonth();
+    }
+
+    /**
+     * Возвращает час дня (0-23)
+     */
+    public synchronized int getHour() {
+        return LocalDateTime.ofInstant(Instant.ofEpochMilli(epochMillis), ZoneId.systemDefault())
+                            .getHour();
+    }
+
+    /**
+     * Возвращает минуты (0-59)
+     */
+    public synchronized int getMinute() {
+        return LocalDateTime.ofInstant(Instant.ofEpochMilli(epochMillis), ZoneId.systemDefault())
+                            .getMinute();
+    }
+
+    /**
+     * Возвращает количество дней с начала игровой эпохи
+     */
+    public synchronized long getDaysSinceEpoch() {
+        return TimeUnit.MILLISECONDS.toDays(epochMillis);
+    }
+
+    /**
+     * Форматирует произвольное время в формате "dd.MM.yyyy"
+     */
+    public static String formatDate(long timeMillis) {
+        return LocalDateTime.ofInstant(Instant.ofEpochMilli(timeMillis), ZoneId.systemDefault())
+                            .format(DATE_FORMATTER);
+    }
+
+    /**
+     * Форматирует произвольное время в формате "HH:mm dd.MM.yyyy"
+     */
+    public static String formatDateTime(long timeMillis) {
+        return LocalDateTime.ofInstant(Instant.ofEpochMilli(timeMillis), ZoneId.systemDefault())
+                            .format(DATE_TIME_FORMATTER);
+    }
     /**
      * При десериализации — восстанавливаем transient-поля (таймер).
      * Если мир был в паузе, paused останется true, но таймер создадим —

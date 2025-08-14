@@ -200,7 +200,7 @@ public class ParsingUtils {
         int x = 0, y = 0;
         Color color = Color.BLACK; // Значение по умолчанию
         StationType type = StationType.REGULAR; // Значение по умолчанию
-
+        long constructionDate = world.getGameTime().getCurrentTimeMillis(); // Текущее время по умолчанию
         // Парсим все поля по ключам
         for (String part : parts) {
             String[] keyValue = part.split(":", 2);
@@ -226,12 +226,18 @@ public class ParsingUtils {
                     case "type":
                         try { type = StationType.valueOf(value); } catch (IllegalArgumentException ignored) {}
                         break;
+                    case "constructionDate":
+                        try { constructionDate = Long.parseLong(value); } catch (NumberFormatException ignored) {
+                            System.err.println("Некорректный формат constructionDate: " + value);
+                        }
+                        break;
                 }
             }
         }
 
         Station station = new Station(world, x, y, StationColors.fromColor(color), type);
         station.setName(name);
+        station.setConstructionDate(constructionDate); // Устанавливаем дату постройки
         if (id != -1) {
             station.setUniqueId(id); // Устанавливаем сохраненный ID
         }
@@ -587,11 +593,11 @@ public class ParsingUtils {
             Station station = stationIdMap.get(stationId);
             if (station != null) {
                 if (isDestruction) {
-                    world.stationDestructionStartTimes.put(station, start);
-                    world.stationDestructionDurations.put(station, duration);
+                    world.getConstructionProcessor().stationDestructionStartTimes.put(station, start);
+                    world.getConstructionProcessor().stationDestructionDurations.put(station, duration);
                 } else {
-                    world.stationBuildStartTimes.put(station, start);
-                    world.stationBuildDurations.put(station, duration);
+                    world.getConstructionProcessor().stationBuildStartTimes.put(station, start);
+                    world.getConstructionProcessor().stationBuildDurations.put(station, duration);
                 }
             } else {
                 System.err.println("Станция не найдена для данных строительства/разрушения: ID=" + stationId);
@@ -636,11 +642,11 @@ public class ParsingUtils {
 
             if (tunnel != null) {
                 if (isDestruction) {
-                    world.tunnelDestructionStartTimes.put(tunnel, startTime);
-                    world.tunnelDestructionDurations.put(tunnel, duration);
+                    world.getConstructionProcessor().tunnelDestructionStartTimes.put(tunnel, startTime);
+                    world.getConstructionProcessor().tunnelDestructionDurations.put(tunnel, duration);
                 } else {
-                    world.tunnelBuildStartTimes.put(tunnel, startTime);
-                    world.tunnelBuildDurations.put(tunnel, duration);
+                    world.getConstructionProcessor().tunnelBuildStartTimes.put(tunnel, startTime);
+                    world.getConstructionProcessor().tunnelBuildDurations.put(tunnel, duration);
                 }
             } else {
                 System.err.println("Туннель не найден для данных строительства/разрушения: startId=" + startId + ", endId=" + endId);
