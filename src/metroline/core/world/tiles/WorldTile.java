@@ -23,6 +23,7 @@ public class WorldTile extends Tile {
     public WorldTile(int x, int y) {
         super(x, y, 16);
     }
+
     public WorldTile(int x, int y, float perm, boolean isWater, float abilityPay, int passengerCount, Color color) {
         super(x, y, 16);
         this.perm = perm;
@@ -55,7 +56,7 @@ public class WorldTile extends Tile {
     public void setPerm(float perm) { this.perm = perm; }
 
     public void setBaseTileColor(Color color) {
-        this.baseTileColor = color != null ? color : Color.BLACK;
+        this.baseTileColor = color;
     }
     public Color getBaseTileColor() {
         return baseTileColor;

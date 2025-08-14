@@ -13,10 +13,7 @@ import metroline.MainFrame;
 import metroline.objects.gameobjects.Label;
 import metroline.screens.panel.LinesLegendWindow;
 import metroline.screens.worldscreens.WorldGameScreen;
-import metroline.util.LngUtil;
-import metroline.util.MessageUtil;
-import metroline.util.MetroLogger;
-import metroline.util.MetroSerializer;
+import metroline.util.*;
 
 import java.awt.*;
 import java.io.*;
@@ -61,8 +58,135 @@ public class GameWorld extends World {
         super(null, width, height, hasPassengerCount, hasAbilityPay, hasLandscape,hasRivers,worldColor, SAVE_FILE);
         this.mainFrame = MainFrame.getInstance();
         this.money = money;
+
+        generateWorld(hasPassengerCount, hasAbilityPay, hasLandscape, hasRivers, worldColor);
+
         initTransientFields();
 
+    }
+    public void generateWorld(boolean hasPassengerCount, boolean hasAbilityPay, boolean hasLandscape, boolean hasRivers, Color worldColor) {
+        //Create world grid
+        System.out.println("Generating world...");
+        worldGrid = new WorldTile[width][height];
+        gameGrid = new GameTile[width][height];
+        // Инициализация генераторов шума с общим seed для согласованности
+        long seed = rand.nextLong();
+        PerlinNoise perlin = new PerlinNoise(seed);
+        VoronoiNoise voronoi = new VoronoiNoise(seed);
+        if(!hasLandscape) {
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    worldGrid[x][y] = new WorldTile(x, y, 0f, false, 0,0, Color.DARK_GRAY);
+                    worldGrid[x][y].setBaseTileColor(worldColor);
+                    gameGrid[x][y] = new GameTile(x, y);
+                }
+            }
+        } else {
+
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    float nx = (float) x / width;
+                    float ny = (float) y / height;
+
+                    // Генерируем оба типа шума для одних и тех же координат
+                    float perlinValue = perlin.fractalNoise(nx * 10, ny * 10, 0, 4, 0.5f);
+                    float voronoiValue = voronoi.evaluate(nx * 15, ny * 15);
+
+                    // Смешиваем шумы с учетом весов
+                    float noiseValue = mixNoises(perlinValue, voronoiValue, 0.6f); // 60% перлина, 40% вороного
+
+                    // Преобразуем в значение твердости породы (0..1)
+                    float perm = transformNoiseToPerm(noiseValue);
+
+                    // Создаем тайл
+                    worldGrid[x][y] = new WorldTile(x, y, perm, false, 0,0, Color.WHITE);
+                    worldGrid[x][y].setBaseTileColor(worldColor);
+                    gameGrid[x][y] = new GameTile(x, y);
+
+                }
+            }
+
+        }
+        // Генерация зон с использованием того же смешанного шума
+        if(hasAbilityPay) {
+            generatePaymentZones(perlin, voronoi);
+        }
+        if(hasPassengerCount) {
+            generatePassengerZones(perlin, voronoi);
+        }
+
+
+
+        if (hasRivers) {
+            if(getWidth() > 100 || getHeight() > 100) {
+                addRivers(rand.nextInt(2,8));
+            } else
+            if(getWidth() > 50 || getHeight() > 50) {
+                addRivers(rand.nextInt(3,5));
+            } else {
+                addRivers(rand.nextInt(1,2));
+            }
+        }
+
+        applyGradient();
+    }
+
+    private float mixNoises(float perlin, float voronoi, float perlinWeight) {
+        // Нормализуем вороной шум (изначально 0..1)
+        voronoi = (float)Math.pow(voronoi, 2);
+
+        // Смешиваем с весами
+        return perlin * perlinWeight + voronoi * (1 - perlinWeight);
+    }
+
+    private float transformNoiseToPerm(float noise) {
+        // Преобразуем шум в значение твердости породы
+        // Здесь можно настроить кривую распределения
+        if (noise < 0.3f) {
+            return 0.1f + noise * 0.6f; // Мягкие породы
+        } else if (noise < 0.7f) {
+            return 0.4f + (noise - 0.3f) * 0.2f; // Средние породы
+        } else {
+            return 0.9f + (noise - 0.7f) * 0.3f; // Твердые породы
+        }
+    }
+    private void generatePaymentZones(PerlinNoise perlin, VoronoiNoise voronoi) {
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                float nx = (float)x / width * 12f; // Более высокая частота
+                float ny = (float)y / height * 12f;
+
+                // Больше вороного для четких зон
+                float perlinValue = perlin.noise(nx, ny, 0);
+                float voronoiValue = voronoi.evaluate(nx, ny);
+
+                //   value = 1f - value; // Инвертируем
+
+                if (voronoiValue > 0.4f) { // Более высокий порог
+                    worldGrid[x][y].setAbilityPay((float) (voronoiValue * 1.5)); // Усиливаем значения
+                }
+            }
+        }
+    }
+
+    private void generatePassengerZones(PerlinNoise perlin, VoronoiNoise voronoi) {
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                float nx = (float)x / width * 12f; // Более высокая частота
+                float ny = (float)y / height * 12f;
+
+                // Больше вороного для четких зон
+                float perlinValue = perlin.noise(nx, ny, 0);
+                float voronoiValue = voronoi.evaluate(nx, ny);
+                float value = mixNoises(perlinValue, voronoiValue, 0.3f); // 70% вороного
+
+                value = 1f - value; // Инвертируем
+
+                if (value > 0.6f) { // Только самые яркие зоны
+                    worldGrid[x][y].setPassengerCount((int)(value * 1200)); // Усиливаем значения
+                }
+            }
+        }
     }
 
     public void initTransientFields() {
@@ -658,11 +782,13 @@ public class GameWorld extends World {
         }
     }
 public void initWorldGrid() {
+        System.out.println("Init world grid");
+
     this.worldGrid = new WorldTile[width][height];
     this.gameGrid = new GameTile[width][height];
     for (int x = 0; x < width; x++) {
         for (int y = 0; y < height; y++) {
-            worldGrid[x][y] = new WorldTile(x,y, 0, false, 0,0, Color.DARK_GRAY);
+            worldGrid[x][y] = new WorldTile(x,y);
             gameGrid[x][y] = new GameTile(x,y);
         }
     }
@@ -702,7 +828,9 @@ public void initWorldGrid() {
 
             this.money = loaded.money;
             this.worldGrid = loaded.worldGrid;
-            this.gameGrid = loaded.gameGrid;
+
+       //     this.gameGrid = loaded.gameGrid;
+
             this.stations = loaded.stations;
             this.gameplayUnits = loaded.gameplayUnits;
 

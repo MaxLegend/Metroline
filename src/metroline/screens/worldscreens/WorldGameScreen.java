@@ -1,6 +1,8 @@
 package metroline.screens.worldscreens;
 
 import metroline.core.world.GameWorld;
+import metroline.core.world.tiles.GameTile;
+import metroline.core.world.tiles.WorldTile;
 import metroline.input.WorldClickController;
 import metroline.objects.gameobjects.*;
 import metroline.objects.enums.Direction;
@@ -8,6 +10,8 @@ import metroline.MainFrame;
 import metroline.objects.gameobjects.Label;
 import metroline.screens.panel.InfoWindow;
 import metroline.screens.panel.LinesLegendWindow;
+import metroline.util.PerlinNoise;
+import metroline.util.VoronoiNoise;
 
 import javax.swing.*;
 import java.awt.*;
@@ -36,13 +40,13 @@ public class WorldGameScreen extends WorldScreen {
 
 
     public WorldGameScreen(MainFrame parent) {
-        super(parent, new GameWorld(widthWorld, heightWorld, false, false,false, false, Color.WHITE, 1000));
+        super(parent,  new GameWorld());
         INSTANCE = this;
+
         this.gameClickHandler = new WorldClickController( this);
         initWorldCache();
         setupRepaintTimer();
     }
-
 
 
 
@@ -229,8 +233,8 @@ public class WorldGameScreen extends WorldScreen {
     }
         private void updateWorldCache() {
             if (worldCache == null ||
-                    worldCache.getWidth() != widthWorld * 16 ||
-                    worldCache.getHeight() != heightWorld * 16) {
+                    worldCache.getWidth() != widthWorld * 32 ||
+                    worldCache.getHeight() != heightWorld * 32) {
                 initWorldCache();
             }
 

@@ -51,19 +51,21 @@ public class MetroSerializer {
             // Время игры
             writer.write("gameTime:" + world.getGameTime().getCurrentTimeMillis() + "\n");
 
+            world.initWorldGrid();
+            world.initGameGrid();
             //Мир
             writer.write("worldGrid:[\n");
             for (int y = 0; y < world.getHeight(); y++) {
                 for (int x = 0; x < world.getWidth(); x++) {
                     WorldTile tile = world.getWorldTile(x, y);
                     writer.write(String.format(Locale.US,
-                            "{x:%d,y:%d,perm:%.2f,isWater:%b,abilityPay:%.2f,passengerCount:%d,color:%s}",
+                            "{x:%d,y:%d,perm:%.2f,isWater:%b,abilityPay:%.2f,passengerCount:%d}",
                             x, y,
                             tile.getPerm(),
                             tile.isWater(),
                             tile.getAbilityPay(),
-                            tile.getPassengerCount(),
-                            colorToHex(tile.getCurrentColor())
+                            tile.getPassengerCount()
+                     //       colorToHex(tile.getCurrentColor())
                     ) + "\n");
                 }
             }
@@ -289,15 +291,16 @@ public class MetroSerializer {
                             int x = Integer.parseInt(extractValue(parts[0], "x"));
                             int y = Integer.parseInt(extractValue(parts[1], "y"));
                             float perm = Float.parseFloat(extractValue(parts[2], "perm"));
+
                             boolean isWater = Boolean.parseBoolean(extractValue(parts[3], "isWater"));
                             float abilityPay = Float.parseFloat(extractValue(parts[4], "abilityPay"));
                             float passengerCount = Float.parseFloat(extractValue(parts[5], "passengerCount"));
-                            Color color = parseColor(extractValue(parts[6], "color"));
+                        //    Color color = parseColor(extractValue(parts[6], "color"));
 
                             WorldTile tile = world.getWorldTile(x, y);
                             if (tile != null) {
                                 tile.setPerm(perm);
-                                tile.setBaseTileColor(color);
+                          //      tile.setBaseTileColor(color);
                                 tile.setAbilityPay(abilityPay);
                                 tile.setWater(isWater);
                                 tile.setPassengerCount((int) passengerCount);
