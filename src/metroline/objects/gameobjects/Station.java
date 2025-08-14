@@ -235,14 +235,13 @@ public class Station extends GameObject {
         if (hasDifferentColorNeighbor) {
             newType = StationType.TRANSFER;
         }
+
         else if (connections.size() == 0) {
             newType = StationType.REGULAR;
         } else if (connections.size() == 1 ) {
             newType = StationType.TERMINAL;
         } else if (connections.size() == 2 ) {
             newType = StationType.TRANSIT;
-        } else  if(isOnWater()) {
-            newType = StationType.ON_WATER;
         }
         if(this.type != StationType.PLANNED) {
 
@@ -259,16 +258,16 @@ public class Station extends GameObject {
     }
 @Override
 public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
+
+    WorldTile tile = getWorld().getWorldTile(getX(), getY());
+    System.out.println("isWater? " + tile.isWater());
     if (getWorld().isRoundStationsEnabled()) {
-        if (this.getType() == StationType.ON_WATER) {
-            drawWaterStation(g, offsetX, offsetY, zoom);
-            if (selected) drawRoundSelection(g, offsetX, offsetY, zoom);
-        } else {
+
             drawWorldColorRing(g, offsetX, offsetY, zoom);
             drawRoundTransfer(g, offsetX, offsetY, zoom);
             drawRoundStation(g, offsetX, offsetY, zoom);
             if (selected) drawRoundSelection(g, offsetX, offsetY, zoom);
-        }
+
     } else {
         drawWorldColorSquare(g, offsetX, offsetY, zoom);
         drawRoundTransfer(g, offsetX, offsetY, zoom);
@@ -277,36 +276,7 @@ public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
     }
 
 }
-    private void drawWaterStation(Graphics g, int offsetX, int offsetY, float zoom) {
-        Graphics2D g2d = (Graphics2D)g;
-        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        // Размеры и позиция
-        int drawSize = (int)(24 * zoom);
-        int cellCenterX = (int)((getX() * 32 + offsetX + 16) * zoom);
-        int cellCenterY = (int)((getY() * 32 + offsetY + 16) * zoom);
-        int drawX = cellCenterX - drawSize/2;
-        int drawY = cellCenterY - drawSize/2;
-
-        // Рисуем основу станции (синий цвет для воды)
-        g2d.setColor(new Color(64, 164, 223)); // Голубой цвет воды
-        g2d.fillOval(drawX, drawY, drawSize, drawSize);
-
-        // Рисуем "мост" поверх (серый цвет)
-        int bridgeWidth = (int)(drawSize * 0.7);
-        int bridgeHeight = (int)(drawSize * 0.3);
-        g2d.setColor(new Color(150, 150, 150));
-        g2d.fillRect(drawX + (drawSize - bridgeWidth)/2,
-                drawY + (drawSize - bridgeHeight)/2,
-                bridgeWidth, bridgeHeight);
-
-        // Если выбрана - рисуем выделение
-        if(selected) {
-            g2d.setColor(Color.YELLOW);
-            g2d.setStroke(new BasicStroke(2 * zoom));
-            g2d.drawOval(drawX - 2, drawY - 2, drawSize + 4, drawSize + 4);
-        }
-    }
     public void drawWorldColorRing(Graphics g, int offsetX, int offsetY, float zoom) {
         int drawSize = (int) (24 * zoom);
         int cellCenterX = (int) ((getX() * 32 + offsetX + 16) * zoom);
@@ -392,6 +362,7 @@ public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
         int drawY = cellCenterY - drawSize / 2;
         Graphics2D g2d = (Graphics2D) g;
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
         if (type == StationType.PLANNED) {
             g2d.setColor(getColor());
             g2d.setStroke(new BasicStroke(2 * zoom));
@@ -440,10 +411,23 @@ public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
                     drawX + drawSize - crossPadding,
                     drawY + drawSize - crossPadding);
         } else {
-            g2d.setColor(getColor());
-            g2d.fillOval(drawX, drawY, drawSize, drawSize);
-        }
 
+                g2d.setColor(getColor());
+                g2d.fillOval(drawX, drawY, drawSize, drawSize);
+
+        }
+        if(isOnWater()) {
+            if(this.getType() == StationType.PLANNED || this.getType() == StationType.BUILDING|| this.getType() == StationType.CLOSED || this.getType() == StationType.DESTROYED) {
+                g2d.setColor(getWorld().getWorldColorAt(getX(), getY()).darker().darker());
+                g2d.setStroke(new BasicStroke(2 * zoom));
+                g2d.drawOval(drawX+4, drawY+4, drawSize-8, drawSize-8);
+            } else {
+                g2d.setColor(getWorld().getWorldColorAt(getX(), getY()));
+                g2d.fillOval(drawX+5, drawY+5, drawSize-10, drawSize-10);
+
+            }
+
+        }
     }
 
     private void drawTransferConnection(Graphics2D g2d, int x1, int y1, int x2, int y2,
@@ -570,6 +554,19 @@ public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
             // Обычная отрисовка для других типов
             g2d.setColor(getColor());
             g2d.fillRoundRect(drawX, drawY, drawSize, drawSize, arcSize, arcSize);
+        }
+        if(isOnWater()) {
+            if(this.getType() == StationType.PLANNED || this.getType() == StationType.BUILDING
+                    || this.getType() == StationType.CLOSED || this.getType() == StationType.DESTROYED) {
+                g2d.setColor(getWorld().getWorldColorAt(getX(), getY()).darker().darker());
+                g2d.setStroke(new BasicStroke(2 * zoom));
+                g2d.drawRoundRect(drawX+3, drawY+3, drawSize-6, drawSize-6, arcSize, arcSize);
+            } else {
+                g2d.setColor(getWorld().getWorldColorAt(getX(), getY()));
+                g2d.fillRoundRect(drawX+3, drawY+3, drawSize-6, drawSize-6, arcSize, arcSize);
+
+            }
+
         }
     }
 

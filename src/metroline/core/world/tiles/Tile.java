@@ -11,6 +11,7 @@ public class Tile implements Serializable {
     private static final long serialVersionUID = 1L;
     protected int x, y;
     protected int size;
+
     protected Tile() {
         this(0, 0, 0); // Инициализация значениями по умолчанию
     }

@@ -34,6 +34,7 @@ public class World implements Serializable {
     public transient WorldScreen screen;
     public boolean roundStationsEnabled = false;
 
+
     public World() {
         super();
     }
@@ -456,6 +457,7 @@ public class World implements Serializable {
     private void setRiverTile(int x, int y, int radius) {
         worldGrid[x][y].setPerm(0.3f);
         worldGrid[x][y].setWater(true);
+        worldGrid[x][y].setWaterDepth(1.0f); // Центр - максимальная глубина
 
         for (int dy = -radius; dy <= radius; dy++) {
             for (int dx = -radius; dx <= radius; dx++) {
@@ -467,8 +469,12 @@ public class World implements Serializable {
                     if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
                         float perm = 0.3f + (dist/radius) * 0.4f;
                         worldGrid[nx][ny].setPerm(perm);
+
+                        // Устанавливаем глубину (1 в центре, 0 на краях)
+                        float depth = 1.0f - (dist / radius);
                         if (dist < radius * 0.7f) {
                             worldGrid[nx][ny].setWater(true);
+                            worldGrid[nx][ny].setWaterDepth(depth);
                         }
                     }
                 }

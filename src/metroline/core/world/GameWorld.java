@@ -64,6 +64,237 @@ public class GameWorld extends World {
         initTransientFields();
 
     }
+    /**
+     * Создает новый GameWorld, загружая его состояние из BufferedReader.
+     * Этот конструктор предназначен для использования сериализатором.
+     *
+     * @param reader BufferedReader, откуда будут читаться данные.
+     * @throws IOException Если возникает ошибка при чтении.
+     */
+    public GameWorld(BufferedReader reader) throws IOException {
+        super(); // Вызываем базовый конструктор World()
+        this.mainFrame = MainFrame.getInstance();
+        initTransientFields(); // Инициализируем transient поля
+
+        String version = null;
+        String line;
+        // Map<String, Station> stationMap = new HashMap<>(); // Для обратной совместимости по имени, больше не используется
+        Map<Long, Station> stationIdMap = new HashMap<>();
+
+        while ((line = reader.readLine()) != null) {
+            line = line.trim(); // Убираем пробелы в начале и конце
+
+            if (line.isEmpty()) continue; // Пропускаем пустые строки
+
+            if (line.startsWith("version:")) {
+                version = line.substring("version:".length());
+                continue;
+            }
+            if (line.startsWith("width:")) {
+                this.width = Integer.parseInt(line.substring("width:".length()));
+                continue; // Продолжаем, чтобы не попасть в else if
+            }
+            if (line.startsWith("height:")) {
+                this.height = Integer.parseInt(line.substring("height:".length()));
+                // Как только получили width и height, инициализируем сетки
+                if (this.width > 0 && this.height > 0) {
+                    initWorldGrid(); // Инициализируем worldGrid
+                    initGameGrid();  // Инициализируем gameGrid
+                }
+                continue;
+            }
+            if (line.startsWith("money:")) {
+                this.money = (int) Float.parseFloat(line.substring("money:".length()));
+                continue;
+            }
+            if (line.startsWith("roundStations:")) {
+                this.roundStationsEnabled = Boolean.parseBoolean(line.substring("roundStations:".length()));
+                continue;
+            }
+            if (line.startsWith("gameTime:")) {
+                long time = Long.parseLong(line.substring("gameTime:".length()));
+                this.gameTime = new GameTime();
+                // Предполагается, что GameTime может быть инициализирован напрямую или имеет сеттер
+                // gameTime.setCurrentTime(time); // Если такой метод существует
+                continue;
+            }
+
+            // --- Обработка секций данных ---
+
+            if (line.equals("worldGrid:[")) {
+                // Чтение worldGrid
+                while (!(line = reader.readLine()).equals("]")) {
+                    line = line.trim();
+                    if (!line.startsWith("{") || !line.endsWith("}")) continue;
+                    String content = line.substring(1, line.length() - 1);
+
+                    // Используем регулярное выражение для корректного разбиения
+                    String[] parts = content.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
+                    if (parts.length < 6) {
+                        System.err.println("Недостаточно частей при парсинге worldGrid: " + line);
+                        continue;
+                    }
+
+                    try {
+                        int x = Integer.parseInt(ParsingUtils.extractValue(parts[0], "x"));
+                        int y = Integer.parseInt(ParsingUtils.extractValue(parts[1], "y"));
+                        float perm = Float.parseFloat(ParsingUtils.extractValue(parts[2], "perm"));
+                        boolean isWater = Boolean.parseBoolean(ParsingUtils.extractValue(parts[3], "isWater"));
+                        float abilityPay = Float.parseFloat(ParsingUtils.extractValue(parts[4], "abilityPay"));
+                        int passengerCount = Integer.parseInt(ParsingUtils.extractValue(parts[5], "passengerCount").split("\\.")[0]); // Убираем .00
+
+                        WorldTile tile = this.getWorldTile(x, y);
+                        if (tile != null) {
+                            tile.setPerm(perm);
+                            tile.setAbilityPay(abilityPay);
+                            tile.setWater(isWater);
+                            tile.setPassengerCount(passengerCount);
+                            // tile.setBaseTileColor(color); // Если цвет сохраняется
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Ошибка при парсинге worldGrid: " + line);
+                        e.printStackTrace();
+                    }
+                }
+                continue;
+            }
+
+            if (line.equals("stations:[")) {
+                // Чтение станций
+                while (!(line = reader.readLine()).equals("]")) {
+                    Station station = ParsingUtils.parseStation(line, this); // Используем вспомогательный метод
+                    if (station != null) {
+                        // stationMap.put(station.getName(), station); // Больше не используется
+                        stationIdMap.put(station.getUniqueId(), station);
+                        this.stations.add(station); // Добавляем в список станций мира
+                    }
+                }
+                continue;
+            }
+
+            if (line.equals("connections:[")) {
+                // Чтение соединений
+                while (!(line = reader.readLine()).equals("]")) {
+                    ParsingUtils.parseConnection(line, this, stationIdMap); // Используем вспомогательный метод
+                }
+                continue;
+            }
+
+            if (line.equals("tunnels:[")) {
+                // Чтение туннелей
+                while (!(line = reader.readLine()).equals("]")) {
+                    Tunnel tunnel = ParsingUtils.parseTunnel(line, this, stationIdMap); // Используем вспомогательный метод
+                    if (tunnel != null) {
+                        this.tunnels.add(tunnel); // Добавляем в список туннелей мира
+                    }
+                }
+                continue;
+            }
+
+            if (line.equals("gameplay_units:[")) {
+                // Чтение игровых юнитов
+                while (!(line = reader.readLine()).equals("]")) {
+                    GameplayUnits gUnits = ParsingUtils.parseGameplayUnit(line, this); // Используем вспомогательный метод
+                    if (gUnits != null) {
+                        this.gameplayUnits.add(gUnits); // Добавляем в список юнитов мира
+                        // Также нужно установить контент в gameGrid, если это необходимо
+                        // gameGrid[gUnits.getX()][gUnits.getY()].setContent(gUnits);
+                    }
+                }
+                continue;
+            }
+
+            if (line.equals("pathPoints:[")) {
+                // Чтение путевых точек для туннелей
+                while (!(line = reader.readLine()).equals("]")) {
+                    ParsingUtils.parsePathPoints(line, this, stationIdMap); // Используем вспомогательный метод
+                }
+                continue;
+            }
+
+            if (line.equals("labels:[")) {
+                // Чтение меток
+                while (!(line = reader.readLine()).equals("]")) {
+                    Label label = ParsingUtils.parseLabel(line, this, stationIdMap); // Используем вспомогательный метод
+                    if (label != null) {
+                        this.labels.add(label); // Добавляем в список меток мира
+                        // Также нужно установить контент в gameGrid, если это необходимо
+                        // gameGrid[label.getX()][label.getY()].setContent(label);
+                    }
+                }
+                continue;
+            }
+
+            if (line.equals("stationBuild:[")) {
+                // Чтение данных о строительстве станций
+                while (!(line = reader.readLine()).equals("]")) {
+                    ParsingUtils.parseConstructionData(line, this, stationIdMap, true, false); // Используем вспомогательный метод
+                }
+                continue;
+            }
+
+            if (line.equals("stationDestroy:[")) {
+                // Чтение данных о разрушении станций
+                while (!(line = reader.readLine()).equals("]")) {
+                    ParsingUtils.parseConstructionData(line, this, stationIdMap, true, true); // Используем вспомогательный метод
+                }
+                continue;
+            }
+
+            if (line.equals("tunnelBuild:[")) {
+                // Чтение данных о строительстве туннелей
+                while (!(line = reader.readLine()).equals("]")) {
+                    ParsingUtils.parseConstructionData(line, this, stationIdMap, false, false); // Используем вспомогательный метод
+                }
+                continue;
+            }
+
+            if (line.equals("tunnelDestroy:[")) {
+                // Чтение данных о разрушении туннелей
+                while (!(line = reader.readLine()).equals("]")) {
+                    ParsingUtils.parseConstructionData(line, this, stationIdMap, false, true); // Используем вспомогательный метод
+                }
+                continue;
+            }
+
+            if (line.equals("gameGrid:[")) {
+                // Чтение gameGrid (содержимое клеток)
+                while (!(line = reader.readLine()).equals("]")) {
+                    line = line.trim();
+                    if (!line.startsWith("{") || !line.endsWith("}")) continue;
+                    String content = line.substring(1, line.length() - 1);
+                    String[] parts = content.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
+                    if (parts.length < 3) {
+                        System.err.println("Недостаточно частей при парсинге gameGrid: " + line);
+                        continue;
+                    }
+
+                    try {
+                        int x = Integer.parseInt(ParsingUtils.extractValue(parts[0], "x"));
+                        int y = Integer.parseInt(ParsingUtils.extractValue(parts[1], "y"));
+                        String contentStr = ParsingUtils.extractValue(parts[2], "content");
+
+                        if (!contentStr.equals("null")) {
+                            GameObject obj = ParsingUtils.parseGameObject(contentStr, this, stationIdMap); // Используем вспомогательный метод
+                            if (obj != null && this.gameGrid != null && x < this.width && y < this.height) {
+                                this.gameGrid[x][y].setContent(obj);
+                            }
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Ошибка при парсинге gameGrid: " + line);
+                        e.printStackTrace();
+                    }
+                }
+                continue;
+            }
+        }
+
+        // Восстанавливаем связи между объектами, если это необходимо
+        restoreStationConnections();
+        // initTransientFields(); // Уже вызвано в начале
+
+        MetroLogger.logInfo("GameWorld successfully constructed from reader.");
+    }
     public void generateWorld(boolean hasPassengerCount, boolean hasAbilityPay, boolean hasLandscape, boolean hasRivers, Color worldColor) {
         //Create world grid
         System.out.println("Generating world...");
@@ -383,7 +614,7 @@ public class GameWorld extends World {
             long endTime = entry.getValue() + stationBuildDurations.get(station);
 
             if (gameTime.getCurrentTimeMillis() >= endTime) {
-                station.setType(StationType.REGULAR); // Или другой конечный тип
+                station.updateType();// Или другой конечный тип
                 buildIterator.remove();
                 stationBuildDurations.remove(station);
                 updateConnectedTunnels(station);
@@ -742,8 +973,6 @@ public class GameWorld extends World {
                     }
                 }
 
-                // Туннель становится ACTIVE только когда обе станции построены
-                // (не PLANNED и не BUILDING)
                 if (!canStartBuilding &&
                         station.getType() != StationType.PLANNED &&
                         station.getType() != StationType.BUILDING &&
@@ -814,42 +1043,50 @@ public void initWorldGrid() {
             MessageUtil.showTimedMessage(LngUtil.translatable("world.not_saved") + ex.getMessage(), true, 2000);
         }
     }
-
+    /**
+     * Загружает мир из стандартного файла сохранения.
+     * Делегирует загрузку статическому методу MetroSerializer.
+     * @return true если загрузка успешна, false если файл не найден.
+     */
     public boolean loadWorld() {
         try {
             MetroSerializer serializer = new MetroSerializer();
-            GameWorld loaded = serializer.loadWorld(SAVE_FILE);
+            // MetroSerializer.loadWorld теперь возвращает полностью сконструированный GameWorld
+            GameWorld loadedWorld = serializer.loadWorld(SAVE_FILE);
 
+            // Копируем ссылки на данные из загруженного мира в текущий экземпляр
+            // Это предполагает, что текущий экземпляр GameWorld заменяется загруженным
+            // Если нужно обновить *этот* экземпляр, логика должна быть другой
+            // Например, можно сделать loadWorld статическим и возвращать GameWorld
 
+            // Альтернатива: если loadWorld должен обновить *этот* экземпляр,
+            // нужно скопировать все поля из loadedWorld в this.
+            // Это менее элегантно, но возможно.
 
-            // Копируем данные из загруженного мира
-            this.width = loaded.width;
-            this.height = loaded.height;
+            // Пример копирования полей (предполагая, что сетки уже инициализированы):
+            this.width = loadedWorld.width;
+            this.height = loadedWorld.height;
+            this.money = loadedWorld.money;
+            this.worldGrid = loadedWorld.worldGrid; // Ссылка
+            this.gameGrid = loadedWorld.gameGrid;   // Ссылка
+            this.stations = loadedWorld.stations;   // Ссылка
+            this.gameplayUnits = loadedWorld.gameplayUnits; // Ссылка
+            this.tunnels = loadedWorld.tunnels;     // Ссылка
+            this.labels = loadedWorld.labels;       // Ссылка
+            this.gameTime = loadedWorld.gameTime;   // Ссылка
+            this.roundStationsEnabled = loadedWorld.roundStationsEnabled;
 
-            this.money = loaded.money;
-            this.worldGrid = loaded.worldGrid;
+            // Копируем transient поля
+            this.stationBuildStartTimes = new HashMap<>(loadedWorld.stationBuildStartTimes);
+            this.stationBuildDurations = new HashMap<>(loadedWorld.stationBuildDurations);
+            this.tunnelBuildStartTimes = new HashMap<>(loadedWorld.tunnelBuildStartTimes);
+            this.tunnelBuildDurations = new HashMap<>(loadedWorld.tunnelBuildDurations);
+            this.stationDestructionStartTimes = new HashMap<>(loadedWorld.stationDestructionStartTimes);
+            this.stationDestructionDurations = new HashMap<>(loadedWorld.stationDestructionDurations);
+            this.tunnelDestructionStartTimes = new HashMap<>(loadedWorld.tunnelDestructionStartTimes);
+            this.tunnelDestructionDurations = new HashMap<>(loadedWorld.tunnelDestructionDurations);
 
-       //     this.gameGrid = loaded.gameGrid;
-
-            this.stations = loaded.stations;
-            this.gameplayUnits = loaded.gameplayUnits;
-
-
-            this.tunnels = loaded.tunnels;
-            this.labels = loaded.labels;
-            this.gameTime = loaded.gameTime;
-            this.roundStationsEnabled = loaded.roundStationsEnabled;
-
-            // Восстанавливаем временные данные
-            this.stationBuildStartTimes = loaded.stationBuildStartTimes;
-            this.stationBuildDurations = loaded.stationBuildDurations;
-            this.tunnelBuildStartTimes = loaded.tunnelBuildStartTimes;
-            this.tunnelBuildDurations = loaded.tunnelBuildDurations;
-            this.stationDestructionStartTimes = loaded.stationDestructionStartTimes;
-            this.stationDestructionDurations = loaded.stationDestructionDurations;
-            this.tunnelDestructionStartTimes = loaded.tunnelDestructionStartTimes;
-            this.tunnelDestructionDurations = loaded.tunnelDestructionDurations;
-
+            // Восстанавливаем связи между объектами
             restoreStationConnections();
 
             // Запускаем игровое время
@@ -863,15 +1100,11 @@ public void initWorldGrid() {
             if (this.screen != null) {
                 this.screen.reinitializeControllers();
             }
-            for (int y = 0; y < height; y++) {
-                for (int x = 0; x < width; x++) {
-                    gameGrid[x][y].restoreContent(this);
-                }
-            }
+
             MetroLogger.logInfo("World successfully loaded");
             MessageUtil.showTimedMessage(LngUtil.translatable("world.loaded"), false, 2000);
             return true;
-        } catch (FileNotFoundException ex) {
+        } catch (java.io.FileNotFoundException ex) {
             // Файл не найден - это нормально при первом запуске
             return false;
         } catch (Exception ex) {
@@ -881,5 +1114,71 @@ public void initWorldGrid() {
         }
         return false;
     }
+//    public boolean loadWorld() {
+//        try {
+//            MetroSerializer serializer = new MetroSerializer();
+//            GameWorld loaded = serializer.loadWorld(SAVE_FILE);
+//
+//
+//
+//            // Копируем данные из загруженного мира
+//            this.width = loaded.width;
+//            this.height = loaded.height;
+//
+//            this.money = loaded.money;
+//            this.worldGrid = loaded.worldGrid;
+//
+//       //     this.gameGrid = loaded.gameGrid;
+//
+//            this.stations = loaded.stations;
+//            this.gameplayUnits = loaded.gameplayUnits;
+//
+//
+//            this.tunnels = loaded.tunnels;
+//            this.labels = loaded.labels;
+//            this.gameTime = loaded.gameTime;
+//            this.roundStationsEnabled = loaded.roundStationsEnabled;
+//
+//            // Восстанавливаем временные данные
+//            this.stationBuildStartTimes = loaded.stationBuildStartTimes;
+//            this.stationBuildDurations = loaded.stationBuildDurations;
+//            this.tunnelBuildStartTimes = loaded.tunnelBuildStartTimes;
+//            this.tunnelBuildDurations = loaded.tunnelBuildDurations;
+//            this.stationDestructionStartTimes = loaded.stationDestructionStartTimes;
+//            this.stationDestructionDurations = loaded.stationDestructionDurations;
+//            this.tunnelDestructionStartTimes = loaded.tunnelDestructionStartTimes;
+//            this.tunnelDestructionDurations = loaded.tunnelDestructionDurations;
+//
+//            restoreStationConnections();
+//
+//            // Запускаем игровое время
+//            if (this.gameTime != null) {
+//                this.gameTime.start();
+//            } else {
+//                this.gameTime = new GameTime();
+//                this.gameTime.start();
+//            }
+//
+//            if (this.screen != null) {
+//                this.screen.reinitializeControllers();
+//            }
+//            for (int y = 0; y < height; y++) {
+//                for (int x = 0; x < width; x++) {
+//                    gameGrid[x][y].restoreContent(this);
+//                }
+//            }
+//            MetroLogger.logInfo("World successfully loaded");
+//            MessageUtil.showTimedMessage(LngUtil.translatable("world.loaded"), false, 2000);
+//            return true;
+//        } catch (FileNotFoundException ex) {
+//            // Файл не найден - это нормально при первом запуске
+//            return false;
+//        } catch (Exception ex) {
+//            ex.printStackTrace();
+//            MetroLogger.logError("Failed to load world", ex);
+//            MessageUtil.showTimedMessage(LngUtil.translatable("world.not_loaded") + ex.getMessage(), true, 2000);
+//        }
+//        return false;
+//    }
 
 }
