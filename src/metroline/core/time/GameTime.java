@@ -32,7 +32,7 @@ public class GameTime implements Serializable {
     // Сериализуемые поля (сохраняются в файл)
     // Сериализуемые поля
     private long epochMillis;        // текущее игровое время (мс с эпохи)
-    private double timeScale = 50200.0; // ускорение (1.0 = реальное время)
+    private double timeScale = 1002000.0; // ускорение (1.0 = реальное время)
     private boolean paused = true;   // флаг паузы
 
     // transient поля
@@ -53,7 +53,7 @@ public class GameTime implements Serializable {
      * Таймер не стартует автоматически — стартует SandboxWorld при создании мира (gameTime.start()).
      */
     public GameTime() {
-        ZonedDateTime zdt = LocalDateTime.of(1970, 1, 1, 0, 0)
+        ZonedDateTime zdt = LocalDateTime.of(1863, 1, 1, 0, 0)
                                          .atZone(ZoneId.of("UTC"));
         this.epochMillis = zdt.toInstant().toEpochMilli();
         this.paused = true;

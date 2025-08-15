@@ -4,21 +4,26 @@ import metroline.objects.enums.StationColors;
 import metroline.util.LngUtil;
 
 import java.awt.*;
+import java.util.concurrent.TimeUnit;
 
 public class GameConstants {
 
+    static final long MAX_LIFETIME = TimeUnit.DAYS.toMillis(20 * 365); // 20 лет
+    static final long REPAIR_THRESHOLD = TimeUnit.DAYS.toMillis(15 * 365); // 15 лет
+    static final long ABANDONED_THRESHOLD = TimeUnit.DAYS.toMillis(4 * 365); // 4 года для закрытых станций
     // Константы стоимости
     public static  float STATION_BASE_COST = 100;
     public static  float TUNNEL_COST_PER_SEGMENT = 10;
 
     public static float STATION_BASE_REVENUE = 2;
 
-    public static  float BASE_STATION_UPKEEP = 8.0f; // Базовое содержание станции
+    public static  float BASE_STATION_UPKEEP = 1.0f; // Базовое содержание станции
     public static  float BASE_TUNNEL_UPKEEP_PER_SEGMENT = 2.0f; // Базовое содержание за сегмент туннеля
 
     public static  float GAMEPLAY_UNITS_COUNT = 40;
     public static  float BASE_STATION_DEMOLITION_COST = 10;
     public static  float STATION_REPAIR_BASE_COST = 10;
+
 
     public static final String[] NAME_PARTS = {
             LngUtil.translatable("st_name_1"),

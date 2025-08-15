@@ -1,5 +1,6 @@
 package metroline.core.time;
 
+import metroline.core.world.GameWorld;
 import metroline.objects.enums.StationType;
 import metroline.objects.enums.TunnelType;
 import metroline.objects.gameobjects.Station;
@@ -10,10 +11,13 @@ import java.util.Map;
 
 public class ConstructionTimeProcessor {
 
-    private long stationDestroyTime = 40000000; // Время разрушения станции
-    private long tunnelDestroyTime = 40000000;
-    private long stationBuildTime = 40000000;
-    private long tunnelBuildTime = 40000000;
+    public long STATION_DESTROY_TIME = 6048000000l;
+    private  long TUNNEL_DESTROY_TIME = 6048000000l;
+    private  long STATION_BUILD_TIME = 6048000000l;
+    private  long TUNNEL_BUILD_TIME = 6048000000l;
+
+    public GameWorld world;
+
     private final GameTime gameTime;
 
     public Map<Station, Long> stationDestructionStartTimes = new HashMap<>();
@@ -26,8 +30,9 @@ public class ConstructionTimeProcessor {
     public Map<Tunnel, Long> tunnelBuildStartTimes = new HashMap<>();
     public Map<Tunnel, Long> tunnelBuildDurations = new HashMap<>();
 
-        public ConstructionTimeProcessor(GameTime gameTime) {
+        public ConstructionTimeProcessor(GameTime gameTime, GameWorld world) {
             this.gameTime = gameTime;
+            this.world = world;
         }
 
         public void initTransientFields() {
@@ -61,7 +66,7 @@ public class ConstructionTimeProcessor {
             if (!stationBuildStartTimes.containsKey(station)) {
                 long startTime = gameTime.getCurrentTimeMillis();
                 stationBuildStartTimes.put(station, startTime);
-                stationBuildDurations.put(station, stationBuildTime);
+                stationBuildDurations.put(station, STATION_BUILD_TIME);
             }
         }
 
@@ -75,17 +80,17 @@ public class ConstructionTimeProcessor {
 
             long startTime = gameTime.getCurrentTimeMillis();
             tunnelBuildStartTimes.put(tunnel, startTime);
-            tunnelBuildDurations.put(tunnel, tunnelBuildTime);
+            tunnelBuildDurations.put(tunnel, TUNNEL_BUILD_TIME);
         }
 
         public void registerStationDestruction(Station station) {
             stationDestructionStartTimes.put(station, gameTime.getCurrentTimeMillis());
-            stationDestructionDurations.put(station, stationDestroyTime);
+            stationDestructionDurations.put(station, STATION_DESTROY_TIME);
         }
 
         public void registerTunnelDestruction(Tunnel tunnel) {
             tunnelDestructionStartTimes.put(tunnel, gameTime.getCurrentTimeMillis());
-            tunnelDestructionDurations.put(tunnel, tunnelDestroyTime);
+            tunnelDestructionDurations.put(tunnel, TUNNEL_DESTROY_TIME);
         }
 
         private float calculateProgress(long startTime, long duration) {
@@ -194,35 +199,36 @@ public class ConstructionTimeProcessor {
         return stationBuildDurations;
     }
 
-    public long getStationDestroyTime() {
-            return stationDestroyTime;
+    public long getstationDestroyTime() {
+
+            return STATION_DESTROY_TIME;
         }
 
-        public void setStationDestroyTime(long stationDestroyTime) {
-            this.stationDestroyTime = stationDestroyTime;
+        public void setSTATION_DESTROY_TIME(long STATION_DESTROY_TIME) {
+            this.STATION_DESTROY_TIME = STATION_DESTROY_TIME;
         }
 
         public long getTunnelDestroyTime() {
-            return tunnelDestroyTime;
+            return TUNNEL_DESTROY_TIME;
         }
 
-        public void setTunnelDestroyTime(long tunnelDestroyTime) {
-            this.tunnelDestroyTime = tunnelDestroyTime;
+        public void setTUNNEL_DESTROY_TIME(long TUNNEL_DESTROY_TIME) {
+            this.TUNNEL_DESTROY_TIME = TUNNEL_DESTROY_TIME;
         }
 
         public long getStationBuildTime() {
-            return stationBuildTime;
+            return STATION_BUILD_TIME;
         }
 
-        public void setStationBuildTime(long stationBuildTime) {
-            this.stationBuildTime = stationBuildTime;
+        public void setSTATION_BUILD_TIME(long STATION_BUILD_TIME) {
+            this.STATION_BUILD_TIME = STATION_BUILD_TIME;
         }
 
         public long getTunnelBuildTime() {
-            return tunnelBuildTime;
+            return TUNNEL_BUILD_TIME;
         }
 
-        public void setTunnelBuildTime(long tunnelBuildTime) {
-            this.tunnelBuildTime = tunnelBuildTime;
+        public void setTunnelBuildTime(long TUNNEL_BUILD_TIME) {
+            this.TUNNEL_BUILD_TIME = TUNNEL_BUILD_TIME;
         }
     }

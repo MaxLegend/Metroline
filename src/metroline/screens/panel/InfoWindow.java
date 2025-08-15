@@ -431,9 +431,9 @@ public class InfoWindow extends JWindow {
                 .append(MathUtil.round((1 - station.getWearLevel()) * 100, 0))
                 .append("%)<br>");
             info.append(LngUtil.translatable("infoWnd.cost") + " ").append(MathUtil.round(GameConstants.STATION_BASE_COST* WorldGameScreen.getInstance().getWorld().getWorldTile(station.getX(), station.getY()).getPerm(),2)).append(" M").append("<br>");
-            info.append(LngUtil.translatable("infoWnd.upkeep") + " ").append(MathUtil.round(world.calculateStationsUpkeep(),2)).append(" M").append("<br>");
 
-        //   System.out.println("INFO BUILDING DATE :  " + world.getConstructionProcessor().getConstructionDate());
+            info.append(LngUtil.translatable("infoWnd.upkeep") + " ").append(MathUtil.round(station.calculateUpkeepCost(),4)).append(" M").append("<br>");
+
             info.append(String.format("<html>%s: %s<br>%s: %s</html>",
                     LngUtil.translatable("station.build_date"),
                     gameTime.formatDate(constructionDate),
@@ -452,8 +452,8 @@ public class InfoWindow extends JWindow {
             info.append(LngUtil.translatable("infoWnd.tunnel_type")+ " ").append(tunnel.getType().getLocalizedName()+ "<br>");
             float cost = tunnel.getLength() * GameConstants.TUNNEL_COST_PER_SEGMENT * WorldGameScreen.getInstance().getWorld().getWorldTile(tunnel.getX(), tunnel.getY()).getPerm();
             info.append(LngUtil.translatable("infoWnd.tunnel_cost")+ " ").append(MathUtil.round(cost,2)).append(" M" + " <br>");
-            info.append(LngUtil.translatable("infoWnd.tunnel_upkeep")+ " ").append(MathUtil.round(world.calculateTunnelsUpkeep(),2)).append(" M" + " <br>");
 
+            info.append(LngUtil.translatable("infoWnd.upkeep") + " ").append(MathUtil.round(tunnel.calculateTunnelsUpkeep(),4)).append(" M").append("<br>");
 
             infoLabel.setText(info.toString());
             updateProgress();
@@ -506,6 +506,13 @@ public class InfoWindow extends JWindow {
         }
         currentObject = null;
         setVisible(false);
+        if (getOwner() instanceof MainFrame) {
+            MainFrame frame = (MainFrame) getOwner();
+            if (frame.getCurrentScreen() instanceof WorldGameScreen) {
+                WorldGameScreen screen = (WorldGameScreen) frame.getCurrentScreen();
+                screen.infoWindows.remove(this);
+            }
+        }
     }
 
     @Override

@@ -1,6 +1,8 @@
 package metroline.objects.gameobjects;
 
+import metroline.core.world.GameWorld;
 import metroline.core.world.World;
+import metroline.core.world.tiles.WorldTile;
 import metroline.objects.enums.TunnelType;
 import metroline.screens.worldscreens.WorldSandboxScreen;
 
@@ -21,6 +23,8 @@ public class Tunnel extends GameObject {
     private List<PathPoint> path = new ArrayList<>();
     private PathPoint pathPoint; // For single bend tunnels
 
+    private float maintenanceCost; // Кэшированная стоимость обслуживания
+    private boolean costDirty = true; // Флаг необходимости перерасчета
 
     public Tunnel() {
         super(0, 0);
@@ -28,6 +32,7 @@ public class Tunnel extends GameObject {
     public Tunnel(World world, Station start, Station end, TunnelType type) {
         super(start.getX(), start.getY());
         this.setWorld(world);
+        this.name = "tunnel_" + getUniqueId();
         this.start = start;
         this.end = end;
         this.type = type;
@@ -373,6 +378,38 @@ public class Tunnel extends GameObject {
         }
 
         g2d.draw(tunnelPath);
+    }
+
+    public float calculateTunnelsUpkeep() {
+
+        if (this.getType() != TunnelType.ACTIVE) {
+            return 0;
+        }
+
+        float tunnelUpkeep = 0; // Стоимость текущего туннеля
+        int segmentCount = this.getPath().size();
+        float baseSegmentCost = GameConstants.BASE_TUNNEL_UPKEEP_PER_SEGMENT;
+        float lengthDiscount = 1 - Math.min(0.2f, segmentCount * 0.005f);
+
+        // Обрабатываем все сегменты туннеля
+        for (PathPoint point : this.getPath()) {
+            WorldTile tile = getWorld().getWorldTile(point.getX(), point.getY());
+            if (tile == null) continue;
+
+            float perm = tile.getPerm();
+            float segmentCost = baseSegmentCost * (1 + perm * 1.8f);
+
+            if (tile.isWater()) {
+                segmentCost *= 3.4f; // Штраф за воду
+            }
+
+            segmentCost *= lengthDiscount;
+            tunnelUpkeep += segmentCost; // НЕ делим на segmentCost!
+        }
+
+
+        return tunnelUpkeep;
+
     }
 }
 

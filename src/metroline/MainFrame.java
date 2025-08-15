@@ -415,7 +415,8 @@ public class MainFrame extends JFrame {
                if (gameTime.checkHourPassed()) {
                     world.updateStationsRevenue();
                     world.updateStationsWear();
-                    world.deductUpkeepCosts();
+                    world.calculateStationsUpkeep();
+                   world.calculateTunnelsUpkeep();
                 }
                //
 
@@ -506,12 +507,12 @@ public class MainFrame extends JFrame {
             }
 
             // Добавляем обработчик закрытия для удаления окна из списка
-            newWindow.addWindowListener(new WindowAdapter() {
-                @Override
-                public void windowClosed(WindowEvent e) {
-                    screen.infoWindows.remove(newWindow);
-                }
-            });
+//            newWindow.addWindowListener(new WindowAdapter() {
+//                @Override
+//                public void windowClosed(WindowEvent e) {
+//                    screen.infoWindows.remove(newWindow);
+//                }
+//            });
 
             screen.infoWindows.add(newWindow);
         }

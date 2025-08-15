@@ -89,7 +89,6 @@ public class WorldClickController {
         }
         WorldGameScreen.getInstance().repaint();
     }
-
     /**
      * Ctrl+Click - создание туннелей
      */
@@ -99,9 +98,30 @@ public class WorldClickController {
 
         if (station == null) return;
 
+        // Проверяем, что станция не в "неактивном" состоянии
+        if (station.getType() == StationType.DESTROYED ||
+                station.getType() == StationType.CLOSED ||
+                station.getType() == StationType.ABANDONED) {
+            return;
+        }
+
         if (selectedStation != null && selectedStation != station) {
+            // Проверяем, что обе станции построены
+            boolean bothBuilt =
+                    selectedStation.getType() == StationType.TRANSIT ||
+                    selectedStation.getType() == StationType.TERMINAL ||
+                    selectedStation.getType() == StationType.REGULAR ||
+                    selectedStation.getType() == StationType.TRANSFER;
+            boolean targetBuilt =
+                    station.getType() == StationType.TRANSIT ||
+                            station.getType() == StationType.TERMINAL ||
+                    station.getType() == StationType.REGULAR ||
+                    station.getType() == StationType.TRANSFER;
+
             // Создаем туннель между двумя станциями
-            Tunnel tunnel = new Tunnel(world, selectedStation, station, TunnelType.PLANNED);
+            Tunnel tunnel = new Tunnel(world, selectedStation, station,
+                    bothBuilt && targetBuilt ? TunnelType.BUILDING : TunnelType.PLANNED);
+
             world.addTunnel(tunnel);
 
             // Снимаем выделение
@@ -121,6 +141,37 @@ public class WorldClickController {
 
         WorldGameScreen.getInstance().repaint();
     }
+//    /**
+//     * Ctrl+Click - создание туннелей
+//     */
+//    public void handleCtrlClick(int x, int y) {
+//        GameWorld world = (GameWorld) WorldGameScreen.getInstance().getWorld();
+//        Station station = world.getStationAt(x, y);
+//
+//        if (station == null) return;
+//
+//        if (selectedStation != null && selectedStation != station) {
+//            // Создаем туннель между двумя станциями
+//            Tunnel tunnel = new Tunnel(world, selectedStation, station, TunnelType.PLANNED);
+//            world.addTunnel(tunnel);
+//
+//            // Снимаем выделение
+//            selectedStation.setSelected(false);
+//            selectedStation = null;
+//        } else {
+//            // Выбираем/снимаем выделение со станции
+//            if (selectedStation == station) {
+//                station.setSelected(false);
+//                selectedStation = null;
+//            } else {
+//                deselectAll();
+//                station.setSelected(true);
+//                selectedStation = station;
+//            }
+//        }
+//
+//        WorldGameScreen.getInstance().repaint();
+//    }
 
     /**
      * Shift+Click - строительство/удаление станций
@@ -177,6 +228,12 @@ public class WorldClickController {
      * Обработка существующей станции
      */
     private void handleExistingStation(Station station) {
+        // Запрещаем действия с разрушающейся/строящейся/закрытой станцией
+        if (station.getType() == StationType.DESTROYED ||
+                station.getType() == StationType.BUILDING) {
+            return;
+        }
+
         if (screen.isAltPressed) {
             // Alt+Shift - начало разрушения станции
             GameWorld gameWorld = (GameWorld) WorldGameScreen.getInstance().getWorld();
@@ -186,7 +243,6 @@ public class WorldClickController {
             if (station.getType() == StationType.PLANNED) {
                 WorldGameScreen.getInstance().getWorld().removeStation(station);
             } else if (station.getType() == StationType.CLOSED) {
-            //    station.setType(StationType.REGULAR);
                 station.updateType();
             } else {
                 station.setType(StationType.CLOSED);
@@ -194,6 +250,24 @@ public class WorldClickController {
         }
         WorldGameScreen.getInstance().repaint();
     }
+//    private void handleExistingStation(Station station) {
+//        if (screen.isAltPressed) {
+//            // Alt+Shift - начало разрушения станции
+//            GameWorld gameWorld = (GameWorld) WorldGameScreen.getInstance().getWorld();
+//            gameWorld.startDestroyingStation(station);
+//        } else {
+//            // Обычный Shift - изменение типа станции
+//            if (station.getType() == StationType.PLANNED) {
+//                WorldGameScreen.getInstance().getWorld().removeStation(station);
+//            } else if (station.getType() == StationType.CLOSED) {
+//            //    station.setType(StationType.REGULAR);
+//                station.updateType();
+//            } else {
+//                station.setType(StationType.CLOSED);
+//            }
+//        }
+//        WorldGameScreen.getInstance().repaint();
+//    }
 
     /**
      * Создание новой станции

@@ -245,8 +245,8 @@ public class WorldSettingsScreen extends GameScreen {
         stationBaseCostSlider = new FloatSlider(LngUtil.translatable("world.station_cost_desc"), 0.1f, 20, 2, 0.1f);
         tunnelCostPerSegmentSlider = new FloatSlider(LngUtil.translatable("world.tunnel_segment_cost_desc"),0.1f, 10, 2, 0.1f);
         stationBaseRevenueSlider = new FloatSlider(LngUtil.translatable("world.station_revenue_desc"),0.1f, 5, 2, 0.1f);
-        baseStationUpkeepSlider = new FloatSlider(LngUtil.translatable("world.station_upkeep_desc"),0.1f, 8, 4, 0.1f);
-        baseTunnelUpkeepSlider = new FloatSlider(LngUtil.translatable("world.tunnel_upkeep_desc"),0.1f, 2, 2, 0.1f);
+        baseStationUpkeepSlider = new FloatSlider(LngUtil.translatable("world.station_upkeep_desc"),0.1f, 8, 0.5f, 0.1f);
+        baseTunnelUpkeepSlider = new FloatSlider(LngUtil.translatable("world.tunnel_upkeep_desc"),0.1f, 2, 0.2f, 0.1f);
         gameplayUnitsCountSlider = new FloatSlider(LngUtil.translatable("world.gameplay_units_desc"),5f, 100, 20, 1f);
 
         // Add economic sliders to panel
