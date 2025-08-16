@@ -1,7 +1,7 @@
 package metroline.screens;
 
 import metroline.MainFrame;
-import metroline.screens.worldscreens.WorldGameScreen;
+import metroline.screens.worldscreens.gameworld.GameWorldScreen;
 import metroline.screens.worldscreens.WorldSandboxScreen;
 import metroline.util.LngUtil;
 import metroline.util.ui.StyleUtil;
@@ -59,7 +59,7 @@ public class MenuScreen extends GameScreen {
             gameScreen.getWorld().loadWorld();
         } else {
             parent.switchScreen(MainFrame.GAME_SCREEN_NAME);
-            WorldGameScreen gameScreen = (WorldGameScreen) parent.getCurrentScreen();
+            GameWorldScreen gameScreen = (GameWorldScreen) parent.getCurrentScreen();
             gameScreen.getWorld().loadWorld();
         }
     }

@@ -3,15 +3,15 @@ package metroline.screens.panel;
 import metroline.MainFrame;
 
 import metroline.core.time.GameTime;
-import metroline.core.world.tiles.WorldTile;
 import metroline.objects.gameobjects.GameConstants;
 import metroline.objects.gameobjects.GameplayUnits;
 import metroline.objects.gameobjects.Station;
 import metroline.objects.gameobjects.Tunnel;
-import metroline.screens.worldscreens.WorldGameScreen;
+import metroline.screens.worldscreens.gameworld.GameWorldScreen;
 import metroline.screens.worldscreens.WorldScreen;
 import metroline.util.LngUtil;
 import metroline.util.MathUtil;
+import metroline.util.ui.UserInterfaceUtil;
 import metroline.util.ui.StyleUtil;
 
 import javax.swing.*;
@@ -90,6 +90,15 @@ public class InfoWindow extends JWindow {
         closeButton.setFocusPainted(false);
         closeButton.setMargin(new Insets(0, 0, 0, 0));
         closeButton.addActionListener(e -> hideWindow());
+        // Кнопка ремонта
+        repairButton = new JButton("\uD83D\uDD27");
+        repairButton.setFont(StyleUtil.getMetrolineFont(14));
+        repairButton.setForeground(StyleUtil.FOREGROUND_COLOR);
+        repairButton.setContentAreaFilled(false);
+        repairButton.setBorderPainted(false);
+        repairButton.setFocusPainted(false);
+        repairButton.setMargin(new Insets(0, 0, 0, 0));
+        repairButton.addActionListener(e -> repairStation());
 
         // Основная информация
         infoLabel = new JLabel();
@@ -110,6 +119,7 @@ public class InfoWindow extends JWindow {
         titlePanel.setOpaque(false);
         titlePanel.add(titleLabel, BorderLayout.CENTER);
         titlePanel.add(closeButton, BorderLayout.EAST);
+        titlePanel.add(repairButton, BorderLayout.WEST);
 
         headerPanel.add(titlePanel, BorderLayout.NORTH);
         headerPanel.setBorder(new EmptyBorder(0, 0, 5, 0));
@@ -159,6 +169,7 @@ public class InfoWindow extends JWindow {
         editNamePanel = new JPanel(new BorderLayout(5, 0));
         editNamePanel.setOpaque(false);
         editNamePanel.setVisible(false);
+
 
         nameEditField = new JTextField();
         nameEditField.setFont(StyleUtil.getMetrolineFont(13));
@@ -271,6 +282,7 @@ public class InfoWindow extends JWindow {
         editNamePanel.add(nameEditField, BorderLayout.CENTER);
         editNamePanel.add(saveNameButton, BorderLayout.EAST);
     }
+
     private Rectangle getAdjustedBounds(int x, int y) {
         Window owner = getOwner();
         if (owner == null) {
@@ -297,6 +309,8 @@ public class InfoWindow extends JWindow {
         titlePanel.repaint();
     }
     private void startNameEditing(Station station) {
+//        repairButton.setVisible(station.getType() == StationType.REGULAR ||
+//                station.getType() == StationType.TRANSFER);
         // Заменяем label на поле редактирования
         JPanel titlePanel = (JPanel) titleLabel.getParent();
         titlePanel.remove(titleLabel);
@@ -402,7 +416,7 @@ public class InfoWindow extends JWindow {
         pack(); // Обновляем размер окна под содержимое
     }
     public void updateInfo() {
-        GameWorld world = (GameWorld) WorldGameScreen.getInstance().getWorld();
+        GameWorld world = (GameWorld) GameWorldScreen.getInstance().getWorld();
         if (currentObject instanceof Station) {
             Station station = (Station) currentObject;
 
@@ -430,7 +444,7 @@ public class InfoWindow extends JWindow {
                 .append(" M (")
                 .append(MathUtil.round((1 - station.getWearLevel()) * 100, 0))
                 .append("%)<br>");
-            info.append(LngUtil.translatable("infoWnd.cost") + " ").append(MathUtil.round(GameConstants.STATION_BASE_COST* WorldGameScreen.getInstance().getWorld().getWorldTile(station.getX(), station.getY()).getPerm(),2)).append(" M").append("<br>");
+            info.append(LngUtil.translatable("infoWnd.cost") + " ").append(MathUtil.round(GameConstants.STATION_BASE_COST* GameWorldScreen.getInstance().getWorld().getWorldTile(station.getX(), station.getY()).getPerm(),2)).append(" M").append("<br>");
 
             info.append(LngUtil.translatable("infoWnd.upkeep") + " ").append(MathUtil.round(station.calculateUpkeepCost(),4)).append(" M").append("<br>");
 
@@ -450,7 +464,7 @@ public class InfoWindow extends JWindow {
             info.append(LngUtil.translatable("infoWnd.tunnel_to")+ " ").append(tunnel.getEnd().getName()).append("<br>");
             info.append(LngUtil.translatable("infoWnd.tunnel_length")+ " ").append(tunnel.getLength()).append( " " + LngUtil.translatable("infoWnd.tunnel_segments") + " <br>");
             info.append(LngUtil.translatable("infoWnd.tunnel_type")+ " ").append(tunnel.getType().getLocalizedName()+ "<br>");
-            float cost = tunnel.getLength() * GameConstants.TUNNEL_COST_PER_SEGMENT * WorldGameScreen.getInstance().getWorld().getWorldTile(tunnel.getX(), tunnel.getY()).getPerm();
+            float cost = tunnel.getLength() * GameConstants.TUNNEL_COST_PER_SEGMENT * GameWorldScreen.getInstance().getWorld().getWorldTile(tunnel.getX(), tunnel.getY()).getPerm();
             info.append(LngUtil.translatable("infoWnd.tunnel_cost")+ " ").append(MathUtil.round(cost,2)).append(" M" + " <br>");
 
             info.append(LngUtil.translatable("infoWnd.upkeep") + " ").append(MathUtil.round(tunnel.calculateTunnelsUpkeep(),4)).append(" M").append("<br>");
@@ -479,7 +493,7 @@ public class InfoWindow extends JWindow {
     private void updateProgress() {
         if (currentObject instanceof Station) {
             Station station = (Station) currentObject;
-            float progress = ((GameWorld) WorldGameScreen.getInstance().getWorld()).getConstructionProcessor().getStationConstructionProgress(station);
+            float progress = ((GameWorld) GameWorldScreen.getInstance().getWorld()).getConstructionProcessor().getStationConstructionProgress(station);
             if (progress > 0 && progress < 1) {
                 progressBar.setVisible(true);
                 progressBar.setValue((int)(progress * 100));
@@ -489,7 +503,7 @@ public class InfoWindow extends JWindow {
             }
         } else if (currentObject instanceof Tunnel) {
             Tunnel tunnel = (Tunnel) currentObject;
-            float progress = ((GameWorld)WorldGameScreen.getInstance().getWorld()).getConstructionProcessor().getTunnelConstructionProgress(tunnel);
+            float progress = ((GameWorld) GameWorldScreen.getInstance().getWorld()).getConstructionProcessor().getTunnelConstructionProgress(tunnel);
             if (progress > 0 && progress < 1) {
                 progressBar.setVisible(true);
                 progressBar.setValue((int)(progress * 100));
@@ -508,8 +522,8 @@ public class InfoWindow extends JWindow {
         setVisible(false);
         if (getOwner() instanceof MainFrame) {
             MainFrame frame = (MainFrame) getOwner();
-            if (frame.getCurrentScreen() instanceof WorldGameScreen) {
-                WorldGameScreen screen = (WorldGameScreen) frame.getCurrentScreen();
+            if (frame.getCurrentScreen() instanceof GameWorldScreen) {
+                GameWorldScreen screen = (GameWorldScreen) frame.getCurrentScreen();
                 screen.infoWindows.remove(this);
             }
         }
@@ -525,85 +539,38 @@ public class InfoWindow extends JWindow {
             super.setVisible(visible && getOwner().isVisible());
         }
 
-    private void initWearComponents() {
-        // Панель для информации об износе
-        JPanel wearPanel = new JPanel(new BorderLayout());
-        wearPanel.setOpaque(false);
-        wearPanel.setBorder(new EmptyBorder(5, 0, 5, 0));
 
-        wearInfoLabel = new JLabel();
-        wearInfoLabel.setFont(StyleUtil.getMetrolineFont(12));
-        wearInfoLabel.setForeground(new Color(200, 200, 200));
-
-        repairButton = new JButton(LngUtil.translatable("station.repair"));
-        repairButton.setFont(StyleUtil.getMetrolineFont(12));
-        repairButton.setForeground(new Color(100, 200, 100));
-        repairButton.setContentAreaFilled(false);
-        repairButton.setBorderPainted(false);
-        repairButton.setFocusPainted(false);
-        repairButton.setVisible(false);
-        repairButton.addActionListener(e -> repairStation());
-
-        wearPanel.add(wearInfoLabel, BorderLayout.CENTER);
-        wearPanel.add(repairButton, BorderLayout.SOUTH);
-
-        contentPanel.add(wearPanel, BorderLayout.SOUTH);
-    }
 
     private void repairStation() {
         if (currentObject instanceof Station) {
             Station station = (Station) currentObject;
-            GameWorld world = (GameWorld) WorldGameScreen.getInstance().getWorld();
+            GameWorld world = (GameWorld) GameWorldScreen.getInstance().getWorld();
 
-            float repairCost = calculateRepairCost(station);
-            if (world.canAfford(repairCost)) {
-                world.removeMoney(repairCost);
-                station.repair();
-                updateInfo();
-                WorldGameScreen.getInstance().repaint();
-            } else {
+            // Проверяем, что станция требует ремонта
+            if (station.getWearLevel() <= 0) {
                 JOptionPane.showMessageDialog(this,
-                        LngUtil.translatable("station.not_enough_money"),
-                        LngUtil.translatable("error"),
-                        JOptionPane.WARNING_MESSAGE);
+                        LngUtil.translatable("station.no_need_repair"),
+                        LngUtil.translatable("info"),
+                        JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+
+            // Рассчитываем стоимость ремонта
+            float repairCost = station.calculateRepairCost(station);
+
+            if (world.canAfford(repairCost)) {
+                    world.removeMoney(repairCost);
+                    station.repair();
+                    updateInfo();
+                    GameWorldScreen.getInstance().repaint();
+
+            } else {
+                UserInterfaceUtil.showTimedMessage("station.not_enough_money", false, 2000);
             }
         }
     }
 
-    private float calculateRepairCost(Station station) {
-        WorldTile tile = ((GameWorld)WorldGameScreen.getInstance().getWorld())
-                .getWorldTile(station.getX(), station.getY());
-        return GameConstants.STATION_REPAIR_BASE_COST * (1 + tile.getPerm());
-    }
 
-//    private void updateWearInfo(Station station) {
-//        GameWorld world = (GameWorld) WorldGameScreen.getInstance().getWorld();
-//        GameTime gameTime = world.getGameTime();
-//
-//        long constructionDate = station.getConstructionDate();
-//        long currentTime = gameTime.getCurrentTimeMillis();
-//        long age = currentTime - constructionDate;
-//
-//        String buildDate = gameTime.formatDate(constructionDate);
-//        String wearPercent = String.format("%.0f%%", station.getWearLevel() * 100);
-//
-//        String wearText = String.format("<html>%s: %s<br>%s: %s</html>",
-//                LngUtil.translatable("station.build_date"),
-//                buildDate,
-//                LngUtil.translatable("station.wear_level"),
-//                wearPercent);
-//
-//        wearInfoLabel.setText(wearText);
-//
-//        // Показываем кнопку ремонта если станция может быть отремонтирована
-//        repairButton.setVisible(station.canRepair());
-//        if (station.canRepair()) {
-//            float cost = calculateRepairCost(station);
-//            repairButton.setText(String.format("%s: %.1f M",
-//                    LngUtil.translatable("station.repair"),
-//                    cost));
-//        }
-//    }
     }
 
 

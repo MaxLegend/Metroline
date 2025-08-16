@@ -6,7 +6,8 @@ import metroline.objects.gameobjects.Station;
 import metroline.objects.gameobjects.Tunnel;
 import metroline.screens.worldscreens.WorldSandboxScreen;
 import metroline.screens.worldscreens.WorldScreen;
-import metroline.screens.worldscreens.WorldGameScreen;
+import metroline.screens.worldscreens.gameworld.GameWorldScreen;
+import metroline.util.ui.UserInterfaceUtil;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -25,7 +26,7 @@ public class SaveToImageUtil {
     public static void saveWorldToPNG(boolean isSandbox) {
         File screenshotsDir = new File("screenshots");
         if (!screenshotsDir.exists() && !screenshotsDir.mkdir()) {
-            MessageUtil.showTimedMessage("Failed to create screenshots directory", true, 4000);
+            UserInterfaceUtil.showTimedMessage("Failed to create screenshots directory", true, 4000);
             return;
         }
 
@@ -36,12 +37,12 @@ public class SaveToImageUtil {
         try {
             WorldScreen screen = isSandbox ?
                     WorldSandboxScreen.getInstance() :
-                    WorldGameScreen.getInstance();
+                    GameWorldScreen.getInstance();
 
             saveToPNG(file, screen);
-            MessageUtil.showTimedMessage("Saved: " + file.getAbsolutePath(), false, 4000);
+            UserInterfaceUtil.showTimedMessage("Saved: " + file.getAbsolutePath(), false, 4000);
         } catch (IOException ex) {
-            MessageUtil.showTimedMessage("Save Error: " + ex.getMessage(), true, 4000);
+            UserInterfaceUtil.showTimedMessage("Save Error: " + ex.getMessage(), true, 4000);
             MetroLogger.logError("Failed to save world to PNG", ex);
         }
     }
@@ -98,8 +99,8 @@ public class SaveToImageUtil {
         // Рисуем статичные элементы (сетку, фон)
         if (screen instanceof WorldSandboxScreen) {
             ((WorldSandboxScreen)screen).drawStaticWorld(g2d);
-        } else if (screen instanceof WorldGameScreen) {
-            ((WorldGameScreen)screen).drawStaticWorld(g2d);
+        } else if (screen instanceof GameWorldScreen) {
+            ((GameWorldScreen)screen).drawStaticWorld(g2d);
         }
 
         // Рисуем туннели

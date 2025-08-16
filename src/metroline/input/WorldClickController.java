@@ -6,7 +6,7 @@ import metroline.objects.enums.StationType;
 import metroline.objects.enums.TunnelType;
 import metroline.objects.gameobjects.*;
 import metroline.objects.gameobjects.Label;
-import metroline.screens.worldscreens.WorldGameScreen;
+import metroline.screens.worldscreens.gameworld.GameWorldScreen;
 import metroline.util.MetroLogger;
 
 import javax.swing.*;
@@ -24,11 +24,11 @@ public class WorldClickController {
     public static PathPoint dragOffset = null;
 
     // Ссылки
-    public WorldGameScreen screen;
+    public GameWorldScreen screen;
     private static StationColors currentStationColor = StationColors.RED;
 
 
-    public WorldClickController(WorldGameScreen screen) {
+    public WorldClickController(GameWorldScreen screen) {
         this.screen = screen;
     }
     /*********************************
@@ -58,11 +58,11 @@ public class WorldClickController {
         }
     }
     public void handleAltShiftClick(int x, int y) {
-        Station station = WorldGameScreen.getInstance().getWorld().getStationAt(x, y);
+        Station station = GameWorldScreen.getInstance().getWorld().getStationAt(x, y);
         if (station != null && (station.getType() != StationType.DESTROYED ||station.getType() != StationType.PLANNED || station.getType() != StationType.BUILDING) ) {
-            GameWorld gameWorld = (GameWorld) WorldGameScreen.getInstance().getWorld();
+            GameWorld gameWorld = (GameWorld) GameWorldScreen.getInstance().getWorld();
             gameWorld.startDestroyingStation(station);
-            WorldGameScreen.getInstance().repaint();
+            GameWorldScreen.getInstance().repaint();
         }
     }
 
@@ -75,7 +75,7 @@ public class WorldClickController {
      * Alt+Click - переключение между PLANNED и BUILDING
      */
     public void handleAltClick(int x, int y) {
-        GameWorld world = (GameWorld) WorldGameScreen.getInstance().getWorld();
+        GameWorld world = (GameWorld) GameWorldScreen.getInstance().getWorld();
         Station station = world.getStationAt(x, y);
 
         if (station != null && station.getType() == StationType.PLANNED) {
@@ -87,13 +87,13 @@ public class WorldClickController {
                 station.setConstructionDate(world.getGameTime().getCurrentTimeMillis());
             }
         }
-        WorldGameScreen.getInstance().repaint();
+        GameWorldScreen.getInstance().repaint();
     }
     /**
      * Ctrl+Click - создание туннелей
      */
     public void handleCtrlClick(int x, int y) {
-        GameWorld world = (GameWorld) WorldGameScreen.getInstance().getWorld();
+        GameWorld world = (GameWorld) GameWorldScreen.getInstance().getWorld();
         Station station = world.getStationAt(x, y);
 
         if (station == null) return;
@@ -139,7 +139,7 @@ public class WorldClickController {
             }
         }
 
-        WorldGameScreen.getInstance().repaint();
+        GameWorldScreen.getInstance().repaint();
     }
 //    /**
 //     * Ctrl+Click - создание туннелей
@@ -177,7 +177,7 @@ public class WorldClickController {
      * Shift+Click - строительство/удаление станций
      */
     public void handleShiftClick(int x, int y) {
-        Station existing = WorldGameScreen.getInstance().getWorld().getStationAt(x, y);
+        Station existing = GameWorldScreen.getInstance().getWorld().getStationAt(x, y);
 
         if (existing != null) {
             handleExistingStation(existing);
@@ -236,19 +236,19 @@ public class WorldClickController {
 
         if (screen.isAltPressed) {
             // Alt+Shift - начало разрушения станции
-            GameWorld gameWorld = (GameWorld) WorldGameScreen.getInstance().getWorld();
+            GameWorld gameWorld = (GameWorld) GameWorldScreen.getInstance().getWorld();
             gameWorld.startDestroyingStation(station);
         } else {
             // Обычный Shift - изменение типа станции
             if (station.getType() == StationType.PLANNED) {
-                WorldGameScreen.getInstance().getWorld().removeStation(station);
+                GameWorldScreen.getInstance().getWorld().removeStation(station);
             } else if (station.getType() == StationType.CLOSED) {
                 station.updateType();
             } else {
                 station.setType(StationType.CLOSED);
             }
         }
-        WorldGameScreen.getInstance().repaint();
+        GameWorldScreen.getInstance().repaint();
     }
 //    private void handleExistingStation(Station station) {
 //        if (screen.isAltPressed) {
@@ -277,18 +277,18 @@ public class WorldClickController {
             return; // Нельзя строить - выходим
         }
 
-        if (WorldGameScreen.getInstance().isCPressed) {
+        if (GameWorldScreen.getInstance().isCPressed) {
             // Ctrl+C - выбор цвета
             showColorSelectionPopup(x, y);
         } else {
             // Создаем новую станцию
             Station station = new Station(
-                    WorldGameScreen.getInstance().getWorld(),
+                    GameWorldScreen.getInstance().getWorld(),
                     x, y,
                     currentStationColor,
                     StationType.PLANNED
             );
-            WorldGameScreen.getInstance().getWorld().addStation(station);
+            GameWorldScreen.getInstance().getWorld().addStation(station);
             checkForTransferStation(station);
         }
     }
@@ -302,7 +302,7 @@ public class WorldClickController {
         int newY = y - dragOffset.y;
 
         if (label.tryMoveTo(newX, newY)) {
-            WorldGameScreen.getInstance().repaint();
+            GameWorldScreen.getInstance().repaint();
         }
     }
 
@@ -329,10 +329,10 @@ public class WorldClickController {
         if (tunnel.getType() != TunnelType.PLANNED) return;
 
         // Проверяем, что новая позиция не совпадает со станцией
-        Station stationAtPos = WorldGameScreen.getInstance().getWorld().getStationAt(x, y);
+        Station stationAtPos = GameWorldScreen.getInstance().getWorld().getStationAt(x, y);
         if (stationAtPos == null) {
             tunnel.moveControlPoint(x, y);
-            WorldGameScreen.getInstance().repaint();
+            GameWorldScreen.getInstance().repaint();
         }
     }
 
@@ -340,7 +340,7 @@ public class WorldClickController {
      * Перемещение станции
      */
     private void moveStationTo(Station station, int newX, int newY) {
-        GameWorld world = (GameWorld) WorldGameScreen.getInstance().getWorld();
+        GameWorld world = (GameWorld) GameWorldScreen.getInstance().getWorld();
 
         // Удаляем из старой позиции
         world.getGameGrid()[station.getX()][station.getY()].setContent(null);
@@ -368,10 +368,10 @@ public class WorldClickController {
             }
         }
 
-        WorldGameScreen.getInstance().repaint();
+        GameWorldScreen.getInstance().repaint();
     }
     private boolean tryGameplayObject(int x, int y) {
-        GameplayUnits gameplayUnits = ((GameWorld)WorldGameScreen.getInstance().getWorld()).getGameplayUnitsAt(x, y);
+        GameplayUnits gameplayUnits = ((GameWorld) GameWorldScreen.getInstance().getWorld()).getGameplayUnitsAt(x, y);
         if (gameplayUnits != null) {
             selectObject(gameplayUnits, x, y);
             return true;
@@ -383,14 +383,14 @@ public class WorldClickController {
      */
     private boolean trySelectLabel(int x, int y) {
         // Сначала точное совпадение
-        Label label = WorldGameScreen.getInstance().getWorld().getLabelAt(x, y);
+        Label label = GameWorldScreen.getInstance().getWorld().getLabelAt(x, y);
         if (label != null) {
             selectObject(label, x, y);
             return true;
         }
 
         // Затем проверяем визуальную область
-        for (Label l : WorldGameScreen.getInstance().getWorld().getLabels()) {
+        for (Label l : GameWorldScreen.getInstance().getWorld().getLabels()) {
             if (isClickOnLabelVisualArea(l, x, y)) {
                 selectObject(l, x, y);
                 return true;
@@ -404,7 +404,7 @@ public class WorldClickController {
      * Попытка выбрать станцию
      */
     private boolean trySelectStation(int x, int y) {
-        Station station = WorldGameScreen.getInstance().getWorld().getStationAt(x, y);
+        Station station = GameWorldScreen.getInstance().getWorld().getStationAt(x, y);
         if (station != null) {
             selectObject(station, x, y);
             return true;
@@ -416,7 +416,7 @@ public class WorldClickController {
      * Попытка выбрать туннель
      */
     private boolean trySelectTunnel(int x, int y) {
-        Tunnel tunnel = WorldGameScreen.getInstance().getWorld().getTunnelAt(x, y);
+        Tunnel tunnel = GameWorldScreen.getInstance().getWorld().getTunnelAt(x, y);
         if (tunnel != null) {
             for (PathPoint p : tunnel.getPath()) {
                 if (p.getX() == x && p.getY() == y) {
@@ -435,7 +435,7 @@ public class WorldClickController {
         obj.setSelected(true);
         selectedObject = obj;
         dragOffset = new PathPoint(clickX - obj.getX(), clickY - obj.getY());
-        WorldGameScreen.getInstance().repaint();
+        GameWorldScreen.getInstance().repaint();
     }
 
     /**
@@ -476,15 +476,15 @@ public class WorldClickController {
      * Проверка границ мира
      */
     private boolean isWithinWorldBounds(int x, int y) {
-        return x >= 0 && x < WorldGameScreen.getInstance().getWorld().getWidth() &&
-                y >= 0 && y < WorldGameScreen.getInstance().getWorld().getHeight();
+        return x >= 0 && x < GameWorldScreen.getInstance().getWorld().getWidth() &&
+                y >= 0 && y < GameWorldScreen.getInstance().getWorld().getHeight();
     }
 
     /**
      * Проверка валидности позиции для станции
      */
     private boolean isPositionValidForStation(int x, int y) {
-        GameWorld world = (GameWorld) WorldGameScreen.getInstance().getWorld();
+        GameWorld world = (GameWorld) GameWorldScreen.getInstance().getWorld();
 
         // Проверяем границы мира
         if (x < 0 || x >= world.getWidth() || y < 0 || y >= world.getHeight()) {
@@ -505,7 +505,7 @@ public class WorldClickController {
      * Снятие выделения со всех объектов
      */
     private void deselectAll() {
-        GameWorld world = (GameWorld) WorldGameScreen.getInstance().getWorld();
+        GameWorld world = (GameWorld) GameWorldScreen.getInstance().getWorld();
 
         for (Station station : world.getStations()) {
             station.setSelected(false);
@@ -539,11 +539,11 @@ public class WorldClickController {
         int x = station.getX();
         int y = station.getY();
 
-        for (int ny = Math.max(0, y-1); ny < Math.min(WorldGameScreen.getInstance().getWorld().getHeight(), y+2); ny++) {
-            for (int nx = Math.max(0, x-1); nx < Math.min(WorldGameScreen.getInstance().getWorld().getWidth(), x+2); nx++) {
+        for (int ny = Math.max(0, y-1); ny < Math.min(GameWorldScreen.getInstance().getWorld().getHeight(), y+2); ny++) {
+            for (int nx = Math.max(0, x-1); nx < Math.min(GameWorldScreen.getInstance().getWorld().getWidth(), x+2); nx++) {
                 if (nx == x && ny == y) continue;
 
-                Station neighbor = WorldGameScreen.getInstance().getWorld().getStationAt(nx, ny);
+                Station neighbor = GameWorldScreen.getInstance().getWorld().getStationAt(nx, ny);
                 if (neighbor != null && !neighbor.getColor().equals(station.getColor())) {
                     station.setType(StationType.TRANSFER);
                     neighbor.setType(StationType.TRANSFER);
@@ -557,7 +557,7 @@ public class WorldClickController {
      * Проверка прогресса строительства
      */
     public void checkConstructionProgress() {
-        GameWorld world = (GameWorld) WorldGameScreen.getInstance().getWorld();
+        GameWorld world = (GameWorld) GameWorldScreen.getInstance().getWorld();
 
         // Создаем копии списков для безопасной итерации
         List<Station> stationsToCheck = new ArrayList<>(world.getStations());
@@ -572,7 +572,7 @@ public class WorldClickController {
                         completeConstruction(station);
                     } else if (station.getType() == StationType.DESTROYED && progress <= 0f) {
                         world.removeStation(station);
-                        WorldGameScreen.getInstance().repaint();
+                        GameWorldScreen.getInstance().repaint();
                     }
                 }
             } catch (Exception e) {
@@ -589,7 +589,7 @@ public class WorldClickController {
                         completeConstruction(tunnel);
                     } else if (tunnel.getType() == TunnelType.DESTROYED && progress <= 0f) {
                         world.removeTunnel(tunnel);
-                        WorldGameScreen.getInstance().repaint();
+                        GameWorldScreen.getInstance().repaint();
                     }
                 }
             } catch (Exception e) {
@@ -604,10 +604,10 @@ public class WorldClickController {
     public void completeConstruction(Station station) {
         if (station.getType() == StationType.BUILDING) {
             station.updateType();
-            if (WorldGameScreen.getInstance().getWorld() instanceof GameWorld world) {
+            if (GameWorldScreen.getInstance().getWorld() instanceof GameWorld world) {
                 world.updateConnectedTunnels(station);
             }
-            WorldGameScreen.getInstance().repaint();
+            GameWorldScreen.getInstance().repaint();
         }
     }
 
@@ -621,7 +621,7 @@ public class WorldClickController {
                     tunnel.getEnd().getType() != StationType.PLANNED &&
                     tunnel.getEnd().getType() != StationType.BUILDING) {
                 tunnel.setType(TunnelType.ACTIVE);
-                WorldGameScreen.getInstance().repaint();
+                GameWorldScreen.getInstance().repaint();
             }
         }
     }
@@ -630,9 +630,9 @@ public class WorldClickController {
      * Расчет стоимости станции
      */
     private float calculateStationCost(Station station) {
-        float totalCost = GameConstants.STATION_BASE_COST * WorldGameScreen.getInstance().getWorld().getWorldTile(station.getX(), station.getY()).getPerm();
+        float totalCost = GameConstants.STATION_BASE_COST * GameWorldScreen.getInstance().getWorld().getWorldTile(station.getX(), station.getY()).getPerm();
 
-        for (Tunnel tunnel : WorldGameScreen.getInstance().getWorld().getTunnels()) {
+        for (Tunnel tunnel : GameWorldScreen.getInstance().getWorld().getTunnels()) {
             if ((tunnel.getStart() == station || tunnel.getEnd() == station) &&
                     tunnel.getType() == TunnelType.PLANNED) {
                 totalCost += tunnel.getLength() * GameConstants.TUNNEL_COST_PER_SEGMENT;
@@ -646,7 +646,7 @@ public class WorldClickController {
      * Показ выбора цвета
      */
     public void showColorSelectionPopup(int x, int y) {
-        Window parentWindow = SwingUtilities.getWindowAncestor(WorldGameScreen.getInstance());
+        Window parentWindow = SwingUtilities.getWindowAncestor(GameWorldScreen.getInstance());
         JDialog colorDialog = new JDialog(parentWindow);
         colorDialog.setUndecorated(true);
         colorDialog.setModal(false);
@@ -682,9 +682,9 @@ public class WorldClickController {
         colorDialog.add(mainPanel);
 
         // Рассчитываем позицию как для InfoWindow
-        Point screenPoint = WorldGameScreen.getInstance().worldToScreen(x, y);
+        Point screenPoint = GameWorldScreen.getInstance().worldToScreen(x, y);
         Point windowPoint = new Point(screenPoint);
-        SwingUtilities.convertPointToScreen(windowPoint, WorldGameScreen.getInstance());
+        SwingUtilities.convertPointToScreen(windowPoint, GameWorldScreen.getInstance());
         colorDialog.setLocation(windowPoint.x + 20, windowPoint.y + 20);
 
         // Обработчики закрытия
@@ -729,11 +729,11 @@ public class WorldClickController {
         colorBtn.addActionListener(e -> {
             currentStationColor = StationColors.fromColor(colorButton);
             Station newStation = new Station(
-                    WorldGameScreen.getInstance().getWorld(),
+                    GameWorldScreen.getInstance().getWorld(),
                     x, y, StationColors.fromColor(colorButton), StationType.PLANNED
             );
-            WorldGameScreen.getInstance().getWorld().addStation(newStation);
-            WorldGameScreen.getInstance().repaint();
+            GameWorldScreen.getInstance().getWorld().addStation(newStation);
+            GameWorldScreen.getInstance().repaint();
             dialog.dispose();
         });
 

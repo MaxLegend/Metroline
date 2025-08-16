@@ -18,60 +18,7 @@ public class StyleUtil {
         return label;
     }
 
-    public static JSlider createMetrolineSlider(int min, int max, int value, String label, JLabel valueLabel) {
-        JSlider slider = new JSlider(min, max, value) {
-            @Override
-            public void updateUI() {
-                setUI(new StyleUtil.MetrolineSlider(this));
-            }
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                if (hasFocus()) {
-                    Graphics2D g2 = (Graphics2D) g.create();
-                    g2.setColor(new Color(0, 0, 0, 0)); // Прозрачный цвет
-                    g2.drawRect(0, 0, getWidth()-1, getHeight()-1);
-                    g2.dispose();
-                }
-        }
-        };
 
-        slider.setBackground(StyleUtil.BACKGROUND_COLOR);
-        slider.setForeground(StyleUtil.FOREGROUND_COLOR);
-        slider.setMajorTickSpacing(50);
-        slider.setMinorTickSpacing(10);
-        slider.setFont(new Font("Arial", Font.PLAIN, 20));
-        slider.setFocusable(false);
-        slider.setSnapToTicks(true);
-        slider.addChangeListener(e -> {
-            JSlider source = (JSlider)e.getSource();
-            if (!source.getValueIsAdjusting()) {
-                int value2 = source.getValue();
-                int step = 10;
-                int adjustedValue = (value2 / step) * step;
-                if (adjustedValue != value2) {
-                    source.setValue(adjustedValue);
-                }
-            }
-        });
-        slider.setModel(new DefaultBoundedRangeModel(value, 0, min, max) {
-            @Override
-            public void setValue(int n) {
-                super.setValue((n / 10) * 10); // Округляем до ближайшего шага 10
-            }
-        });
-        slider.setUI(new StyleUtil.MetrolineSlider(slider));
-
-        valueLabel.setText(slider.getValue() + label);
-        slider.addChangeListener(e -> {
-            JSlider source = (JSlider)e.getSource();
-            if (!source.getValueIsAdjusting()) {
-                valueLabel.setText( source.getValue() + label);
-            }
-        });
-
-        return slider;
-    }
 
     public static MetrolineCheckbox createMetrolineCheckBox(String text, String tooltipText) {
         MetrolineCheckbox checkBox = new MetrolineCheckbox(text,tooltipText);
@@ -162,74 +109,7 @@ public class StyleUtil {
         });
         return button;
     }
-    public static class MetrolineSlider extends BasicSliderUI {
-        private static final int TRACK_HEIGHT = 4;
-        private static final int THUMB_WIDTH = 12;
-        private static final int THUMB_HEIGHT = 16;
 
-        public MetrolineSlider(JSlider slider) {
-            super(slider);
-        }
-
-
-        @Override
-        protected Dimension getThumbSize() {
-            return new Dimension(THUMB_WIDTH, THUMB_HEIGHT);
-        }
-        protected void scrollDueToClickInTrack(int direction) {
-
-            int value = slider.getValue();
-
-            if (slider.getOrientation() == JSlider.HORIZONTAL) {
-                value = this.valueForXPosition(slider.getMousePosition().x);
-            } else if (slider.getOrientation() == JSlider.VERTICAL) {
-                value = this.valueForYPosition(slider.getMousePosition().y);
-            }
-            slider.setValue(value);
-        }
-        @Override
-        public void paintTrack(Graphics g) {
-            Graphics2D g2d = (Graphics2D) g;
-            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-            Rectangle trackBounds = trackRect;
-            int trackTop = trackBounds.y + (trackBounds.height - TRACK_HEIGHT) / 2;
-
-            // Фон трека (полоска)
-            g2d.setColor(new Color(60, 60, 60)); // Темный серый
-            g2d.fillRect(trackBounds.x, trackTop, trackBounds.width, TRACK_HEIGHT);
-
-            // Заполненная часть трека
-            int fillWidth = thumbRect.x + (thumbRect.width / 2) - trackBounds.x;
-            g2d.setColor(new Color(90, 90, 90)); // Серый
-            g2d.fillRect(trackBounds.x, trackTop, fillWidth, TRACK_HEIGHT);
-        }
-
-        @Override
-        public void paintThumb(Graphics g) {
-            Graphics2D g2d = (Graphics2D) g;
-            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-            // Прямоугольный ползунок
-            g2d.setColor(new Color(120, 120, 120)); // Светло-серый
-            g2d.fillRect(thumbRect.x, thumbRect.y, thumbRect.width, thumbRect.height);
-        }
-
-        @Override
-        public void paintTicks(Graphics g) {
-            // Убираем деления для минимализма
-        }
-
-        @Override
-        public void paintLabels(Graphics g) {
-            super.paintLabels(g);
-        }
-
-        @Override
-        public void paintFocus(Graphics g) {}
-
-
-    }
 
 
 

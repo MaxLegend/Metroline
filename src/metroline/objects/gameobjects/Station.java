@@ -6,6 +6,7 @@ import metroline.core.world.tiles.WorldTile;
 import metroline.objects.enums.Direction;
 import metroline.objects.enums.StationColors;
 import metroline.objects.enums.StationType;
+import metroline.screens.worldscreens.gameworld.GameWorldScreen;
 
 import java.awt.*;
 import java.util.EnumMap;
@@ -43,11 +44,6 @@ public class Station extends GameObject {
         this.constructionDate = world.getGameTime().getCurrentTimeMillis();
     }
 
-    public boolean isConstructionDateVisible() {
-       // setConstructionDate(getWorld().getGameTime().getCurrentTimeMillis());
-        return getType() != StationType.PLANNED;
-    }
-
 
 
     public boolean isLowIncomeStations() {
@@ -59,6 +55,15 @@ public class Station extends GameObject {
                  this.getType() == StationType.CLOSED ||
                  this.getType() == StationType.DESTROYED ||
                  this.getType() == StationType.PLANNED;
+    }
+
+    public float calculateRepairCost(Station station) {
+        float baseCost = GameConstants.STATION_REPAIR_BASE_COST;
+        float wearFactor = station.getWearLevel(); // 0-1
+        WorldTile tile = ((GameWorld) GameWorldScreen.getInstance().getWorld())
+                .getWorldTile(station.getX(), station.getY());
+
+        return baseCost * wearFactor * (1 + tile.getPerm());
     }
     /**
      * Gets connected stations with their directions

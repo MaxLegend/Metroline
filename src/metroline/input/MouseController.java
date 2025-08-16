@@ -1,9 +1,8 @@
 package metroline.input;
 
-import metroline.MainFrame;
 import metroline.objects.gameobjects.GameObject;
 import metroline.objects.gameobjects.PathPoint;
-import metroline.screens.worldscreens.WorldGameScreen;
+import metroline.screens.worldscreens.gameworld.GameWorldScreen;
 import metroline.screens.worldscreens.WorldSandboxScreen;
 import metroline.screens.worldscreens.WorldScreen;
 
@@ -103,7 +102,7 @@ public class MouseController extends MouseAdapter {
                 sbScreen.sandboxClickHandler.handleEditStationName(worldPos.x, worldPos.y);
                 sbScreen.sandboxClickHandler.handleRemoveTunnel(worldPos.x, worldPos.y);
             }
-        } else if (screen instanceof WorldGameScreen gScreen) {
+        } else if (screen instanceof GameWorldScreen gScreen) {
             GameObject selectedObject = gScreen.getWorld().getGameObjectAt(worldPos.x, worldPos.y);
             gScreen.parent.showInfoPanel(selectedObject, worldPos.x, worldPos.y);
         }
@@ -130,7 +129,7 @@ public class MouseController extends MouseAdapter {
 
         if (screen instanceof WorldSandboxScreen sbScreen) {
             sbScreen.handleClick(worldPos.x, worldPos.y);
-        } else if (screen instanceof WorldGameScreen gsScreen) {
+        } else if (screen instanceof GameWorldScreen gsScreen) {
             gsScreen.handleWorldClick(worldPos.x, worldPos.y);
         }
     }
@@ -159,8 +158,8 @@ public class MouseController extends MouseAdapter {
         if (worldPos != null) {
             if (screen instanceof WorldSandboxScreen sbscreen) {
                 sbscreen.sandboxClickHandler.handleEditDrag(worldPos.x, worldPos.y);
-            } else if (screen instanceof WorldGameScreen gamescreen) {
-                gamescreen.gameClickHandler.handleEditDrag(worldPos.x, worldPos.y);
+            } else if (screen instanceof GameWorldScreen gamescreen) {
+                gamescreen.worldClickController.handleEditDrag(worldPos.x, worldPos.y);
             }
         }
     }
@@ -185,8 +184,8 @@ public class MouseController extends MouseAdapter {
         if (screen instanceof WorldSandboxScreen sbscreen) {
             sbscreen.sandboxClickHandler.selectedObject = null;
             SandboxClickHandler.dragOffset = null;
-        } else if (screen instanceof WorldGameScreen gScreen) {
-            gScreen.gameClickHandler.selectedObject = null;
+        } else if (screen instanceof GameWorldScreen gScreen) {
+            gScreen.worldClickController.selectedObject = null;
             WorldClickController.dragOffset = null;
         }
     }

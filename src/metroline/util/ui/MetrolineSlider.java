@@ -10,7 +10,7 @@ import java.text.DecimalFormat;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class FloatSlider extends JComponent implements SwingConstants {
+public class MetrolineSlider extends JComponent implements SwingConstants {
 
 
     private String tooltipText;
@@ -32,7 +32,7 @@ public class FloatSlider extends JComponent implements SwingConstants {
     private ChangeEvent changeEvent = new ChangeEvent(this);
     private EventListenerList listenerList = new EventListenerList();
 
-    public FloatSlider(String tooltipText,float min, float max, float value, float step) {
+    public MetrolineSlider(String tooltipText,float min, float max, float value, float step) {
         this.minValue = min;
         this.maxValue = max;
         this.stepSize = step;
@@ -210,15 +210,15 @@ public class FloatSlider extends JComponent implements SwingConstants {
     }
     @Override
     public void updateUI() {
-        setUI(FloatSliderUI.createUI(this));
+        setUI(MetrolineSliderUI.createUI(this));
     }
 
-    public void setUI(FloatSliderUI ui) {
+    public void setUI(MetrolineSliderUI ui) {
         super.setUI(ui);
     }
 
-    public FloatSliderUI getUI() {
-        return (FloatSliderUI) ui;
+    public MetrolineSliderUI getUI() {
+        return (MetrolineSliderUI) ui;
     }
 
     public float getMinValue() {

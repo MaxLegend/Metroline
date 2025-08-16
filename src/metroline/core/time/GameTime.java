@@ -103,14 +103,7 @@ public class GameTime implements Serializable {
 
     public synchronized double getTimeScale() { return timeScale; }
     public synchronized boolean isPaused() { return paused; }
-//    public String formatDate(long timeMillis) {
-//        // Конвертируем игровое время в читаемую дату
-//        long days = TimeUnit.MILLISECONDS.toDays(timeMillis);
-//        int year = (int)(days / 365) + 1;
-//        int month = (int)((days % 365) / 30) + 1;
-//        int day = (int)(days % 30) + 1;
-//
-//        return String.format("%02d.%02d.%02d", day, month, year);
+
 //    }
     /**
      * Возвращает текущее игровое время в миллисекундах (epoch).
@@ -126,13 +119,6 @@ public class GameTime implements Serializable {
      */
     public synchronized Instant getCurrentInstant() { return Instant.ofEpochMilli(epochMillis); }
 
-    /**
-     * Форматированная строка времени для HUD.
-     */
-//    public synchronized String getDateTimeString() {
-//        Instant inst = Instant.ofEpochMilli(epochMillis);
-//        return LocalDateTime.ofInstant(inst, ZoneId.systemDefault()).format(DISPLAY_FMT);
-//    }
     /**
      * Проверяет, наступила ли новая игровая минута
      * @return true если минута изменилась с последней проверки

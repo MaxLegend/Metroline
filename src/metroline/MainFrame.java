@@ -18,8 +18,9 @@ import metroline.screens.MenuScreen;
 import metroline.screens.panel.InfoWindow;
 import metroline.screens.panel.LinesLegendWindow;
 import metroline.screens.worldscreens.WorldSettingsScreen;
-import metroline.screens.worldscreens.WorldGameScreen;
+import metroline.screens.worldscreens.gameworld.GameWorldScreen;
 import metroline.screens.worldscreens.WorldSandboxScreen;
+
 import metroline.util.LngUtil;
 import metroline.util.MetroLogger;
 import metroline.util.ui.StyleUtil;
@@ -48,7 +49,7 @@ public class MainFrame extends JFrame {
 
     public LinesLegendWindow legendWindow;
 
-   public static boolean showPaymentZones = false;
+    public static boolean showPaymentZones = false;
     public static boolean showPassengerZones = false;
 
     private JButton legendButton;
@@ -82,7 +83,7 @@ public class MainFrame extends JFrame {
         if (screens.isEmpty()) {
             screens.put(MAIN_MENU_SCREEN_NAME, new MenuScreen(this));
             screens.put(SANDBOX_SCREEN_NAME, new WorldSandboxScreen(this));
-            screens.put(GAME_SCREEN_NAME, new WorldGameScreen(this));
+            screens.put(GAME_SCREEN_NAME, new GameWorldScreen(this));
             screens.put(WORLD_SETTINGS_SCREEN_NAME, new WorldSettingsScreen(this));
         }
         initializeWindow(false);
@@ -93,34 +94,34 @@ public class MainFrame extends JFrame {
         return INSTANCE;
     }
     private void initializeWindow(boolean preserveState) {
-       try {
+        try {
 
-           GameScreen previousScreen = currentScreen;
-           String activeScreenName = getActiveScreenName();
-           MetroLogger.logInfo("Screen mode: " + (isFullscreen ? "Fullscreen" : "Windowed"));
-           dispose();
+            GameScreen previousScreen = currentScreen;
+            String activeScreenName = getActiveScreenName();
+            MetroLogger.logInfo("Screen mode: " + (isFullscreen ? "Fullscreen" : "Windowed"));
+            dispose();
 
-           if (isFullscreen) {
+            if (isFullscreen) {
 
-               setupFullscreenWindow();
-           } else {
+                setupFullscreenWindow();
+            } else {
 
-               setupWindowedMode();
-           }
+                setupWindowedMode();
+            }
 
-           initUI();
+            initUI();
 
-           if (preserveState && previousScreen != null) {
-               screens.put(activeScreenName, previousScreen);
-               switchScreen(activeScreenName);
+            if (preserveState && previousScreen != null) {
+                screens.put(activeScreenName, previousScreen);
+                switchScreen(activeScreenName);
 
-           } else {
-               switchScreen(MAIN_MENU_SCREEN_NAME);
-           }
+            } else {
+                switchScreen(MAIN_MENU_SCREEN_NAME);
+            }
 
-           setVisible(true);
-       } catch (Exception e) {
-           MetroLogger.logError( "Failed changed screen mode!", e);
+            setVisible(true);
+        } catch (Exception e) {
+            MetroLogger.logError( "Failed changed screen mode!", e);
         }
     }
 
@@ -246,15 +247,15 @@ public class MainFrame extends JFrame {
     private void toggleLegendWindow() {
         if (legendWindow == null) {
             legendWindow = new LinesLegendWindow(this);
-            if (currentScreen instanceof WorldGameScreen) {
-                ((WorldGameScreen)currentScreen).setLegendWindow(legendWindow);
+            if (currentScreen instanceof GameWorldScreen) {
+                ((GameWorldScreen)currentScreen).setLegendWindow(legendWindow);
             }
         }
         if (legendWindow.isVisible()) {
             legendWindow.hideWindow();
         } else {
-            if (currentScreen instanceof WorldGameScreen) {
-                WorldGameScreen screen = (WorldGameScreen) currentScreen;
+            if (currentScreen instanceof GameWorldScreen) {
+                GameWorldScreen screen = (GameWorldScreen) currentScreen;
                 if (screen.getWorld() instanceof GameWorld) {
                     legendWindow.updateLines((GameWorld) screen.getWorld());
                 }
@@ -264,16 +265,16 @@ public class MainFrame extends JFrame {
     }
     public void togglePaymentZones() {
         showPaymentZones = !showPaymentZones;
-        if (currentScreen instanceof WorldGameScreen) {
-            ((WorldGameScreen)currentScreen).invalidateCache();
+        if (currentScreen instanceof GameWorldScreen) {
+            ((GameWorldScreen)currentScreen).invalidateCache();
             currentScreen.repaint();
         }
     }
 
     public void togglePassengerZones() {
         showPassengerZones = !showPassengerZones;
-        if (currentScreen instanceof WorldGameScreen) {
-            ((WorldGameScreen)currentScreen).invalidateCache();
+        if (currentScreen instanceof GameWorldScreen) {
+            ((GameWorldScreen)currentScreen).invalidateCache();
             currentScreen.repaint();
         }
     }
@@ -374,8 +375,8 @@ public class MainFrame extends JFrame {
                 sandboxWorld.getGameTime().togglePause();
             }
         }
-        if (currentScreen instanceof WorldGameScreen) {
-            GameWorld gameWorld = (GameWorld) ((WorldGameScreen) currentScreen).getWorld();
+        if (currentScreen instanceof GameWorldScreen) {
+            GameWorld gameWorld = (GameWorld) ((GameWorldScreen) currentScreen).getWorld();
             if (gameWorld != null && gameWorld.getGameTime() != null) {
                 gameWorld.getGameTime().togglePause();
             }
@@ -397,8 +398,8 @@ public class MainFrame extends JFrame {
     }
 
     private void initTimeUpdater() {
-    timeUpdateTimer = new Timer(33, e -> updateTimeDisplay());
-    timeUpdateTimer.start();
+        timeUpdateTimer = new Timer(33, e -> updateTimeDisplay());
+        timeUpdateTimer.start();
     }
 
     private void updateTimeDisplay() {
@@ -407,18 +408,18 @@ public class MainFrame extends JFrame {
             if (currentScreen instanceof WorldSandboxScreen) {
                 SandboxWorld world = (SandboxWorld) ((WorldSandboxScreen) currentScreen).getWorld();
                 if (world != null && world.getGameTime() != null) newTime = world.getGameTime().getDateTimeString();
-            } else if (currentScreen instanceof WorldGameScreen) {
-                GameWorld world =  ((GameWorld)((WorldGameScreen)currentScreen).getWorld());
+            } else if (currentScreen instanceof GameWorldScreen) {
+                GameWorld world =  ((GameWorld)((GameWorldScreen)currentScreen).getWorld());
                 if (world != null && world.getGameTime() != null) newTime = world.getGameTime().getDateTimeString();
                 GameTime gameTime = world.getGameTime();
 
-               if (gameTime.checkHourPassed()) {
+                if (gameTime.checkHourPassed()) {
                     world.updateStationsRevenue();
                     world.updateStationsWear();
                     world.calculateStationsUpkeep();
-                   world.calculateTunnelsUpkeep();
+                    world.calculateTunnelsUpkeep();
                 }
-               //
+                //
 
             }
 
@@ -439,8 +440,8 @@ public class MainFrame extends JFrame {
         if (currentScreen instanceof WorldSandboxScreen) {
             ((WorldSandboxScreen)currentScreen).getWorld().saveWorld();
         }
-        if (currentScreen instanceof WorldGameScreen) {
-           ((WorldGameScreen)currentScreen).getWorld().saveWorld();
+        if (currentScreen instanceof GameWorldScreen) {
+            ((GameWorldScreen)currentScreen).getWorld().saveWorld();
         }
         currentScreen.requestFocusInWindow();
     }
@@ -452,8 +453,8 @@ public class MainFrame extends JFrame {
         if (currentScreen instanceof WorldSandboxScreen) {
             ((WorldSandboxScreen)currentScreen).getWorld().loadWorld();
         }
-        if (currentScreen instanceof WorldGameScreen) {
-            ((WorldGameScreen)currentScreen).getWorld().loadWorld();
+        if (currentScreen instanceof GameWorldScreen) {
+            ((GameWorldScreen)currentScreen).getWorld().loadWorld();
         }
     }
 
@@ -486,7 +487,7 @@ public class MainFrame extends JFrame {
         if (selectedObject == null ) {
             return;
         }
-        if(currentScreen instanceof WorldGameScreen screen) {
+        if(currentScreen instanceof GameWorldScreen screen) {
             // Получаем экранные координаты
             Point screenPoint = screen.worldToScreen(worldX, worldY);
             Point windowPoint = new Point(screenPoint);

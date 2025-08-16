@@ -1,4 +1,4 @@
-package metroline.util;
+package metroline.util.serialize;
 
 import metroline.objects.enums.*;
 import metroline.objects.gameobjects.*;

@@ -1,11 +1,9 @@
 package metroline.core.world.tiles;
 
+
 import metroline.MainFrame;
-import metroline.screens.worldscreens.WorldGameScreen;
-import metroline.screens.worldscreens.WorldSandboxScreen;
 
 import java.awt.*;
-import java.util.Random;
 
 /**
  * World tile that represents terrain with building permissions

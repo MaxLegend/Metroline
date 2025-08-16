@@ -13,8 +13,10 @@ import metroline.objects.enums.TunnelType;
 import metroline.MainFrame;
 import metroline.objects.gameobjects.Label;
 import metroline.screens.panel.LinesLegendWindow;
-import metroline.screens.worldscreens.WorldGameScreen;
+import metroline.screens.worldscreens.gameworld.GameWorldScreen;
 import metroline.util.*;
+import metroline.util.serialize.MetroSerializer;
+import metroline.util.ui.UserInterfaceUtil;
 
 import java.awt.*;
 import java.io.*;
@@ -200,8 +202,11 @@ public class GameWorld extends World {
         this.legendWindow = legendWindow;
     }
     public void updateLegendWindow() {
-        if (mainFrame != null && mainFrame.legendWindow != null) {
-            mainFrame.legendWindow.updateLegend(this);
+        if (screen instanceof GameWorldScreen) {
+            GameWorldScreen gameScreen = (GameWorldScreen) screen;
+            if (gameScreen.parent != null && gameScreen.parent.legendWindow != null) {
+                gameScreen.parent.legendWindow.updateLegend(this);
+            }
         }
     }
     public PathPoint findFreePositionNear(int x, int y, String name) {
@@ -558,13 +563,13 @@ public class GameWorld extends World {
     public void addGameplayUnits(GameplayUnits obj) {
         gameplayUnits.add(obj);
         gameGrid[obj.getX()][obj.getY()].setContent(obj);
-        WorldGameScreen.getInstance().invalidateCache();
+        GameWorldScreen.getInstance().invalidateCache();
     }
 
     public void removeGameplayUnits(GameplayUnits obj) {
         gameplayUnits.remove(obj);
         gameGrid[obj.getX()][obj.getY()].setContent(null);
-        WorldGameScreen.getInstance().invalidateCache();
+        GameWorldScreen.getInstance().invalidateCache();
     }
     @Override
     public World getWorld() {
@@ -670,10 +675,10 @@ public class GameWorld extends World {
             serializer.saveWorld(this, SAVE_FILE);
 
             MetroLogger.logInfo("World successfully saved");
-            MessageUtil.showTimedMessage(LngUtil.translatable("world.saved"), false, 2000);
+            UserInterfaceUtil.showTimedMessage(LngUtil.translatable("world.saved"), false, 2000);
         } catch (IOException ex) {
             MetroLogger.logError("Failed to save world", ex);
-            MessageUtil.showTimedMessage(LngUtil.translatable("world.not_saved") + ex.getMessage(), true, 2000);
+            UserInterfaceUtil.showTimedMessage(LngUtil.translatable("world.not_saved") + ex.getMessage(), true, 2000);
         }
     }
     /**
@@ -735,7 +740,7 @@ public class GameWorld extends World {
             }
 
             MetroLogger.logInfo("World successfully loaded");
-            MessageUtil.showTimedMessage(LngUtil.translatable("world.loaded"), false, 2000);
+            UserInterfaceUtil.showTimedMessage(LngUtil.translatable("world.loaded"), false, 2000);
             return true;
         } catch (java.io.FileNotFoundException ex) {
             // Файл не найден - это нормально при первом запуске
@@ -743,7 +748,7 @@ public class GameWorld extends World {
         } catch (Exception ex) {
             ex.printStackTrace();
             MetroLogger.logError("Failed to load world", ex);
-            MessageUtil.showTimedMessage(LngUtil.translatable("world.not_loaded") + ex.getMessage(), true, 2000);
+            UserInterfaceUtil.showTimedMessage(LngUtil.translatable("world.not_loaded") + ex.getMessage(), true, 2000);
         }
         return false;
     }

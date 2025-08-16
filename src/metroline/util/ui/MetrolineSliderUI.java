@@ -10,7 +10,7 @@ import java.awt.geom.RoundRectangle2D;
 
 import static javax.swing.SwingConstants.HORIZONTAL;
 
-public  class FloatSliderUI extends ComponentUI {
+public  class MetrolineSliderUI extends ComponentUI {
     private static final int TRACK_HEIGHT = 4;
     private static final int THUMB_WIDTH = 12;
     private static final int THUMB_HEIGHT = 16;
@@ -19,15 +19,15 @@ public  class FloatSliderUI extends ComponentUI {
     private static final Color THUMB_COLOR = new Color(120, 120, 120);
     private static final Font VALUE_FONT = new Font("SansSerif", Font.BOLD, 11);
 
-    private FloatSlider slider;
+    private MetrolineSlider slider;
     private Rectangle thumbRect = new Rectangle();
     private boolean isDragging = false;
 
     public static ComponentUI createUI(JComponent c) {
-        return new FloatSliderUI((FloatSlider) c);
+        return new MetrolineSliderUI((MetrolineSlider) c);
     }
 
-    public FloatSliderUI(FloatSlider slider) {
+    public MetrolineSliderUI(MetrolineSlider slider) {
         this.slider = slider;
         thumbRect.width = THUMB_WIDTH;
         thumbRect.height = THUMB_HEIGHT;
@@ -96,10 +96,10 @@ public  class FloatSliderUI extends ComponentUI {
 
     @Override
     public void installUI(JComponent c) {
-        configureSlider((FloatSlider) c);
+        configureSlider((MetrolineSlider) c);
     }
 
-    private void configureSlider(FloatSlider slider) {
+    private void configureSlider(MetrolineSlider slider) {
         slider.setOpaque(false);
         slider.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
     }

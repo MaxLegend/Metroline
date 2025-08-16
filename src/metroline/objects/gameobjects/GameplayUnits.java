@@ -2,7 +2,6 @@ package metroline.objects.gameobjects;
 
 import metroline.core.world.World;
 import metroline.objects.enums.GameplayUnitsType;
-import metroline.screens.worldscreens.WorldGameScreen;
 
 import javax.imageio.ImageIO;
 import java.awt.*;

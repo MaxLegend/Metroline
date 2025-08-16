@@ -1,9 +1,9 @@
-package metroline.util;
+package metroline.util.ui;
 
 import javax.swing.*;
 import java.awt.*;
 
-public class MessageUtil {
+public class UserInterfaceUtil {
     /**
      * Показывает временное сообщение (исчезает через 2 секунды)
      * @param message Текст сообщения
