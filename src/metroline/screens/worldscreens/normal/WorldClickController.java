@@ -1,4 +1,4 @@
-package metroline.input;
+package metroline.screens.worldscreens.normal;
 
 import metroline.core.world.GameWorld;
 import metroline.objects.enums.StationColors;
@@ -6,7 +6,6 @@ import metroline.objects.enums.StationType;
 import metroline.objects.enums.TunnelType;
 import metroline.objects.gameobjects.*;
 import metroline.objects.gameobjects.Label;
-import metroline.screens.worldscreens.GameWorldScreen;
 import metroline.util.MetroLogger;
 
 import javax.swing.*;

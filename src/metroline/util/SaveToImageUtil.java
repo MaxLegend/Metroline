@@ -6,7 +6,7 @@ import metroline.objects.gameobjects.Station;
 import metroline.objects.gameobjects.Tunnel;
 import metroline.screens.worldscreens.sandbox.SandboxWorldScreen;
 import metroline.screens.worldscreens.WorldScreen;
-import metroline.screens.worldscreens.GameWorldScreen;
+import metroline.screens.worldscreens.normal.GameWorldScreen;
 import metroline.util.ui.UserInterfaceUtil;
 
 import javax.imageio.ImageIO;

@@ -1,7 +1,7 @@
 package metroline.screens;
 
 import metroline.MainFrame;
-import metroline.screens.worldscreens.GameWorldScreen;
+import metroline.screens.worldscreens.normal.GameWorldScreen;
 import metroline.screens.worldscreens.sandbox.SandboxWorldScreen;
 import metroline.util.LngUtil;
 import metroline.util.ui.StyleUtil;

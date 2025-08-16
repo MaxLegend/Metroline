@@ -7,7 +7,7 @@ import metroline.objects.gameobjects.GameConstants;
 import metroline.objects.gameobjects.GameplayUnits;
 import metroline.objects.gameobjects.Station;
 import metroline.objects.gameobjects.Tunnel;
-import metroline.screens.worldscreens.GameWorldScreen;
+import metroline.screens.worldscreens.normal.GameWorldScreen;
 import metroline.screens.worldscreens.WorldScreen;
 import metroline.util.LngUtil;
 import metroline.util.MathUtil;

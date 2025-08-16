@@ -1,13 +1,12 @@
-package metroline.screens.worldscreens;
+package metroline.screens.worldscreens.normal;
 
 import metroline.core.world.GameWorld;
-import metroline.input.WorldClickController;
 import metroline.objects.gameobjects.*;
 import metroline.MainFrame;
 import metroline.objects.gameobjects.Label;
 import metroline.screens.panel.InfoWindow;
-import metroline.screens.panel.LinesLegendWindow;
 import metroline.screens.render.StationRender;
+import metroline.screens.worldscreens.CachedWorldScreen;
 
 import javax.swing.*;
 import java.awt.*;

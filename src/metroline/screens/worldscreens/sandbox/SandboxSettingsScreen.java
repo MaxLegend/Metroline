@@ -67,14 +67,14 @@ public class SandboxSettingsScreen extends GameScreen {
         widthSlider = createWorldSizeSlider(
                 "world.width",
                 "width_world_slider_desc",
-                20, 200, 100
+                20, 200, 40
         );
         mainPanel.add(createSliderPanel(widthSlider), gbc);
 
         heightSlider = createWorldSizeSlider(
                 "world.height",
                 "height_world_slider_desc",
-                20, 200, 100
+                20, 200, 40
         );
         mainPanel.add(createSliderPanel(heightSlider), gbc);
 

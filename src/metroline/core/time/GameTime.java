@@ -28,11 +28,11 @@ import java.util.concurrent.TimeUnit;
  */
 public class GameTime implements Serializable {
     private static final long serialVersionUID = 1L;
-
+    private static GameTime INSTANCE;
     // Сериализуемые поля (сохраняются в файл)
     // Сериализуемые поля
     private long epochMillis;        // текущее игровое время (мс с эпохи)
-    private double timeScale = 1002000.0; // ускорение (1.0 = реальное время)
+    private double timeScale = 120.0; // ускорение (1.0 = реальное время)
     private boolean paused = true;   // флаг паузы
 
     // transient поля
@@ -60,6 +60,9 @@ public class GameTime implements Serializable {
         // timer не создаём здесь, чтобы не запускать таймер вне контекста UI/мода.
     }
 
+    public static synchronized GameTime getInstance() {
+        return INSTANCE;
+    }
     /**
      * Запускает игровой таймер и снимает паузу.
      * Если таймер не создан — создаётся.

@@ -7,13 +7,13 @@ import metroline.objects.gameobjects.*;
 import metroline.objects.enums.StationType;
 import metroline.objects.enums.TunnelType;
 import metroline.objects.gameobjects.Label;
+import metroline.screens.worldscreens.normal.GameWorldScreen;
+import metroline.util.LngUtil;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
 
 
 import static metroline.screens.worldscreens.sandbox.SandboxWorldScreen.*;
@@ -30,7 +30,7 @@ public class SandboxClickHandler {
     private static boolean dragging = false;
     public static PathPoint dragOffset = null;
 
-    private static Color currentStationColor = GameConstants.COLORS[0]; // Красный по умолчанию
+    private static StationColors currentStationColor = StationColors.RED;
      boolean colorSelectionEnabled = false;
 
     /**
@@ -137,7 +137,8 @@ public class SandboxClickHandler {
         Station station = SandboxWorldScreen.getInstance().getWorld().getStationAt(x, y);
         Tunnel t = SandboxWorldScreen.getInstance().getWorld().getTunnelAt(x, y);
         if (station != null) {
-            editStationName(station);
+            Point mouseWorldPos = new Point(station.getX(), station.getY());
+            editStationName(station, mouseWorldPos );
         }
     }
     /**
@@ -175,75 +176,102 @@ public class SandboxClickHandler {
         SandboxWorldScreen.getInstance().repaint();
     }
 
+    /**
+     * Показ выбора цвета
+     */
     public void showColorSelectionPopup(int x, int y) {
-        // Создаем прозрачное безрамочное окно
-        Window parentWindow = SwingUtilities.getWindowAncestor(SandboxWorldScreen.getInstance());
+        Window parentWindow = SwingUtilities.getWindowAncestor(GameWorldScreen.getInstance());
         JDialog colorDialog = new JDialog(parentWindow);
-        colorDialog.setUndecorated(true); // Убираем рамку и заголовок
-        colorDialog.setBackground(new Color(0, 0, 0, 0)); // Прозрачный фон
+        colorDialog.setUndecorated(true);
+        colorDialog.setModal(false);
 
-        JPanel colorPanel = new JPanel(new GridLayout(2, 2));
-        colorPanel.setBorder(BorderFactory.createLineBorder(Color.WHITE, 2)); // Белая рамка
-        colorPanel.setOpaque(true);
-        colorPanel.setBackground(new Color(50, 50, 50)); // Темный фон
+        // Создаем панель с темной подложкой и скругленными углами
+        JPanel mainPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setColor(new Color(255, 255, 255, 0));
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
+                g2d.setColor(new Color(80, 80, 80, 70));
+                g2d.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 12, 12);
+                g2d.dispose();
+            }
+        };
 
-        // Конвертируем мировые координаты в экранные
-        Point screenPos = SandboxWorldScreen.getInstance().worldToScreen(x, y);
+        mainPanel.setLayout(new BorderLayout());
+        mainPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+        mainPanel.setOpaque(false);
 
-        for (Color color : GameConstants.COLORS) {
-            JButton colorBtn = new JButton();
-            colorBtn.setBackground(color);
-            colorBtn.setPreferredSize(new Dimension(30, 30));
-            colorBtn.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5)); // Убираем стандартную рамку кнопки
-            colorBtn.setContentAreaFilled(false); // Прозрачная область кнопки
-            colorBtn.setOpaque(true); // Но сам цвет видимый
-            colorBtn.setFocusPainted(false); // Убираем эффект фокуса
+        // Панель для цветов
+        JPanel colorPanel = new JPanel(new GridLayout(4, 4, 5, 5));
+        colorPanel.setOpaque(false);
 
-            colorBtn.addActionListener(e -> {
-                SandboxClickHandler.currentStationColor = color;
-                Station newStation = new Station(SandboxWorldScreen.getInstance().getWorld(), x, y, StationColors.fromColor(color), StationType.REGULAR);
-                SandboxWorldScreen.getInstance().getWorld().addStation(newStation);
-                SandboxWorldScreen.getInstance().repaint();
-                colorDialog.dispose();
-                colorSelectionEnabled = false;
-            });
-
-            // Эффект при наведении
-            colorBtn.addMouseListener(new MouseAdapter() {
-                public void mouseEntered(MouseEvent e) {
-                    colorBtn.setBorder(BorderFactory.createLineBorder(Color.WHITE, 2));
-                }
-                public void mouseExited(MouseEvent e) {
-                    colorBtn.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-                }
-            });
-
+        for (StationColors color : StationColors.values()) {
+            JButton colorBtn = createColorButton(color.getColor(), x, y, colorDialog);
             colorPanel.add(colorBtn);
         }
 
-        colorDialog.add(colorPanel);
-        colorDialog.pack();
+        mainPanel.add(colorPanel, BorderLayout.CENTER);
+        colorDialog.add(mainPanel);
 
-        // Позиционируем окно рядом с курсором
-        colorDialog.setLocation(
-                screenPos.x + 20, // Смещение от курсора
-                screenPos.y + 20
-        );
+        // Рассчитываем позицию как для InfoWindow
+        Point screenPoint = GameWorldScreen.getInstance().worldToScreen(x, y);
+        Point windowPoint = new Point(screenPoint);
+        SwingUtilities.convertPointToScreen(windowPoint, GameWorldScreen.getInstance());
+        colorDialog.setLocation(windowPoint.x + 20, windowPoint.y + 20);
 
-        // Закрытие при клике вне окна
+        // Обработчики закрытия
         colorDialog.addWindowFocusListener(new WindowAdapter() {
+            @Override
             public void windowLostFocus(WindowEvent e) {
                 colorDialog.dispose();
-                colorSelectionEnabled = false;
-            }
-            @Override
-            public void windowClosed(WindowEvent e) {
-                colorDialog.dispose();
-                colorSelectionEnabled = false; // Сбрасываем флаг при закрытии
             }
         });
 
+        colorDialog.pack();
         colorDialog.setVisible(true);
+    }
+
+    private JButton createColorButton(Color colorButton, int x, int y, JDialog dialog) {
+        JButton colorBtn = new JButton() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                // Рисуем скругленную кнопку
+                g2d.setColor(colorButton);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
+
+                // Обводка при наведении
+                if (getModel().isRollover()) {
+                    g2d.setColor(Color.WHITE);
+                    g2d.setStroke(new BasicStroke(2));
+                    g2d.drawRoundRect(1, 1, getWidth()-3, getHeight()-3, 20, 20);
+                }
+                g2d.dispose();
+            }
+        };
+
+        colorBtn.setPreferredSize(new Dimension(30, 30));
+        colorBtn.setContentAreaFilled(false);
+        colorBtn.setOpaque(false);
+        colorBtn.setFocusPainted(false);
+        colorBtn.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+
+        colorBtn.addActionListener(e -> {
+            currentStationColor = StationColors.fromColor(colorButton);
+            Station newStation = new Station(
+                    GameWorldScreen.getInstance().getWorld(),
+                    x, y, StationColors.fromColor(colorButton), StationType.PLANNED
+            );
+            GameWorldScreen.getInstance().getWorld().addStation(newStation);
+            GameWorldScreen.getInstance().repaint();
+            dialog.dispose();
+        });
+
+        return colorBtn;
     }
     /**
      * Handles selection of stations/tunnels
@@ -292,7 +320,7 @@ public class SandboxClickHandler {
         if (SandboxWorldScreen.getInstance().isShiftPressed) {
             // Дополнительная проверка (хотя предыдущие проверки уже гарантируют пустую клетку)
             if (SandboxWorldScreen.getInstance().getWorld().getStationAt(x, y) == null) {
-                Station newStation = new Station(SandboxWorldScreen.getInstance().getWorld(), x, y, StationColors.fromColor(SandboxClickHandler.currentStationColor), StationType.REGULAR);
+                Station newStation = new Station(SandboxWorldScreen.getInstance().getWorld(), x, y, SandboxClickHandler.currentStationColor, StationType.REGULAR);
                 SandboxWorldScreen.getInstance().getWorld().addStation(newStation);
                 checkForTransferStation(newStation);
                 SandboxWorldScreen.getInstance().repaint();
@@ -328,30 +356,81 @@ public class SandboxClickHandler {
     /**
      * Edit station name
      */
-    static void editStationName(Station station) {
-        // Создаем панель с текстовым полем
-        JPanel panel = new JPanel(new BorderLayout());
-        JLabel label = new JLabel("Station Name:");
-        JTextField textField = new JTextField(station.getName(), 20);
-        panel.add(label, BorderLayout.NORTH);
-        panel.add(textField, BorderLayout.CENTER);
-
-        // Показываем диалоговое окно
-        int result = JOptionPane.showConfirmDialog(
-                SandboxWorldScreen.getInstance(),
-                panel,
-                "Edit name",
-                JOptionPane.OK_CANCEL_OPTION,
-                JOptionPane.PLAIN_MESSAGE
+    static void editStationName(Station station, Point mouseWorldPos) {
+        // Получаем экранные координаты из мировых
+        Point screenPos = SandboxWorldScreen.getInstance().worldToScreen(
+                mouseWorldPos.x,
+                mouseWorldPos.y
         );
 
-        // Обрабатываем результат
-        if (result == JOptionPane.OK_OPTION) {
-            String newName = textField.getText().trim();
-            if (!newName.isEmpty()) {
-                station.setName(newName);
-                SandboxWorldScreen.getInstance().repaint();
+        // Конвертируем в координаты окна
+        Point windowPos = new Point(screenPos);
+        SwingUtilities.convertPointToScreen(windowPos, SandboxWorldScreen.getInstance());
+
+        // Создаем кастомное окно
+        JDialog dialog = new JDialog();
+        dialog.setUndecorated(true);
+        dialog.setBackground(new Color(0, 0, 0, 0));
+
+        // Основная панель
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(new Color(45, 45, 45));
+        panel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(80, 80, 80), 1),
+                BorderFactory.createEmptyBorder(5, 10, 5, 10)
+        ));
+
+        // Текстовое поле
+        JTextField textField = new JTextField(station.getName(), 15);
+        textField.setForeground(Color.WHITE);
+        textField.setBackground(new Color(60, 60, 60));
+        textField.setBorder(BorderFactory.createEmptyBorder(5, 8, 5, 8));
+        textField.setFont(new Font("Sans Serif", Font.PLAIN, 14));
+        textField.setCaretColor(Color.WHITE);
+        textField.selectAll();
+
+        // Обработчики событий
+        textField.addActionListener(e -> {
+            applyNameChange(station, textField.getText().trim());
+            dialog.dispose();
+        });
+
+        textField.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusLost(FocusEvent e) {
+                applyNameChange(station, textField.getText().trim());
+                dialog.dispose();
             }
+        });
+
+        panel.add(textField, BorderLayout.CENTER);
+        dialog.add(panel);
+        dialog.pack();
+
+        // Позиционируем окно рядом с курсором (смещение 20px вправо и вниз)
+        dialog.setLocation(
+                windowPos.x + 20,
+                windowPos.y + 20
+        );
+
+        // Закрытие при клике вне окна
+        dialog.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (!panel.contains(e.getPoint())) {
+                    dialog.dispose();
+                }
+            }
+        });
+
+        dialog.setVisible(true);
+        textField.requestFocusInWindow();
+    }
+
+    private static void applyNameChange(Station station, String newName) {
+        if (!newName.isEmpty() && !newName.equals(station.getName())) {
+            station.setName(newName);
+            SandboxWorldScreen.getInstance().repaint();
         }
     }
     /**
@@ -375,7 +454,7 @@ public class SandboxClickHandler {
         }
 
         // Создаем новую станцию с текущим цветом
-        Station station = new Station(SandboxWorldScreen.getInstance().getWorld(), x, y, StationColors.fromColor(currentStationColor), StationType.REGULAR);
+        Station station = new Station(SandboxWorldScreen.getInstance().getWorld(), x, y, currentStationColor, StationType.REGULAR);
         SandboxWorldScreen.getInstance().getWorld().addStation(station);
         checkForTransferStation(station);
     }

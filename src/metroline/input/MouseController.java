@@ -2,7 +2,8 @@ package metroline.input;
 
 import metroline.objects.gameobjects.GameObject;
 import metroline.objects.gameobjects.PathPoint;
-import metroline.screens.worldscreens.GameWorldScreen;
+import metroline.screens.worldscreens.normal.GameWorldScreen;
+import metroline.screens.worldscreens.normal.WorldClickController;
 import metroline.screens.worldscreens.sandbox.SandboxClickHandler;
 import metroline.screens.worldscreens.sandbox.SandboxWorldScreen;
 import metroline.screens.worldscreens.WorldScreen;

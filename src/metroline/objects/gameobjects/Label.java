@@ -1,6 +1,7 @@
 package metroline.objects.gameobjects;
 
 import metroline.core.world.GameWorld;
+import metroline.core.world.SandboxWorld;
 import metroline.core.world.World;
 
 import java.awt.*;
@@ -51,14 +52,22 @@ public class Label extends GameObject {
             // Разрешаем перемещение в пределах 2 клеток от станции
             if (dx <= 2 && dy <= 2 && (dx + dy) > 0) { // Исключаем позицию станции
                 // Проверяем, что клетка свободна (нет других станций или меток)
-                if (world.getStationAt(newX, newY) == null &&
-                        (world.getLabelAt(newX, newY) == null || world.getLabelAt(newX, newY) == this)) {
-                    if(((GameWorld)getWorld()).getGameplayUnitsAt(newX, newY) == null) {
-                    world.getGameGrid()[getX()][getY()].setContent(null);
-                    this.x = newX;
-                    this.y = newY;
-                    world.getGameGrid()[newX][newY].setContent(this);
-                    return true;
+                if (world.getStationAt(newX, newY) == null && (world.getLabelAt(newX, newY) == null || world.getLabelAt(newX, newY) == this)) {
+                    if(world instanceof GameWorld w2) {
+                        if (w2.getGameplayUnitsAt(newX, newY) == null) {
+                            world.getGameGrid()[getX()][getY()].setContent(null);
+                            this.x = newX;
+                            this.y = newY;
+                            world.getGameGrid()[newX][newY].setContent(this);
+                            return true;
+                        }
+                    }
+                    else {
+                        world.getGameGrid()[getX()][getY()].setContent(null);
+                        this.x = newX;
+                        this.y = newY;
+                        world.getGameGrid()[newX][newY].setContent(this);
+                        return true;
                     }
                 }
             }

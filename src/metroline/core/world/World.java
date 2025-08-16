@@ -6,7 +6,7 @@ import metroline.core.world.tiles.GameTile;
 import metroline.core.world.tiles.WorldTile;
 import metroline.objects.enums.Direction;
 import metroline.objects.gameobjects.Label;
-import metroline.screens.worldscreens.GameWorldScreen;
+import metroline.screens.worldscreens.normal.GameWorldScreen;
 import metroline.screens.worldscreens.WorldScreen;
 import metroline.util.*;
 import metroline.util.ui.UserInterfaceUtil;

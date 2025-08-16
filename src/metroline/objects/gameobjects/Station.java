@@ -6,14 +6,12 @@ import metroline.core.world.tiles.WorldTile;
 import metroline.objects.enums.Direction;
 import metroline.objects.enums.StationColors;
 import metroline.objects.enums.StationType;
-import metroline.screens.worldscreens.GameWorldScreen;
+import metroline.screens.worldscreens.normal.GameWorldScreen;
 
 import java.awt.*;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Random;
-
-import static metroline.screens.render.StationRender.drawWorldColorRing;
 
 
 /**

@@ -13,7 +13,7 @@ import metroline.objects.enums.TunnelType;
 import metroline.MainFrame;
 import metroline.objects.gameobjects.Label;
 import metroline.screens.panel.LinesLegendWindow;
-import metroline.screens.worldscreens.GameWorldScreen;
+import metroline.screens.worldscreens.normal.GameWorldScreen;
 import metroline.screens.worldscreens.sandbox.SandboxWorldScreen;
 import metroline.util.*;
 import metroline.util.serialize.MetroSerializer;

@@ -11,6 +11,7 @@ import java.util.Map;
 import metroline.core.time.GameTime;
 import metroline.core.world.GameWorld;
 import metroline.core.world.SandboxWorld;
+import metroline.core.world.World;
 import metroline.objects.gameobjects.GameplayUnits;
 import metroline.objects.gameobjects.Station;
 import metroline.objects.gameobjects.Tunnel;
@@ -19,7 +20,7 @@ import metroline.screens.MenuScreen;
 import metroline.screens.panel.InfoWindow;
 import metroline.screens.panel.LinesLegendWindow;
 import metroline.screens.worldscreens.WorldSettingsScreen;
-import metroline.screens.worldscreens.GameWorldScreen;
+import metroline.screens.worldscreens.normal.GameWorldScreen;
 import metroline.screens.worldscreens.sandbox.SandboxSettingsScreen;
 import metroline.screens.worldscreens.sandbox.SandboxWorldScreen;
 
@@ -243,6 +244,7 @@ public class MainFrame extends JFrame {
     }
 
     private JTextField createTimeScaleField() {
+
         JTextField field = new JTextField("1", 3) {
             @Override
             protected void paintBorder(Graphics g) {}
@@ -487,7 +489,7 @@ public class MainFrame extends JFrame {
 
         // Добавляем глобальный слушатель кликов
         outsideClickListener = event -> {
-            if ( currentPopup != null) {
+            if ( event.getID() == MouseEvent.MOUSE_PRESSED && currentPopup != null) {
                 MouseEvent mouseEvent = (MouseEvent)event;
 
                 if ((!currentPopup.getBounds().contains(mouseEvent.getLocationOnScreen()) &&
@@ -653,14 +655,6 @@ public class MainFrame extends JFrame {
             }else if (selectedObject instanceof GameplayUnits) {
                 newWindow.displayGameplayUnitsInfo((GameplayUnits) selectedObject, windowPoint);
             }
-
-            // Добавляем обработчик закрытия для удаления окна из списка
-//            newWindow.addWindowListener(new WindowAdapter() {
-//                @Override
-//                public void windowClosed(WindowEvent e) {
-//                    screen.infoWindows.remove(newWindow);
-//                }
-//            });
 
             screen.infoWindows.add(newWindow);
         }
