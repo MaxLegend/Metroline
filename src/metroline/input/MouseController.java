@@ -2,8 +2,9 @@ package metroline.input;
 
 import metroline.objects.gameobjects.GameObject;
 import metroline.objects.gameobjects.PathPoint;
-import metroline.screens.worldscreens.gameworld.GameWorldScreen;
-import metroline.screens.worldscreens.WorldSandboxScreen;
+import metroline.screens.worldscreens.GameWorldScreen;
+import metroline.screens.worldscreens.sandbox.SandboxClickHandler;
+import metroline.screens.worldscreens.sandbox.SandboxWorldScreen;
 import metroline.screens.worldscreens.WorldScreen;
 
 import javax.swing.*;
@@ -97,7 +98,7 @@ public class MouseController extends MouseAdapter {
      */
     private void handleDoubleClick(MouseEvent e, PathPoint worldPos) {
 
-        if (screen instanceof WorldSandboxScreen sbScreen) {
+        if (screen instanceof SandboxWorldScreen sbScreen) {
             if (!sbScreen.isCtrlPressed && !sbScreen.isShiftPressed) {
                 sbScreen.sandboxClickHandler.handleEditStationName(worldPos.x, worldPos.y);
                 sbScreen.sandboxClickHandler.handleRemoveTunnel(worldPos.x, worldPos.y);
@@ -115,7 +116,7 @@ public class MouseController extends MouseAdapter {
         lastDragPoint = e.getPoint();
         isRightMouseDragging = true;
 
-        if (screen instanceof WorldSandboxScreen) {
+        if (screen instanceof SandboxWorldScreen) {
             SandboxClickHandler.startDrag(e.getX(), e.getY());
         }
     }
@@ -127,7 +128,7 @@ public class MouseController extends MouseAdapter {
         PathPoint worldPos = screen.screenToWorld(e.getX(), e.getY());
         isLeftMouseDragging = true;
 
-        if (screen instanceof WorldSandboxScreen sbScreen) {
+        if (screen instanceof SandboxWorldScreen sbScreen) {
             sbScreen.handleClick(worldPos.x, worldPos.y);
         } else if (screen instanceof GameWorldScreen gsScreen) {
             gsScreen.handleWorldClick(worldPos.x, worldPos.y);
@@ -156,7 +157,7 @@ public class MouseController extends MouseAdapter {
     private void handleLeftMouseDrag(MouseEvent e) {
         PathPoint worldPos = screen.screenToWorld(e.getX(), e.getY());
         if (worldPos != null) {
-            if (screen instanceof WorldSandboxScreen sbscreen) {
+            if (screen instanceof SandboxWorldScreen sbscreen) {
                 sbscreen.sandboxClickHandler.handleEditDrag(worldPos.x, worldPos.y);
             } else if (screen instanceof GameWorldScreen gamescreen) {
                 gamescreen.worldClickController.handleEditDrag(worldPos.x, worldPos.y);
@@ -170,7 +171,7 @@ public class MouseController extends MouseAdapter {
     private void handleRightMouseReleased(MouseEvent e) {
         isRightMouseDragging = false;
 
-        if (screen instanceof WorldSandboxScreen) {
+        if (screen instanceof SandboxWorldScreen) {
             SandboxClickHandler.stopDrag();
         }
     }
@@ -181,7 +182,7 @@ public class MouseController extends MouseAdapter {
     private void handleLeftMouseReleased(MouseEvent e) {
         isLeftMouseDragging = false;
 
-        if (screen instanceof WorldSandboxScreen sbscreen) {
+        if (screen instanceof SandboxWorldScreen sbscreen) {
             sbscreen.sandboxClickHandler.selectedObject = null;
             SandboxClickHandler.dragOffset = null;
         } else if (screen instanceof GameWorldScreen gScreen) {

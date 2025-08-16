@@ -1,10 +1,9 @@
 package metroline.objects.gameobjects;
 
-import metroline.core.world.GameWorld;
 import metroline.core.world.World;
 import metroline.core.world.tiles.WorldTile;
 import metroline.objects.enums.TunnelType;
-import metroline.screens.worldscreens.WorldSandboxScreen;
+import metroline.screens.worldscreens.sandbox.SandboxWorldScreen;
 
 import java.awt.*;
 import java.awt.geom.Area;
@@ -251,10 +250,9 @@ public class Tunnel extends GameObject {
         return new BasicStroke(width, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1.0f).createStrokedShape(pathShape);
     }
     @Override
-    public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
+    public void draw(Graphics2D g2d, int offsetX, int offsetY, float zoom) {
         if (path.size() < 2) return;
 
-        Graphics2D g2d = (Graphics2D)g;
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
         // Общие настройки для всех типов туннелей
@@ -337,7 +335,7 @@ public class Tunnel extends GameObject {
         }
 
         // Debug-отрисовка контрольных точек
-        if (WorldSandboxScreen.getInstance().debugMode && (selected || pathPoint != null)) {
+        if (SandboxWorldScreen.getInstance().debugMode && (selected || pathPoint != null)) {
             g2d.setColor(Color.LIGHT_GRAY);
             for (PathPoint p : path) {
                 int x = (int)((p.getX() * 32 + offsetX + 16) * zoom);

@@ -1,6 +1,7 @@
 package metroline.screens.panel;
 
 import metroline.core.world.GameWorld;
+import metroline.core.world.World;
 import metroline.objects.enums.StationColors;
 import metroline.util.LngUtil;
 import metroline.util.ui.StyleUtil;
@@ -117,14 +118,14 @@ public class LinesLegendWindow extends JWindow {
     }
 
 
-    public void updateLegend(GameWorld world) {
+    public void updateLegend(World world) {
         if (SwingUtilities.isEventDispatchThread()) {
             updateLines(world);
         } else {
             SwingUtilities.invokeLater(() -> updateLines(world));
         }
     }
-    public void updateLines(GameWorld world) {
+    public void updateLines(World world) {
         linesPanel.removeAll();
         colorEntries.clear();
 

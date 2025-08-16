@@ -6,12 +6,14 @@ import metroline.core.world.tiles.WorldTile;
 import metroline.objects.enums.Direction;
 import metroline.objects.enums.StationColors;
 import metroline.objects.enums.StationType;
-import metroline.screens.worldscreens.gameworld.GameWorldScreen;
+import metroline.screens.worldscreens.GameWorldScreen;
 
 import java.awt.*;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Random;
+
+import static metroline.screens.render.StationRender.drawWorldColorRing;
 
 
 /**
@@ -88,7 +90,13 @@ public class Station extends GameObject {
             label.setText(name);
         }
     }
-/**
+
+    @Override
+    public void draw(Graphics2D g, int offsetX, int offsetY, float zoom) {
+
+    }
+
+    /**
      * Gets the station color
      * @return Color of the station
      */
@@ -285,26 +293,8 @@ public class Station extends GameObject {
         WorldTile tile = getWorld().getWorldTile(getX(), getY());
         return tile != null && tile.isWater();
     }
-@Override
-public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
 
-    WorldTile tile = getWorld().getWorldTile(getX(), getY());
-    System.out.println("isWater? " + tile.isWater());
-    if (getWorld().isRoundStationsEnabled()) {
 
-//            drawWorldColorRing(g, offsetX, offsetY, zoom);
-//            drawRoundTransfer(g, offsetX, offsetY, zoom);
-//            drawRoundStation(g, offsetX, offsetY, zoom);
-//            if (selected) drawRoundSelection(g, offsetX, offsetY, zoom);
-
-    } else {
-//        drawWorldColorSquare(g, offsetX, offsetY, zoom);
-//        drawRoundTransfer(g, offsetX, offsetY, zoom);
-//        drawSquareStation(g, offsetX, offsetY, zoom);
-//        if(selected) drawSquareSelection(g, offsetX, offsetY, zoom);
-    }
-
-}
 
 
 

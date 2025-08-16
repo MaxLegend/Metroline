@@ -121,5 +121,5 @@ public abstract class GameObject implements Serializable {
      * @param offsetY Vertical offset
      * @param zoom Current zoom level
      */
-    public abstract void draw(Graphics g, int offsetX, int offsetY, float zoom);
+    public abstract void draw(Graphics2D g, int offsetX, int offsetY, float zoom);
 }

@@ -6,7 +6,7 @@ import metroline.objects.enums.StationType;
 import metroline.objects.enums.TunnelType;
 import metroline.objects.gameobjects.*;
 import metroline.objects.gameobjects.Label;
-import metroline.screens.worldscreens.gameworld.GameWorldScreen;
+import metroline.screens.worldscreens.GameWorldScreen;
 import metroline.util.MetroLogger;
 
 import javax.swing.*;

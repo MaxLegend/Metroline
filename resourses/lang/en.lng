@@ -1,5 +1,6 @@
 create_world_title=CREATE NEW WORLD
 main_menu.start=New Game
+main_menu.start_sandbox=New Sandbox
 main_menu.load_sandbox=Load Sandbox
 main_menu.load_standart=Load Game
 main_menu.settings=Settings
@@ -18,9 +19,11 @@ world.create_sandbox=Create Sandbox
 toolbar.save_game=Save Game
 toolbar.load_game=Load Game
 toolbar.back_menu=Back in menu
-toolbar.options=Options
+toolbar.game=Game
 toolbar.exit=Exit in metroline
 timebar.pause=Pause
+timebar.timespeed=Time Speed:
+
 world.width=World Width
 world.height=World Height
 world.cells=cells

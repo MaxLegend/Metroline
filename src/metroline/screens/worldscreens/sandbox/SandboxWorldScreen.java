@@ -1,43 +1,45 @@
-package metroline.screens.worldscreens;
+package metroline.screens.worldscreens.sandbox;
 
 
+import metroline.core.world.GameWorld;
 import metroline.core.world.SandboxWorld;
 
 
-import metroline.input.SandboxClickHandler;
-import metroline.objects.gameobjects.Label;
-import metroline.objects.gameobjects.PathPoint;
-import metroline.objects.gameobjects.Station;
+import metroline.objects.gameobjects.*;
 import metroline.objects.enums.Direction;
-import metroline.objects.gameobjects.Tunnel;
 import metroline.MainFrame;
+import metroline.objects.gameobjects.Label;
+import metroline.screens.render.StationRender;
+import metroline.screens.worldscreens.CachedWorldScreen;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 
 /**
  * World screen that displays and interacts with the game world
  */
-public class WorldSandboxScreen extends WorldScreen {
-    public static WorldSandboxScreen INSTANCE;
+public class SandboxWorldScreen extends CachedWorldScreen {
+    public static SandboxWorldScreen INSTANCE;
     public SandboxClickHandler sandboxClickHandler;
     private BufferedImage worldCache; // Кешированное изображение мира
     private boolean cacheValid = false; // Флаг валидности кеша
 
-    public WorldSandboxScreen(MainFrame parent) {
-        super(parent, new SandboxWorld(widthWorld, heightWorld, false, false, Color.WHITE));
+    public SandboxWorldScreen(MainFrame parent) {
+        super(parent, new SandboxWorld(widthWorld, heightWorld, Color.WHITE));
         INSTANCE = this;
         this.sandboxClickHandler = new SandboxClickHandler();
         initWorldCache();
     }
-    public void createNewWorld(int width, int height, boolean hasOrganicPatches, boolean hasRivers, Color worldColor) {
+    public void createNewWorld(int width, int height, Color worldColor) {
         widthWorld = width;
         heightWorld = height;
-        this.setWorld(new SandboxWorld(width, height, hasOrganicPatches, hasRivers,worldColor));
+        this.setWorld(new SandboxWorld(width, height, worldColor));
         invalidateCache();
         repaint();
     }
@@ -67,7 +69,7 @@ public class WorldSandboxScreen extends WorldScreen {
         repaint();
     }
 
-    public static WorldSandboxScreen getInstance() {
+    public static SandboxWorldScreen getInstance() {
         return INSTANCE;
     }
     private void initWorldCache() {
@@ -99,12 +101,51 @@ public class WorldSandboxScreen extends WorldScreen {
         g2d.drawImage(worldCache, 0, 0, null);
 
         for (Tunnel tunnel : getWorld().getTunnels()) {
-            tunnel.draw(g, 0, 0, 1);
+            tunnel.draw(g2d, 0, 0, 1);
         }
 
 
-        for (Station station : getWorld().getStations()) {
-            station.draw(g, 0, 0, 1);
+        if(getWorld().isRoundStationsEnabled()) {
+            for (Station station : getWorld().getStations()) {
+                StationRender.drawWorldColorRing(station,g2d, 0, 0, 1);
+            }
+            // 1. Сначала рисуем все соединения всех станций
+            for (Station station : getWorld().getStations()) {
+                StationRender.drawRoundTransfer(station, g2d, 0, 0, 1);
+            }
+
+            // 2. Затем рисуем все станции
+            for (Station station : getAllStationsSorted()) {
+                StationRender.drawRoundStation(station, g2d, 0, 0, 1);
+            }
+
+            // 3. В конце рисуем выделения
+            for (Station station : getWorld().getStations()) {
+                if (station.isSelected()) {
+                    StationRender.drawRoundSelection(station, g2d, 0, 0, 1);
+                }
+            }
+        } else {
+
+            for (Station station : getWorld().getStations()) {
+                StationRender.drawWorldColorSquare(station, g2d, 0, 0, 1);
+            }
+
+            for (Station station : getWorld().getStations()) {
+                StationRender.drawRoundTransfer(station, g2d, 0, 0, 1);
+            }
+
+            // 2. Затем рисуем все станции
+            for (Station station : getAllStationsSorted()) {
+                StationRender.drawSquareStation(station, g2d, 0, 0, 1);
+            }
+
+            // 3. В конце рисуем выделения
+            for (Station station : getWorld().getStations()) {
+                if (station.isSelected()) {
+                    StationRender.drawSquareSelection(station, g2d, 0, 0, 1);
+                }
+            }
         }
 
         for (Label label : getWorld().getLabels()) {
@@ -118,6 +159,15 @@ public class WorldSandboxScreen extends WorldScreen {
         if (debugMode) {
             drawDebugInfo(g2d);
         }
+    }
+    private java.util.List<Station> getAllStationsSorted() {
+        // Сортируем станции по координатам, чтобы избежать перекрытий
+        List<Station> stations = new ArrayList<>(getWorld().getStations());
+        stations.sort((a, b) -> {
+            if (a.getY() != b.getY()) return Integer.compare(a.getY(), b.getY());
+            return Integer.compare(a.getX(), b.getX());
+        });
+        return stations;
     }
     private void updateWorldCache() {
         if (worldCache == null ||

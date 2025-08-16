@@ -2,6 +2,7 @@ package metroline.core.world.tiles;
 
 
 import metroline.MainFrame;
+import metroline.core.world.GameWorld;
 
 import java.awt.*;
 
@@ -147,69 +148,17 @@ public class WorldTile extends Tile {
                 //        g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.4f));
                 int layerColor = 180 + (int)(55 * abilityPay);
                 // Отрисовка платежеспособности (красный)
-                if (MainFrame.showPaymentZones && abilityPay > 0) {
+                if (GameWorld.showPaymentZones && abilityPay > 0) {
 
                     g.setColor(new Color(layerColor, 0, 0, 180));
                     g.fillRect(x, y, size, size);
                 }
 
                 // Отрисовка пассажиропотока (зеленый)
-                if (MainFrame.showPassengerZones && passengerCount > 0) {
+                if (GameWorld.showPassengerZones && passengerCount > 0) {
                     g.setColor(new Color(0, layerColor, 0, 180));
                     g.fillRect(x, y, size, size);
                 }
     }
-//    @Override
-//    public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
-//  //      super.draw(g, offsetX, offsetY, zoom);
-//
-//        int drawSize = (int)(size * zoom);
-//        int drawX = (int)((x * size + offsetX) * zoom);
-//        int drawY = (int)((y * size + offsetY) * zoom);
-//        Graphics2D g2d = (Graphics2D)g;
-//        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-//      //  int range = 50;
-//
-////        int red = Math.max(0, Math.min(255, baseTileColor.getRed() - (int)(perm * range)));
-////        int green = Math.max(0, Math.min(255, baseTileColor.getGreen() - (int)(perm * range)));
-////        int blue = Math.max(0, Math.min(255, baseTileColor.getBlue() - (int)(perm * range)));
-//        Color baseColor;
-//        if (isWater) {
-//            // Используем анимированный цвет воды, передаем текущее время
-//            long time = System.currentTimeMillis();
-//            baseColor = getAnimatedWaterColor(time);
-//        } else {
-//            int range = 50;
-//            int red = Math.max(0, Math.min(255, baseTileColor.getRed() - (int)(perm * range)));
-//            int green = Math.max(0, Math.min(255, baseTileColor.getGreen() - (int)(perm * range)));
-//            int blue = Math.max(0, Math.min(255, baseTileColor.getBlue() - (int)(perm * range)));
-//            baseColor = new Color(red, green, blue);
-//        }
-////        // Создаем основной цвет плитки
-////        Color baseColor = isWater ?
-////                new Color(64, 164, 223) : // Водный цвет
-////                new Color(red, green, blue);
-//
-//        g.setColor(baseColor);
-//        g2d.fillRect(drawX, drawY, drawSize, drawSize);
-//
-//                // Настройка прозрачности
-//        //        g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.4f));
-//                int layerColor = 180 + (int)(55 * abilityPay);
-//                // Отрисовка платежеспособности (красный)
-//                if (MainFrame.showPaymentZones && abilityPay > 0) {
-//
-//                    g2d.setColor(new Color(layerColor, 0, 0, 180));
-//                    g2d.fillRect(drawX, drawY, drawSize, drawSize);
-//                }
-//
-//                // Отрисовка пассажиропотока (зеленый)
-//                if (MainFrame.showPassengerZones && passengerCount > 0) {
-//                    g2d.setColor(new Color(0, layerColor, 0, 180));
-//                    g2d.fillRect(drawX, drawY, drawSize, drawSize);
-//                }
-//
-//
-//    }
 
 }

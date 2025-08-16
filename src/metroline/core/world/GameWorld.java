@@ -13,7 +13,8 @@ import metroline.objects.enums.TunnelType;
 import metroline.MainFrame;
 import metroline.objects.gameobjects.Label;
 import metroline.screens.panel.LinesLegendWindow;
-import metroline.screens.worldscreens.gameworld.GameWorldScreen;
+import metroline.screens.worldscreens.GameWorldScreen;
+import metroline.screens.worldscreens.sandbox.SandboxWorldScreen;
 import metroline.util.*;
 import metroline.util.serialize.MetroSerializer;
 import metroline.util.ui.UserInterfaceUtil;
@@ -34,7 +35,8 @@ public class GameWorld extends World {
     public float money;
     private MetroSerializer worldSerializer;
     private ConstructionTimeProcessor processor;
-
+    public static boolean showPaymentZones = false;
+    public static boolean showPassengerZones = false;
     private List<GameplayUnits> gameplayUnits = new ArrayList<>();
 
     public transient LinesLegendWindow legendWindow;
@@ -74,7 +76,7 @@ public class GameWorld extends World {
 
     public void generateWorld(boolean hasPassengerCount, boolean hasAbilityPay, boolean hasLandscape, boolean hasRivers, Color worldColor) {
         //Create world grid
-        System.out.println("Generating world...");
+        MetroLogger.logInfo("Generating game world...");
         worldGrid = new WorldTile[width][height];
         gameGrid = new GameTile[width][height];
         // Инициализация генераторов шума с общим seed для согласованности
@@ -137,6 +139,7 @@ public class GameWorld extends World {
         }
 
         applyGradient();
+        MetroLogger.logInfo("World successfully created!");
     }
 
     private float mixNoises(float perlin, float voronoi, float perlinWeight) {
@@ -204,6 +207,12 @@ public class GameWorld extends World {
     public void updateLegendWindow() {
         if (screen instanceof GameWorldScreen) {
             GameWorldScreen gameScreen = (GameWorldScreen) screen;
+            if (gameScreen.parent != null && gameScreen.parent.legendWindow != null) {
+                gameScreen.parent.legendWindow.updateLegend(this);
+            }
+        }
+        if (screen instanceof SandboxWorldScreen) {
+            SandboxWorldScreen gameScreen = (SandboxWorldScreen) screen;
             if (gameScreen.parent != null && gameScreen.parent.legendWindow != null) {
                 gameScreen.parent.legendWindow.updateLegend(this);
             }

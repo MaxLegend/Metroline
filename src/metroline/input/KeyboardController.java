@@ -1,7 +1,7 @@
 package metroline.input;
 
 import metroline.screens.GameScreen;
-import metroline.screens.worldscreens.WorldSandboxScreen;
+import metroline.screens.worldscreens.sandbox.SandboxWorldScreen;
 import metroline.screens.worldscreens.WorldScreen;
 import metroline.util.SaveToImageUtil;
 
@@ -41,7 +41,7 @@ public class KeyboardController extends KeyAdapter {
         if(screen instanceof WorldScreen worldScreen) {
 
             if (e.isControlDown() && e.getKeyCode() == KeyEvent.VK_S) {
-                SaveToImageUtil.saveWorldToPNG(screen instanceof WorldSandboxScreen);
+                SaveToImageUtil.saveWorldToPNG(screen instanceof SandboxWorldScreen);
                 e.consume();
             }
             if (e.isControlDown() && e.getKeyCode() == KeyEvent.VK_D) {

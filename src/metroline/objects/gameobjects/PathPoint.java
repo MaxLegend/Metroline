@@ -14,7 +14,7 @@ public class PathPoint extends GameObject {
     }
 
     @Override
-    public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
+    public void draw(Graphics2D g, int offsetX, int offsetY, float zoom) {
 
     }
 }

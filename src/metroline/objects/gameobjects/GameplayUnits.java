@@ -73,7 +73,7 @@ public class GameplayUnits extends GameObject {
     }
 
     @Override
-    public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
+    public void draw(Graphics2D g, int offsetX, int offsetY, float zoom) {
         int baseCellSize = 32;
         int drawX = (int)((x * baseCellSize + offsetX) * zoom);
         int drawY = (int)((y * baseCellSize + offsetY) * zoom);

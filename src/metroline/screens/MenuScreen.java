@@ -1,8 +1,8 @@
 package metroline.screens;
 
 import metroline.MainFrame;
-import metroline.screens.worldscreens.gameworld.GameWorldScreen;
-import metroline.screens.worldscreens.WorldSandboxScreen;
+import metroline.screens.worldscreens.GameWorldScreen;
+import metroline.screens.worldscreens.sandbox.SandboxWorldScreen;
 import metroline.util.LngUtil;
 import metroline.util.ui.StyleUtil;
 
@@ -38,14 +38,16 @@ public class MenuScreen extends GameScreen {
 
         // Minimalist buttons aligned to left
         JButton startButton = StyleUtil.createMetrolineButton(LngUtil.translatable("main_menu.start"),e -> parent.switchScreen(MainFrame.WORLD_SETTINGS_SCREEN_NAME));
+        JButton startButtonSandbox = StyleUtil.createMetrolineButton(LngUtil.translatable("main_menu.start_sandbox"),e -> parent.switchScreen(MainFrame.SANDBOX_SETTINGS_SCREEN_NAME));
         JButton loadSBButton = StyleUtil.createMetrolineButton(LngUtil.translatable("main_menu.load_sandbox"),e -> loadGame(parent, true));
         JButton loadButton = StyleUtil.createMetrolineButton(LngUtil.translatable("main_menu.load_standart"),e -> loadGame(parent, false)); //
 
         JButton exitButton = StyleUtil.createMetrolineButton(LngUtil.translatable("main_menu.exit"), e -> System.exit(0));
 
         add(startButton, gbc);
-        add(loadSBButton, gbc);
         add(loadButton, gbc);
+        add(startButtonSandbox, gbc);
+        add(loadSBButton, gbc);
         add(exitButton, gbc);
 
     }
@@ -55,7 +57,7 @@ public class MenuScreen extends GameScreen {
     private void loadGame(MainFrame parent, boolean isSandbox) {
         if(isSandbox) {
             parent.switchScreen(MainFrame.SANDBOX_SCREEN_NAME);
-            WorldSandboxScreen gameScreen = (WorldSandboxScreen) parent.getCurrentScreen();
+            SandboxWorldScreen gameScreen = (SandboxWorldScreen) parent.getCurrentScreen();
             gameScreen.getWorld().loadWorld();
         } else {
             parent.switchScreen(MainFrame.GAME_SCREEN_NAME);

@@ -1,7 +1,9 @@
 package metroline.screens.worldscreens;
 
 import metroline.MainFrame;
+import metroline.core.world.GameWorld;
 import metroline.core.world.World;
+import metroline.screens.panel.LinesLegendWindow;
 import metroline.util.debug.DebugInfoRenderer;
 
 import java.awt.*;
@@ -13,11 +15,16 @@ public abstract class CachedWorldScreen extends WorldScreen {
     protected BufferedImage worldCache;
     protected boolean cacheValid = false;
     protected Font debugFont = new Font("Monospaced", Font.PLAIN, 12);
-
+    public LinesLegendWindow legendWindow;
     public CachedWorldScreen(MainFrame parent, World world) {
         super(parent, world);
     }
-
+    public void setLegendWindow(LinesLegendWindow legendWindow) {
+        this.legendWindow = legendWindow;
+        if (getWorld() instanceof GameWorld) {
+            ((GameWorld)getWorld()).setLegendWindow(legendWindow);
+        }
+    }
     protected void initWorldCache(int width, int height) {
         worldCache = new BufferedImage(width * 32, height * 32, BufferedImage.TYPE_INT_ARGB);
     }

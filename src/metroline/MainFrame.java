@@ -2,6 +2,7 @@ package metroline;
 
 
 import javax.swing.*;
+import javax.swing.text.PlainDocument;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.HashMap;
@@ -18,9 +19,11 @@ import metroline.screens.MenuScreen;
 import metroline.screens.panel.InfoWindow;
 import metroline.screens.panel.LinesLegendWindow;
 import metroline.screens.worldscreens.WorldSettingsScreen;
-import metroline.screens.worldscreens.gameworld.GameWorldScreen;
-import metroline.screens.worldscreens.WorldSandboxScreen;
+import metroline.screens.worldscreens.GameWorldScreen;
+import metroline.screens.worldscreens.sandbox.SandboxSettingsScreen;
+import metroline.screens.worldscreens.sandbox.SandboxWorldScreen;
 
+import metroline.util.IntegerDocumentFilter;
 import metroline.util.LngUtil;
 import metroline.util.MetroLogger;
 import metroline.util.ui.StyleUtil;
@@ -36,6 +39,7 @@ public class MainFrame extends JFrame {
     public static final String MAIN_MENU_SCREEN_NAME = "menu";
     public static final String GAME_SCREEN_NAME = "gamescreen";
     public static final String WORLD_SETTINGS_SCREEN_NAME = "world_settings";
+    public static final String SANDBOX_SETTINGS_SCREEN_NAME = "sandbox_world_settings";
 
     private GameScreen currentScreen;
 
@@ -49,8 +53,7 @@ public class MainFrame extends JFrame {
 
     public LinesLegendWindow legendWindow;
 
-    public static boolean showPaymentZones = false;
-    public static boolean showPassengerZones = false;
+
 
     private JButton legendButton;
     private JButton economicLayerButton;
@@ -82,9 +85,10 @@ public class MainFrame extends JFrame {
 
         if (screens.isEmpty()) {
             screens.put(MAIN_MENU_SCREEN_NAME, new MenuScreen(this));
-            screens.put(SANDBOX_SCREEN_NAME, new WorldSandboxScreen(this));
+            screens.put(SANDBOX_SCREEN_NAME, new SandboxWorldScreen(this));
             screens.put(GAME_SCREEN_NAME, new GameWorldScreen(this));
             screens.put(WORLD_SETTINGS_SCREEN_NAME, new WorldSettingsScreen(this));
+            screens.put(SANDBOX_SETTINGS_SCREEN_NAME, new SandboxSettingsScreen(this));
         }
         initializeWindow(false);
         setupKeyBindings();
@@ -186,69 +190,195 @@ public class MainFrame extends JFrame {
     }
     private JWindow currentPopup;
     private AWTEventListener outsideClickListener;
-    private void initUI() {
-        timePanel.removeAll();
 
+
+    private void initUI() {
+        initTimePanel();
+        initLegendWindow();
+        initToolBar();
+    }
+
+    private void initTimePanel() {
+        timePanel.removeAll();
         timePanel.setLayout(new BorderLayout());
         timePanel.setBackground(new Color(60, 60, 60));
 
-        // Левая часть - время
+        timePanel.add(createTimeControlPanel(), BorderLayout.WEST);
+       // timePanel.add(createTimeScalePanel(), BorderLayout.CENTER);
+        timePanel.add(createRightPanel(), BorderLayout.EAST);
 
-        JPanel timeLeftPanel = new JPanel();
-        timeLeftPanel.setBackground(new Color(60, 60, 60));
+        add(timePanel, BorderLayout.SOUTH);
+    }
+
+    private JPanel createTimeControlPanel() {
+        JPanel panel = new JPanel();
+        panel.setBackground(new Color(60, 60, 60));
+
         timeLabel = new JLabel(lastDisplayedTime);
         timeLabel.setForeground(Color.WHITE);
         timeLabel.setFont(new Font("Sans Serif", Font.BOLD, 13));
-        timeLeftPanel.add(timeLabel);
-        timeLeftPanel.add(StyleUtil.createMetrolineInGameButton(LngUtil.translatable("timebar.pause"), e -> timeControl()));
+        panel.add(timeLabel);
 
-        JPanel rightPanel = new JPanel(new BorderLayout());
-        rightPanel.setBackground(new Color(60, 60, 60));
-        legendButton = StyleUtil.createMetrolineInGameButton(LngUtil.translatable("legend.button"), e -> toggleLegendWindow());
-        rightPanel.add(legendButton, BorderLayout.EAST);
-
-        economicLayerButton = StyleUtil.createMetrolineInGameButton(LngUtil.translatable("timebar.economic_layers"),
-                e -> showEconomicLayerPopupMenu((JButton)e.getSource()));
-        rightPanel.add(economicLayerButton, BorderLayout.WEST);
-
-        rightPanel.setBackground(new Color(60, 60, 60));
-        moneyLabel.setForeground(Color.WHITE);
-        moneyLabel.setFont(new Font("Sans Serif", Font.BOLD, 14));
-        rightPanel.add(moneyLabel);
-
-
-
-        timePanel.add(timeLeftPanel, BorderLayout.WEST);
-        timePanel.add(rightPanel, BorderLayout.EAST);
-
-        add(timePanel, BorderLayout.SOUTH);
-
-        legendWindow = new LinesLegendWindow(this);
-        // Позиционируем в правом нижнем углу
-        Rectangle bounds = getBounds();
-        legendWindow.setLocation(bounds.x + bounds.width - 350, bounds.y + bounds.height - 260);
-
-        toolBar = new JToolBar();
-        toolBar.setFloatable(false);
-        toolBar.setVisible(false);
-        toolBar.setBackground(new Color(45, 45, 45));
-
-        toolBar.add(StyleUtil.createMetrolineInGameButton(LngUtil.translatable("toolbar.save_game"), e -> saveGame()));
-        toolBar.add(StyleUtil.createMetrolineInGameButton(LngUtil.translatable("toolbar.load_game"), e -> loadGame()));
-        toolBar.add(StyleUtil.createMetrolineInGameButton(LngUtil.translatable("toolbar.back_menu"), e -> backToMenu()));
-        JButton menuButton = StyleUtil.createMetrolineInGameButton(LngUtil.translatable("toolbar.options"), e -> showOptionsPopupMenu((JButton)e.getSource()));
-        toolBar.add(menuButton);
-        toolBar.add(StyleUtil.createMetrolineInGameButton(LngUtil.translatable("toolbar.exit"), e -> exitGame()));
-
-        add(toolBar, BorderLayout.NORTH);
-
+        panel.add(StyleUtil.createMetrolineInGameButton(
+                LngUtil.translatable("timebar.pause"),
+                e -> timeControl()
+        ));
+        panel.add(createTimeScalePanel(), BorderLayout.EAST);
+        return panel;
     }
 
+    private JPanel createTimeScalePanel() {
+        JPanel panel = new JPanel();
+        panel.setBackground(new Color(60, 60, 60));
+
+        JLabel label = new JLabel(LngUtil.translatable("timebar.timespeed"));
+        label.setFont(new Font("Sans Serif", Font.BOLD, 13));
+        label.setForeground(Color.WHITE);
+        panel.add(label);
+
+        JTextField timeScaleField = createTimeScaleField();
+        panel.add(timeScaleField);
+
+        return panel;
+    }
+
+    private JTextField createTimeScaleField() {
+        JTextField field = new JTextField("1", 3) {
+            @Override
+            protected void paintBorder(Graphics g) {}
+        };
+
+        field.setHorizontalAlignment(JTextField.CENTER);
+        field.setForeground(Color.WHITE);
+        field.setBackground(new Color(60, 60, 60));
+        field.setBorder(BorderFactory.createEmptyBorder());
+        field.setFont(new Font("Sans Serif", Font.BOLD, 13));
+        field.setEditable(false);
+        field.setOpaque(false);
+
+        ((PlainDocument)field.getDocument()).setDocumentFilter(new IntegerDocumentFilter());
+
+        field.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    field.setEditable(true);
+                    field.setOpaque(true);
+                    field.setBackground(new Color(45, 45, 45));
+                    field.requestFocus();
+                    field.selectAll();
+                }
+            }
+        });
+
+        field.addActionListener(e -> applyTimeScale(field));
+        field.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusLost(FocusEvent e) {
+                applyTimeScale(field);
+            }
+        });
+
+        return field;
+    }
+
+    private JPanel createRightPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(new Color(60, 60, 60));
+
+        legendButton = StyleUtil.createMetrolineInGameButton(
+                LngUtil.translatable("legend.button"),
+                e -> toggleLegendWindow()
+        );
+        panel.add(legendButton, BorderLayout.EAST);
+        if(getCurrentScreen() instanceof GameWorldScreen) {
+            economicLayerButton = StyleUtil.createMetrolineInGameButton(
+                    LngUtil.translatable("timebar.economic_layers"),
+                    e -> showEconomicLayerPopupMenu((JButton) e.getSource())
+            );
+            panel.add(economicLayerButton, BorderLayout.WEST);
+
+        moneyLabel.setForeground(Color.WHITE);
+        moneyLabel.setFont(new Font("Sans Serif", Font.BOLD, 14));
+        panel.add(moneyLabel);
+        }
+        return panel;
+    }
+
+    private void initLegendWindow() {
+        legendWindow = new LinesLegendWindow(this);
+        Rectangle bounds = getBounds();
+        legendWindow.setLocation(
+                bounds.x + bounds.width - 350,
+                bounds.y + bounds.height - 260
+        );
+    }
+
+    private void initToolBar() {
+        toolBar = new JToolBar();
+        toolBar.setBorder(BorderFactory.createEmptyBorder());
+        toolBar.setFloatable(false);
+        toolBar.setVisible(false);
+        //toolBar.setLayout(new BorderLayout());
+        toolBar.setBackground(new Color(60, 60, 60));
+
+
+
+        JButton optionsButton = createToolBarButton(
+                "toolbar.game",
+                e -> showOptionsPopupMenu((JButton)e.getSource())
+        );
+        toolBar.add(optionsButton);
+//        toolBar.add(createToolBarButton("toolbar.save_game", e -> saveGame()));
+//        toolBar.add(createToolBarButton("toolbar.load_game", e -> loadGame()));
+//        toolBar.add(createToolBarButton("toolbar.back_menu", e -> backToMenu()));
+//        toolBar.add(createToolBarButton("toolbar.exit", e -> exitGame()));
+
+        add(toolBar, BorderLayout.NORTH);
+    }
+
+    private JButton createToolBarButton(String translationKey, ActionListener listener) {
+        return StyleUtil.createMetrolineInGameButton(
+                LngUtil.translatable(translationKey),
+                listener
+        );
+    }
+
+    private void applyTimeScale(JTextField timeScaleField) {
+        try {
+            int scale = Integer.parseInt(timeScaleField.getText());
+            if (scale < 1) scale = 1;
+            timeScaleField.setText(String.valueOf(scale));
+            setTimeScale(scale);
+        } catch (NumberFormatException ex) {
+            timeScaleField.setText("1");
+            setTimeScale(1);
+        }
+        timeScaleField.setBackground(new Color(60, 60, 60));
+        timeScaleField.setEditable(false);
+    }
+    private void setTimeScale(int scale) {
+        if (currentScreen instanceof SandboxWorldScreen) {
+            SandboxWorld world = (SandboxWorld) ((SandboxWorldScreen) currentScreen).getWorld();
+            if (world != null && world.getGameTime() != null) {
+
+                world.getGameTime().setTimeScale(scale*100);
+            }
+        } else if (currentScreen instanceof GameWorldScreen) {
+            GameWorld world = (GameWorld) ((GameWorldScreen) currentScreen).getWorld();
+            if (world != null && world.getGameTime() != null) {
+                world.getGameTime().setTimeScale(scale*100);
+            }
+        }
+    }
     private void toggleLegendWindow() {
         if (legendWindow == null) {
             legendWindow = new LinesLegendWindow(this);
             if (currentScreen instanceof GameWorldScreen) {
                 ((GameWorldScreen)currentScreen).setLegendWindow(legendWindow);
+            }
+            if (currentScreen instanceof SandboxWorldScreen) {
+                ((SandboxWorldScreen)currentScreen).setLegendWindow(legendWindow);
             }
         }
         if (legendWindow.isVisible()) {
@@ -257,14 +387,22 @@ public class MainFrame extends JFrame {
             if (currentScreen instanceof GameWorldScreen) {
                 GameWorldScreen screen = (GameWorldScreen) currentScreen;
                 if (screen.getWorld() instanceof GameWorld) {
-                    legendWindow.updateLines((GameWorld) screen.getWorld());
+                    legendWindow.updateLines(screen.getWorld());
                 }
+
+            }
+            if (currentScreen instanceof SandboxWorldScreen) {
+                SandboxWorldScreen screen = (SandboxWorldScreen) currentScreen;
+                if (screen.getWorld() instanceof SandboxWorld) {
+                    legendWindow.updateLines(screen.getWorld());
+                }
+
             }
             legendWindow.showWindow();
         }
     }
     public void togglePaymentZones() {
-        showPaymentZones = !showPaymentZones;
+        GameWorld.showPaymentZones = !GameWorld.showPaymentZones;
         if (currentScreen instanceof GameWorldScreen) {
             ((GameWorldScreen)currentScreen).invalidateCache();
             currentScreen.repaint();
@@ -272,7 +410,7 @@ public class MainFrame extends JFrame {
     }
 
     public void togglePassengerZones() {
-        showPassengerZones = !showPassengerZones;
+        GameWorld.showPassengerZones = !GameWorld.showPassengerZones;
         if (currentScreen instanceof GameWorldScreen) {
             ((GameWorldScreen)currentScreen).invalidateCache();
             currentScreen.repaint();
@@ -323,8 +461,17 @@ public class MainFrame extends JFrame {
         JPanel menuPanel = new JPanel(new GridLayout(0, 1));
         menuPanel.setBackground(StyleUtil.BACKGROUND_COLOR);
         menuPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
-        JButton button = StyleUtil.createMetrolineInGameButton(LngUtil.translatable("options.1" ), e -> {});
-        menuPanel.add(button);
+
+        JButton save_game = createToolBarButton("toolbar.save_game", e -> saveGame());
+        JButton load_game = createToolBarButton("toolbar.load_game", e -> loadGame());
+        JButton back_menu = createToolBarButton("toolbar.back_menu", e -> backToMenu());
+        JButton exit_game = createToolBarButton("toolbar.exit", e -> exitGame());
+
+      //  JButton button = StyleUtil.createMetrolineInGameButton(LngUtil.translatable("options.1" ), e -> {});
+        menuPanel.add(save_game);
+        menuPanel.add(load_game);
+        menuPanel.add(back_menu);
+        menuPanel.add(exit_game);
 
         // Создаем и настраиваем popup-окно
         currentPopup = new JWindow(this);
@@ -340,11 +487,11 @@ public class MainFrame extends JFrame {
 
         // Добавляем глобальный слушатель кликов
         outsideClickListener = event -> {
-            if (event.getID() == MouseEvent.MOUSE_PRESSED && currentPopup != null) {
+            if ( currentPopup != null) {
                 MouseEvent mouseEvent = (MouseEvent)event;
 
-                if (!currentPopup.getBounds().contains(mouseEvent.getLocationOnScreen()) &&
-                        !sourceButton.getBounds().contains(mouseEvent.getPoint())) {
+                if ((!currentPopup.getBounds().contains(mouseEvent.getLocationOnScreen()) &&
+                        !sourceButton.getBounds().contains(mouseEvent.getPoint()) ) || getCurrentScreen() instanceof MenuScreen) {
                     closePopupMenu();
                 }
             }
@@ -369,8 +516,8 @@ public class MainFrame extends JFrame {
      * Управление временем (паузой)
      */
     public void timeControl() {
-        if (currentScreen instanceof WorldSandboxScreen) {
-            SandboxWorld sandboxWorld = (SandboxWorld) ((WorldSandboxScreen) currentScreen).getWorld();
+        if (currentScreen instanceof SandboxWorldScreen) {
+            SandboxWorld sandboxWorld = (SandboxWorld) ((SandboxWorldScreen) currentScreen).getWorld();
             if (sandboxWorld != null && sandboxWorld.getGameTime() != null) {
                 sandboxWorld.getGameTime().togglePause();
             }
@@ -405,8 +552,8 @@ public class MainFrame extends JFrame {
     private void updateTimeDisplay() {
         SwingUtilities.invokeLater(() -> {
             String newTime = null;
-            if (currentScreen instanceof WorldSandboxScreen) {
-                SandboxWorld world = (SandboxWorld) ((WorldSandboxScreen) currentScreen).getWorld();
+            if (currentScreen instanceof SandboxWorldScreen) {
+                SandboxWorld world = (SandboxWorld) ((SandboxWorldScreen) currentScreen).getWorld();
                 if (world != null && world.getGameTime() != null) newTime = world.getGameTime().getDateTimeString();
             } else if (currentScreen instanceof GameWorldScreen) {
                 GameWorld world =  ((GameWorld)((GameWorldScreen)currentScreen).getWorld());
@@ -437,8 +584,8 @@ public class MainFrame extends JFrame {
      * Save game
      */
     private void saveGame() {
-        if (currentScreen instanceof WorldSandboxScreen) {
-            ((WorldSandboxScreen)currentScreen).getWorld().saveWorld();
+        if (currentScreen instanceof SandboxWorldScreen) {
+            ((SandboxWorldScreen)currentScreen).getWorld().saveWorld();
         }
         if (currentScreen instanceof GameWorldScreen) {
             ((GameWorldScreen)currentScreen).getWorld().saveWorld();
@@ -450,8 +597,8 @@ public class MainFrame extends JFrame {
      * Load game
      */
     private void loadGame() {
-        if (currentScreen instanceof WorldSandboxScreen) {
-            ((WorldSandboxScreen)currentScreen).getWorld().loadWorld();
+        if (currentScreen instanceof SandboxWorldScreen) {
+            ((SandboxWorldScreen)currentScreen).getWorld().loadWorld();
         }
         if (currentScreen instanceof GameWorldScreen) {
             ((GameWorldScreen)currentScreen).getWorld().loadWorld();

@@ -66,7 +66,7 @@ public class Label extends GameObject {
         return false;
     }
     @Override
-    public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
+    public void draw(Graphics2D g, int offsetX, int offsetY, float zoom) {
         // Получаем относительное положение текста к станции
         if (parentStation != null) {
             int relX = getX() - parentStation.getX();

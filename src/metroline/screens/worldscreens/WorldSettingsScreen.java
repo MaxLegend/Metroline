@@ -4,7 +4,6 @@ import metroline.MainFrame;
 import metroline.core.world.GameWorld;
 import metroline.objects.gameobjects.GameConstants;
 import metroline.screens.GameScreen;
-import metroline.screens.worldscreens.gameworld.GameWorldScreen;
 import metroline.util.ui.MetrolineButton;
 import metroline.util.ui.MetrolineSlider;
 import metroline.util.LngUtil;
@@ -215,12 +214,10 @@ public class WorldSettingsScreen extends GameScreen {
         buttonPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         MetrolineButton backButton = new MetrolineButton(LngUtil.translatable("world.back"), e -> parent.switchScreen("menu"));
-        JButton createSBButton = StyleUtil.createMetrolineButton(LngUtil.translatable("world.create_sandbox"), e -> createWorld(true));
-        JButton createGameButton = StyleUtil.createMetrolineButton(LngUtil.translatable("world.create_standart"), e -> createWorld(false));
+
+        JButton createGameButton = StyleUtil.createMetrolineButton(LngUtil.translatable("world.create_standart"), e -> createWorld());
 
         buttonPanel.add(backButton);
-        buttonPanel.add(Box.createRigidArea(new Dimension(20, 0)));
-        buttonPanel.add(createSBButton);
         buttonPanel.add(Box.createRigidArea(new Dimension(20, 0)));
         buttonPanel.add(createGameButton);
 
@@ -365,7 +362,7 @@ public class WorldSettingsScreen extends GameScreen {
         });
     }
 
-    private void createWorld(boolean isSandbox) {
+    private void createWorld() {
         float width = widthSlider.getValue();
         float height = heightSlider.getValue();
         boolean hasPassengerCount = passengerCountCheck.isSelected();
@@ -388,19 +385,13 @@ public class WorldSettingsScreen extends GameScreen {
         GameConstants.BASE_STATION_UPKEEP = baseStationUpkeep;
         GameConstants.BASE_TUNNEL_UPKEEP_PER_SEGMENT = baseTunnelUpkeep;
         GameConstants.GAMEPLAY_UNITS_COUNT = gameplayUnitsCount;
-        if(isSandbox) {
-            parent.switchScreen(MainFrame.SANDBOX_SCREEN_NAME);
-            WorldSandboxScreen gameScreen = (WorldSandboxScreen) parent.getCurrentScreen();
-            gameScreen.createNewWorld((int) width, (int) height, hasLandscape, hasRivers, worldColor);
-            gameScreen.getWorld().setRoundStationsEnabled(roundStations);
-        } else {
             parent.switchScreen(MainFrame.GAME_SCREEN_NAME);
             GameWorldScreen gameScreen = (GameWorldScreen) parent.getCurrentScreen();
             gameScreen.createNewWorld((int) width, (int) height,hasPassengerCount,hasAbilityPay,  hasLandscape, hasRivers, worldColor, (int) startMoney);
             gameScreen.getWorld().setRoundStationsEnabled(roundStations);
             ((GameWorld)gameScreen.getWorld()).setMoney((int) startMoney); // Устанавливаем начальные деньги
             gameScreen.updateMoneyDisplay(); // Обновляем отображение
-        }
+
     }
 
     @Override

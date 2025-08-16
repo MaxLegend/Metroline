@@ -1,4 +1,4 @@
-package metroline.screens.worldscreens.gameworld;
+package metroline.screens.worldscreens;
 
 import metroline.core.world.GameWorld;
 import metroline.input.WorldClickController;
@@ -8,7 +8,6 @@ import metroline.objects.gameobjects.Label;
 import metroline.screens.panel.InfoWindow;
 import metroline.screens.panel.LinesLegendWindow;
 import metroline.screens.render.StationRender;
-import metroline.screens.worldscreens.CachedWorldScreen;
 
 import javax.swing.*;
 import java.awt.*;
@@ -20,7 +19,7 @@ import java.util.List;
 public class GameWorldScreen extends CachedWorldScreen {
     public static GameWorldScreen INSTANCE;
     public WorldClickController worldClickController;
-    public LinesLegendWindow legendWindow;
+
     public final List<InfoWindow> infoWindows = new ArrayList<>();
     private Timer repaintTimer;
     //Debug
@@ -50,12 +49,7 @@ public class GameWorldScreen extends CachedWorldScreen {
         worldClickController.mainClickHandler(x,y);
         repaint();
     }
-    public void setLegendWindow(LinesLegendWindow legendWindow) {
-        this.legendWindow = legendWindow;
-        if (getWorld() instanceof GameWorld) {
-            ((GameWorld)getWorld()).setLegendWindow(legendWindow);
-        }
-    }
+
 
     public void createNewWorld(int width, int height, boolean hasPassengerCount, boolean hasAbilityPay, boolean hasLandscape, boolean hasRivers, Color worldColor, int money) {
         stopRepaintTimer();

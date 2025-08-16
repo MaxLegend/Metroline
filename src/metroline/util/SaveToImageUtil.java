@@ -4,9 +4,9 @@ import metroline.core.world.World;
 import metroline.objects.gameobjects.Label;
 import metroline.objects.gameobjects.Station;
 import metroline.objects.gameobjects.Tunnel;
-import metroline.screens.worldscreens.WorldSandboxScreen;
+import metroline.screens.worldscreens.sandbox.SandboxWorldScreen;
 import metroline.screens.worldscreens.WorldScreen;
-import metroline.screens.worldscreens.gameworld.GameWorldScreen;
+import metroline.screens.worldscreens.GameWorldScreen;
 import metroline.util.ui.UserInterfaceUtil;
 
 import javax.imageio.ImageIO;
@@ -36,7 +36,7 @@ public class SaveToImageUtil {
 
         try {
             WorldScreen screen = isSandbox ?
-                    WorldSandboxScreen.getInstance() :
+                    SandboxWorldScreen.getInstance() :
                     GameWorldScreen.getInstance();
 
             saveToPNG(file, screen);
@@ -97,8 +97,8 @@ public class SaveToImageUtil {
 
     private static void drawWorldContent(Graphics2D g2d, WorldScreen screen, World world) {
         // Рисуем статичные элементы (сетку, фон)
-        if (screen instanceof WorldSandboxScreen) {
-            ((WorldSandboxScreen)screen).drawStaticWorld(g2d);
+        if (screen instanceof SandboxWorldScreen) {
+            ((SandboxWorldScreen)screen).drawStaticWorld(g2d);
         } else if (screen instanceof GameWorldScreen) {
             ((GameWorldScreen)screen).drawStaticWorld(g2d);
         }
