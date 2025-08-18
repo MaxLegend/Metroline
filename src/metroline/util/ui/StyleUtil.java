@@ -32,26 +32,7 @@ public class StyleUtil {
         return new Color(changedColor.getRed() + value, changedColor.getGreen() + value, changedColor.getBlue() + value);
     }
 
-    public static JButton createMetrolineInGameButton(String text, ActionListener action) {
-        JButton button = new JButton(text);
-        button.setContentAreaFilled(false);
-        button.setOpaque(true);
-        button.setBackground(new Color(60, 60, 60));
-        button.setForeground(Color.WHITE);
-        button.setFont(new Font("Sans Serif", Font.BOLD, 13));
-        button.setBorder(BorderFactory.createEmptyBorder(5, 15, 5, 15));
-        button.setFocusPainted(false);
-        button.addActionListener(action);
 
-        button.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {button.setBackground(new Color(79, 155, 155));}
-            public void mouseEntered(MouseEvent e) { button.setBackground(new Color(80, 80, 80)); }
-            public void mouseExited(MouseEvent e) { button.setBackground(new Color(60, 60, 60)); }
-        });
-
-        return button;
-    }
     public static Font getMetrolineFont(int size) {
         return new Font("Sans Serif", Font.BOLD, size);
     }

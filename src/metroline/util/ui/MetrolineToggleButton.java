@@ -8,61 +8,41 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
-public class MetrolineButton extends JButton {
+public class MetrolineToggleButton extends JToggleButton {
     public static final Color DEFAULT_BACKGROUND = new Color(60, 60, 60);
     public static final Color HOVER_BACKGROUND = new Color(80, 80, 80);
-    public static final Color CLICK_BACKGROUND = new Color(79, 155, 155);
+    public static final Color PRESSED_BACKGROUND = new Color(79, 155, 155);
+    public static final Color SELECTED_BACKGROUND = new Color(50, 120, 120);
     public static final Color DEFAULT_FOREGROUND = Color.WHITE;
     public static final Font DEFAULT_FONT = new Font("Sans Serif", Font.BOLD, 13);
 
-    public MetrolineButton(String text) {
+    public MetrolineToggleButton(String text) {
         super(text);
         initDefaultStyle();
     }
 
-    public MetrolineButton(String text, ActionListener action) {
+    public MetrolineToggleButton(String text, ActionListener action) {
         super(text);
         initDefaultStyle();
         addActionListener(action);
     }
 
-    public MetrolineButton(String text, Color customColor, ActionListener action) {
+    public MetrolineToggleButton(String text, Color customColor, ActionListener action) {
         super(text);
         initCustomColorStyle(customColor);
         addActionListener(action);
     }
 
-    public MetrolineButton(String iconText, String tooltip, ActionListener action) {
+    public MetrolineToggleButton(String iconText, String tooltip, ActionListener action) {
         super(iconText);
         initIconStyle();
         setLocalizedTooltip(tooltip);
         addActionListener(action);
     }
-    public static JButton createMetrolineInGameButton(String text, ActionListener action) {
-        JButton button = new JButton(text);
-        button.setContentAreaFilled(false);
-        button.setOpaque(true);
-        button.setBackground(new Color(60, 60, 60));
-        button.setForeground(Color.WHITE);
-        button.setFont(new Font("Sans Serif", Font.BOLD, 13));
-        button.setBorder(BorderFactory.createEmptyBorder(5, 15, 5, 15));
-        button.setFocusPainted(false);
-        button.addActionListener(action);
 
-        button.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {button.setBackground(new Color(79, 155, 155));}
-            public void mouseEntered(MouseEvent e) { button.setBackground(new Color(80, 80, 80)); }
-            public void mouseExited(MouseEvent e) { button.setBackground(new Color(60, 60, 60)); }
-        });
-
-        return button;
-    }
     public void setLocalizedTooltip(String tooltipKey) {
         if (tooltipKey != null && !tooltipKey.isEmpty()) {
             this.setToolTipText(LngUtil.translatable(tooltipKey));
-
-            // Добавляем слушатель для динамического обновления подсказки при изменении языка
             this.addPropertyChangeListener("ancestor", evt -> {
                 if (this.getToolTipText() != null) {
                     this.setToolTipText(LngUtil.translatable(tooltipKey));
@@ -70,6 +50,7 @@ public class MetrolineButton extends JButton {
             });
         }
     }
+
     private void initDefaultStyle() {
         setForeground(DEFAULT_FOREGROUND);
         setFont(DEFAULT_FONT);
@@ -82,19 +63,38 @@ public class MetrolineButton extends JButton {
         addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
-                setBackground(HOVER_BACKGROUND);
+                if (!isSelected()) {
+                    setBackground(HOVER_BACKGROUND);
+                }
             }
+
             @Override
             public void mouseExited(MouseEvent e) {
-                setBackground(DEFAULT_BACKGROUND);
+                if (!isSelected()) {
+                    setBackground(DEFAULT_BACKGROUND);
+                }
             }
+
             @Override
             public void mousePressed(MouseEvent e) {
-                setBackground(CLICK_BACKGROUND);
+                if (!isSelected()) {
+                    setBackground(PRESSED_BACKGROUND);
+                }
             }
+
             @Override
             public void mouseReleased(MouseEvent e) {
-                setBackground(HOVER_BACKGROUND);
+                if (!isSelected()) {
+                    setBackground(HOVER_BACKGROUND);
+                }
+            }
+        });
+
+        addItemListener(e -> {
+            if (isSelected()) {
+                setBackground(SELECTED_BACKGROUND);
+            } else {
+                setBackground(DEFAULT_BACKGROUND);
             }
         });
     }
@@ -108,22 +108,45 @@ public class MetrolineButton extends JButton {
         setContentAreaFilled(false);
         setOpaque(true);
 
+        Color hoverColor = StyleUtil.changeColorShade(baseColor, 20);
+        Color pressedColor = StyleUtil.changeColorShade(baseColor, -20);
+        Color selectedColor = StyleUtil.changeColorShade(baseColor, -30);
+
         addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
-                setBackground(StyleUtil.changeColorShade(baseColor, 20));
+                if (!isSelected()) {
+                    setBackground(hoverColor);
+                }
             }
+
             @Override
             public void mouseExited(MouseEvent e) {
-                setBackground(baseColor);
+                if (!isSelected()) {
+                    setBackground(baseColor);
+                }
             }
+
             @Override
             public void mousePressed(MouseEvent e) {
-                setBackground(StyleUtil.changeColorShade(baseColor, -20));
+                if (!isSelected()) {
+                    setBackground(pressedColor);
+                }
             }
+
             @Override
             public void mouseReleased(MouseEvent e) {
-                setBackground(StyleUtil.changeColorShade(baseColor, 20));
+                if (!isSelected()) {
+                    setBackground(hoverColor);
+                }
+            }
+        });
+
+        addItemListener(e -> {
+            if (isSelected()) {
+                setBackground(selectedColor);
+            } else {
+                setBackground(baseColor);
             }
         });
     }
@@ -141,10 +164,23 @@ public class MetrolineButton extends JButton {
         addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
-                setBackground(HOVER_BACKGROUND);
+                if (!isSelected()) {
+                    setBackground(HOVER_BACKGROUND);
+                }
             }
+
             @Override
             public void mouseExited(MouseEvent e) {
+                if (!isSelected()) {
+                    setBackground(DEFAULT_BACKGROUND);
+                }
+            }
+        });
+
+        addItemListener(e -> {
+            if (isSelected()) {
+                setBackground(SELECTED_BACKGROUND);
+            } else {
                 setBackground(DEFAULT_BACKGROUND);
             }
         });

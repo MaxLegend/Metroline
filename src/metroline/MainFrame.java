@@ -27,6 +27,8 @@ import metroline.screens.worldscreens.sandbox.SandboxWorldScreen;
 import metroline.util.IntegerDocumentFilter;
 import metroline.util.LngUtil;
 import metroline.util.MetroLogger;
+import metroline.util.ui.MetrolineButton;
+import metroline.util.ui.MetrolineToggleButton;
 import metroline.util.ui.StyleUtil;
 
 /**
@@ -57,7 +59,7 @@ public class MainFrame extends JFrame {
 
 
     private JButton legendButton;
-    private JButton economicLayerButton;
+    private MetrolineToggleButton economicLayerButton;
 
     public JLabel moneyLabel = new JLabel("100");
 
@@ -155,11 +157,6 @@ public class MainFrame extends JFrame {
         initializeWindow(true);
 
     }
-
-
-    /**
-     * Set to fullscreen mode
-     */
     private void setupFullscreenWindow() {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setUndecorated(true); // Убираем стандартную рамку - на время отладки.
@@ -180,6 +177,35 @@ public class MainFrame extends JFrame {
         setLocationRelativeTo(null); // Центрируем окно
         isFullscreen = false;
     }
+//    private void setupFullscreenWindow() {
+//        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+//        setUndecorated(true);
+//        setLayout(new BorderLayout());
+//        getContentPane().setBackground(new Color(30, 30, 30));
+//
+//        // Настоящий полноэкранный режим
+//        GraphicsEnvironment env = GraphicsEnvironment.getLocalGraphicsEnvironment();
+//        GraphicsDevice device = env.getDefaultScreenDevice();
+//        device.setFullScreenWindow(this);
+//
+//        isFullscreen = true;
+//    }
+//
+//    private void setupWindowedMode() {
+//        // Выход из полноэкранного режима
+//        GraphicsEnvironment env = GraphicsEnvironment.getLocalGraphicsEnvironment();
+//        GraphicsDevice device = env.getDefaultScreenDevice();
+//        device.setFullScreenWindow(null);
+//
+//        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+//        setUndecorated(false);
+//        setLayout(new BorderLayout());
+//        getContentPane().setBackground(new Color(30, 30, 30));
+//        setSize(1100, 600);
+//        setLocationRelativeTo(null);
+//        isFullscreen = false;
+//    }
+
     /**
      * UI Initialization
      */
@@ -220,7 +246,7 @@ public class MainFrame extends JFrame {
         timeLabel.setFont(new Font("Sans Serif", Font.BOLD, 13));
         panel.add(timeLabel);
 
-        panel.add(StyleUtil.createMetrolineInGameButton(
+        panel.add(MetrolineButton.createMetrolineInGameButton(
                 LngUtil.translatable("timebar.pause"),
                 e -> timeControl()
         ));
@@ -288,13 +314,13 @@ public class MainFrame extends JFrame {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(new Color(60, 60, 60));
 
-        legendButton = StyleUtil.createMetrolineInGameButton(
+        legendButton = MetrolineButton.createMetrolineInGameButton(
                 LngUtil.translatable("legend.button"),
                 e -> toggleLegendWindow()
         );
         panel.add(legendButton, BorderLayout.EAST);
-        if(getCurrentScreen() instanceof GameWorldScreen) {
-            economicLayerButton = StyleUtil.createMetrolineInGameButton(
+
+            economicLayerButton = new MetrolineToggleButton(
                     LngUtil.translatable("timebar.economic_layers"),
                     e -> showEconomicLayerPopupMenu((JButton) e.getSource())
             );
@@ -303,7 +329,7 @@ public class MainFrame extends JFrame {
         moneyLabel.setForeground(Color.WHITE);
         moneyLabel.setFont(new Font("Sans Serif", Font.BOLD, 14));
         panel.add(moneyLabel);
-        }
+
         return panel;
     }
 
@@ -340,7 +366,7 @@ public class MainFrame extends JFrame {
     }
 
     private JButton createToolBarButton(String translationKey, ActionListener listener) {
-        return StyleUtil.createMetrolineInGameButton(
+        return MetrolineButton.createMetrolineInGameButton(
                 LngUtil.translatable(translationKey),
                 listener
         );
@@ -424,8 +450,8 @@ public class MainFrame extends JFrame {
         JPanel menuPanel = new JPanel(new GridLayout(0, 1));
         menuPanel.setBackground(StyleUtil.BACKGROUND_COLOR);
         menuPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
-        JButton passengerButton = StyleUtil.createMetrolineInGameButton(LngUtil.translatable("elayer.passenger" ), e -> togglePassengerZones());
-        JButton abilityPayButton = StyleUtil.createMetrolineInGameButton(LngUtil.translatable("elayer.abilityPay" ), e -> togglePaymentZones());
+        JButton passengerButton = MetrolineButton.createMetrolineInGameButton(LngUtil.translatable("elayer.passenger" ), e -> togglePassengerZones());
+        JButton abilityPayButton = MetrolineButton.createMetrolineInGameButton(LngUtil.translatable("elayer.abilityPay" ), e -> togglePaymentZones());
 
         passengerButton.setSize(sourceButton.getSize());
         abilityPayButton.setSize(sourceButton.getSize());
@@ -613,6 +639,7 @@ public class MainFrame extends JFrame {
     public void switchScreen(String screenName) {
         if (currentScreen != null) {
             remove(currentScreen);
+            toolBar.setVisible(false);
         }
 //        if (!(screenName.equals(GAME_SCREEN_NAME) || screenName.equals(SANDBOX_SCREEN_NAME))) {
 //            clearLegendWindow();
@@ -627,6 +654,7 @@ public class MainFrame extends JFrame {
         toolBar.setVisible(isGameScreen || isSandboxGameScreen);
         timePanel.setVisible(isGameScreen|| isSandboxGameScreen);
         legendButton.setVisible(isGameScreen || isSandboxGameScreen);
+
         revalidate();
         repaint();
         currentScreen.requestFocusInWindow();

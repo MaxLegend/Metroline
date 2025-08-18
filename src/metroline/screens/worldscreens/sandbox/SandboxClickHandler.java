@@ -263,11 +263,11 @@ public class SandboxClickHandler {
         colorBtn.addActionListener(e -> {
             currentStationColor = StationColors.fromColor(colorButton);
             Station newStation = new Station(
-                    GameWorldScreen.getInstance().getWorld(),
-                    x, y, StationColors.fromColor(colorButton), StationType.PLANNED
+                    SandboxWorldScreen.getInstance().getWorld(),
+                    x, y, StationColors.fromColor(colorButton), StationType.REGULAR
             );
-            GameWorldScreen.getInstance().getWorld().addStation(newStation);
-            GameWorldScreen.getInstance().repaint();
+            SandboxWorldScreen.getInstance().getWorld().addStation(newStation);
+            SandboxWorldScreen.getInstance().repaint();
             dialog.dispose();
         });
 

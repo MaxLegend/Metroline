@@ -216,7 +216,7 @@ public class WorldSettingsScreen extends GameScreen {
 
         MetrolineButton backButton = new MetrolineButton(LngUtil.translatable("world.back"), e -> parent.switchScreen("menu"));
 
-        JButton createGameButton = StyleUtil.createMetrolineButton(LngUtil.translatable("world.create_standart"), e -> createWorld());
+        MetrolineButton createGameButton = new MetrolineButton(LngUtil.translatable("world.create_standart"), e -> createWorld());
 
         buttonPanel.add(backButton);
         buttonPanel.add(Box.createRigidArea(new Dimension(20, 0)));

@@ -4,6 +4,7 @@ import metroline.core.world.World;
 import metroline.objects.gameobjects.Label;
 import metroline.objects.gameobjects.Station;
 import metroline.objects.gameobjects.Tunnel;
+import metroline.screens.worldscreens.CachedWorldScreen;
 import metroline.screens.worldscreens.sandbox.SandboxWorldScreen;
 import metroline.screens.worldscreens.WorldScreen;
 import metroline.screens.worldscreens.normal.GameWorldScreen;

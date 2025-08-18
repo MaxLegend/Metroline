@@ -244,7 +244,7 @@ public class GameWorld extends World {
     @Override
     public void addStation(Station station) {
         super.addStation(station);
-
+    //    if(screen!=null)  ((GameWorldScreen)screen).notifyStationsChanged();
         if (station.getType() == StationType.BUILDING) {
             // Проверяем, не добавлена ли уже станция
             if (!getConstructionProcessor().getStationBuildStartTimes().containsKey(station)) {
@@ -265,7 +265,7 @@ public class GameWorld extends World {
 
         // Вызываем родительский метод
             super.addTunnel(tunnel);
-
+     //       if(screen!=null) ((GameWorldScreen)screen).notifyTunnelsChanged();
         // Инициализируем карты, если они null
         if (getConstructionProcessor().getTunnelBuildStartTimes() == null) {
 
