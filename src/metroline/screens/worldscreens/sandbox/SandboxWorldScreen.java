@@ -160,7 +160,7 @@ public class SandboxWorldScreen extends CachedWorldScreen {
             drawDebugInfo(g2d);
         }
     }
-    private java.util.List<Station> getAllStationsSorted() {
+    public java.util.List<Station> getAllStationsSorted() {
         // Сортируем станции по координатам, чтобы избежать перекрытий
         List<Station> stations = new ArrayList<>(getWorld().getStations());
         stations.sort((a, b) -> {

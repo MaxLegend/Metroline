@@ -572,13 +572,13 @@ public class GameWorld extends World {
     public void addGameplayUnits(GameplayUnits obj) {
         gameplayUnits.add(obj);
         gameGrid[obj.getX()][obj.getY()].setContent(obj);
-        GameWorldScreen.getInstance().invalidateCache();
+        GameWorldScreen.getInstance().invalidateCache(false);
     }
 
     public void removeGameplayUnits(GameplayUnits obj) {
         gameplayUnits.remove(obj);
         gameGrid[obj.getX()][obj.getY()].setContent(null);
-        GameWorldScreen.getInstance().invalidateCache();
+        GameWorldScreen.getInstance().invalidateCache(false);
     }
     @Override
     public World getWorld() {

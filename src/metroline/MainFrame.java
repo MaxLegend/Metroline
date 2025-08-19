@@ -432,7 +432,7 @@ public class MainFrame extends JFrame {
     public void togglePaymentZones() {
         GameWorld.showPaymentZones = !GameWorld.showPaymentZones;
         if (currentScreen instanceof GameWorldScreen) {
-            ((GameWorldScreen)currentScreen).invalidateCache();
+            ((GameWorldScreen)currentScreen).invalidateCache(false);
             currentScreen.repaint();
         }
     }
@@ -440,7 +440,7 @@ public class MainFrame extends JFrame {
     public void togglePassengerZones() {
         GameWorld.showPassengerZones = !GameWorld.showPassengerZones;
         if (currentScreen instanceof GameWorldScreen) {
-            ((GameWorldScreen)currentScreen).invalidateCache();
+            ((GameWorldScreen)currentScreen).invalidateCache(false);
             currentScreen.repaint();
         }
     }

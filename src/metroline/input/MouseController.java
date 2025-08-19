@@ -200,23 +200,34 @@ public class MouseController extends MouseAdapter {
         int currentOffsetX = screen.getOffsetX();
         int currentOffsetY = screen.getOffsetY();
 
+        // Получаем позицию курсора в мировых координатах ДО изменения зума
         PathPoint worldPosBefore = screen.screenToWorld(e.getX(), e.getY());
-        float zoomDelta = -e.getWheelRotation() * 0.1f;
-        float newZoom = currentZoom * (1 + zoomDelta);
+        if (worldPosBefore == null) return;
+
+        // Вычисляем новый зум
+        float zoomFactor = 1.1f;
+        if (e.getWheelRotation() > 0) {
+            zoomFactor = 1.0f / zoomFactor; // Уменьшение масштаба
+        }
+
+        float newZoom = currentZoom * zoomFactor;
         newZoom = Math.max(0.1f, Math.min(3.0f, newZoom));
 
-        if (currentZoom == newZoom) return;
+        if (Math.abs(currentZoom - newZoom) < 0.01f) return;
 
+        // Устанавливаем новый зум
         screen.setZoom(newZoom);
 
+        // Вычисляем новую позицию курсора в экранных координатах после изменения зума
         Point screenPosAfter = screen.worldToScreen(worldPosBefore.x, worldPosBefore.y);
+        if (screenPosAfter == null) return;
+
+        // Корректируем смещение так, чтобы точка под курсором осталась на месте
         int dx = e.getX() - screenPosAfter.x;
         int dy = e.getY() - screenPosAfter.y;
 
-        screen.setOffset(
-                currentOffsetX + dx,
-                currentOffsetY + dy
-        );
+        screen.setOffset(currentOffsetX + dx, currentOffsetY + dy);
     }
+
 }
 
