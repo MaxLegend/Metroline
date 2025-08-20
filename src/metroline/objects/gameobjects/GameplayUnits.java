@@ -13,7 +13,9 @@ import java.util.Map;
 public class GameplayUnits extends GameObject {
     private final GameplayUnitsType type;
     private static final Map<GameplayUnitsType, BufferedImage> icons = new HashMap<>();
-
+    private final long creationTime;
+    private int condition; // Состояние здания (0-100)
+    private boolean isAbandoned;
     static {
         try {
             icons.put(GameplayUnitsType.PORT, loadIcon("port.png"));
@@ -24,6 +26,9 @@ public class GameplayUnits extends GameObject {
             icons.put(GameplayUnitsType.CITYHALL, loadIcon("cityhall.png"));
             icons.put(GameplayUnitsType.SHOP, loadIcon("shop.png"));
             icons.put(GameplayUnitsType.FACTORY, loadIcon("factory.png"));
+            icons.put(GameplayUnitsType.BIG_HOUSE, loadIcon("big_house.png"));
+            icons.put(GameplayUnitsType.HOUSE, loadIcon("house.png"));
+            icons.put(GameplayUnitsType.SMALL_HOUSE, loadIcon("small_house.png"));
         } catch (IOException e) {
             e.printStackTrace();
             // Запасной вариант - создаем простые иконки
@@ -38,8 +43,34 @@ public class GameplayUnits extends GameObject {
         super(world, x, y);
         this.type = type;
         this.name = type.getLocalizedName();
+        this.creationTime = world.getGameTime().getCurrentTimeMillis();
+        this.condition = 80 + world.rand.nextInt(20); // 80-100% initially
+        this.isAbandoned = false;
     }
 
+    public void updateCondition() {
+        // Здания slowly deteriorate over time
+        if (!isAbandoned && getWorld().rand.nextFloat() < 0.01f) {
+            condition = Math.max(0, condition - 1);
+
+            // Если состояние слишком плохое, здание забрасывается
+            if (condition < 30 && getWorld().rand.nextFloat() < 0.05f) {
+                abandon();
+            }
+        }
+    }
+    private void abandon() {
+        isAbandoned = true;
+        // Можно изменить внешний вид заброшенного здания
+    }
+
+    public void renovate() {
+        isAbandoned = false;
+        condition = 80 + getWorld().rand.nextInt(20);
+    }
+    public long getCreationTime() { return creationTime; }
+    public int getCondition() { return condition; }
+    public boolean isAbandoned() { return isAbandoned; }
     public GameplayUnitsType getType() {
         return type;
     }

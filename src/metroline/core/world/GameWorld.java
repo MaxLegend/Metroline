@@ -2,6 +2,7 @@ package metroline.core.world;
 
 import metroline.core.time.ConstructionTimeProcessor;
 import metroline.core.time.GameTime;
+import metroline.core.world.cities.CityManager;
 import metroline.core.world.tiles.GameTile;
 
 import metroline.core.world.tiles.WorldTile;
@@ -39,20 +40,24 @@ public class GameWorld extends World {
     public static boolean showPassengerZones = false;
     private List<GameplayUnits> gameplayUnits = new ArrayList<>();
 
+    private CityManager cityManager;
+
     public transient LinesLegendWindow legendWindow;
     public GameWorld() {
         super();
 
     }
 
-    public GameWorld(int width, int height,boolean hasPassengerCount, boolean hasAbilityPay,  boolean hasLandscape, boolean hasRivers, Color worldColor, int money) {
+    public GameWorld(short width, short height,boolean hasPassengerCount, boolean hasAbilityPay,  boolean hasLandscape, boolean hasRivers, int worldColor, int money) {
         super(null, width, height, hasPassengerCount, hasAbilityPay, hasLandscape,hasRivers,worldColor, SAVE_FILE);
         this.mainFrame = MainFrame.getInstance();
         this.money = money;
         this.gameTime = new GameTime();
         processor = new ConstructionTimeProcessor(gameTime, this);
         processor.initTransientFields();
+
         generateWorld(hasPassengerCount, hasAbilityPay, hasLandscape, hasRivers, worldColor);
+        this.cityManager = new CityManager(this);
 
     }
     /**
@@ -74,27 +79,38 @@ public class GameWorld extends World {
 
     }
 
-    public void generateWorld(boolean hasPassengerCount, boolean hasAbilityPay, boolean hasLandscape, boolean hasRivers, Color worldColor) {
-        //Create world grid
+    public void generateWorld(boolean hasPassengerCount, boolean hasAbilityPay, boolean hasLandscape, boolean hasRivers, int worldColor) {
+        initWorldGrid();
         MetroLogger.logInfo("Generating game world...");
-        worldGrid = new WorldTile[width][height];
-        gameGrid = new GameTile[width][height];
+        worldGrid = new WorldTile[width*height];
+        gameGrid = new GameTile[width*height];
+        gameplayGrid = new GameTile[width*height];
         // Инициализация генераторов шума с общим seed для согласованности
         long seed = rand.nextLong();
+        WorldTile worldTile;
+        GameTile gameTile;
+        GameTile gameplayTile;
+
         PerlinNoise perlin = new PerlinNoise(seed);
         VoronoiNoise voronoi = new VoronoiNoise(seed);
         if(!hasLandscape) {
-            for (int y = 0; y < height; y++) {
-                for (int x = 0; x < width; x++) {
-                    worldGrid[x][y] = new WorldTile(x, y, 0f, false, 0,0, Color.DARK_GRAY);
-                    worldGrid[x][y].setBaseTileColor(worldColor);
-                    gameGrid[x][y] = new GameTile(x, y);
+
+            for (short y = 0; y < height; y++) {
+                for (short x = 0; x < width; x++) {
+                    worldTile = new WorldTile(x, y, 0f, false, 0,0, 0x6E6E6E);
+                    setWorldTile(x, y, worldTile);
+                    worldTile.setBaseTileColor(worldColor);
+                    gameTile = new GameTile(x, y);
+                    setGameTile(x, y, gameTile);
+
+                    gameplayTile = new GameTile(x, y);
+                    setGameplayTile(x, y, gameplayTile);
                 }
             }
         } else {
 
-            for (int y = 0; y < height; y++) {
-                for (int x = 0; x < width; x++) {
+            for (short y = 0; y < height; y++) {
+                for (short x = 0; x < width; x++) {
                     float nx = (float) x / width;
                     float ny = (float) y / height;
 
@@ -108,11 +124,17 @@ public class GameWorld extends World {
                     // Преобразуем в значение твердости породы (0..1)
                     float perm = transformNoiseToPerm(noiseValue);
 
+                    worldTile = new WorldTile(x, y, perm, false, 0,0, 0xFFFFFF);
+                    setWorldTile(x, y, worldTile);
+                    worldTile.setBaseTileColor(worldColor);
                     // Создаем тайл
-                    worldGrid[x][y] = new WorldTile(x, y, perm, false, 0,0, Color.WHITE);
-                    worldGrid[x][y].setBaseTileColor(worldColor);
-                    gameGrid[x][y] = new GameTile(x, y);
+//                    worldGrid[x][y] = new WorldTile(x, y, perm, false, 0,0, Color.WHITE);
+//                    worldGrid[x][y].setBaseTileColor(worldColor);
+                    gameTile = new GameTile(x, y);
+                    setGameTile(x, y, gameTile);
 
+                    gameplayTile = new GameTile(x, y);
+                    setGameplayTile(x, y, gameplayTile);
                 }
             }
 
@@ -141,7 +163,21 @@ public class GameWorld extends World {
         applyGradient();
         MetroLogger.logInfo("World successfully created!");
     }
+    public void updateCities() {
+        // Обновляем систему городка
+        if (cityManager != null) {
+            cityManager.update();
+        }
 
+        // Обновляем состояние всех игровых объектов
+        updateGameplayUnits();
+    }
+
+    private void updateGameplayUnits() {
+        for (GameplayUnits unit : gameplayUnits) {
+            unit.updateCondition();
+        }
+    }
     private float mixNoises(float perlin, float voronoi, float perlinWeight) {
         // Нормализуем вороной шум (изначально 0..1)
         voronoi = (float)Math.pow(voronoi, 2);
@@ -174,7 +210,7 @@ public class GameWorld extends World {
                 //   value = 1f - value; // Инвертируем
 
                 if (voronoiValue > 0.4f) { // Более высокий порог
-                    worldGrid[x][y].setAbilityPay((float) (voronoiValue * 1.5)); // Усиливаем значения
+                    getWorldTile(x, y).setAbilityPay((float) (voronoiValue * 1.5)); // Усиливаем значения
                 }
             }
         }
@@ -194,7 +230,7 @@ public class GameWorld extends World {
                 value = 1f - value; // Инвертируем
 
                 if (value > 0.6f) { // Только самые яркие зоны
-                    worldGrid[x][y].setPassengerCount((int)(value * 1200)); // Усиливаем значения
+                    getWorldTile(x, y).setPassengerCount((int)(value * 1200)); // Усиливаем значения
                 }
             }
         }
@@ -291,7 +327,7 @@ public class GameWorld extends World {
     }
     public GameplayUnits getGameplayUnitsAt(int x, int y) {
         if (x < 0 || x >= width || y < 0 || y >= height) return null;
-        GameObject obj = gameGrid[x][y].getContent();
+        GameObject obj = getGameplayTile(x, y).getContent();
         return obj instanceof GameplayUnits ? (GameplayUnits)obj : null;
     }
 
@@ -421,7 +457,7 @@ public class GameWorld extends World {
                 int ny = station.getY() + dy;
 
                 if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-                    GameObject obj = gameGrid[nx][ny].getContent();
+                    GameObject obj = getGameplayTile(nx, ny).getContent();
                     if (obj instanceof GameplayUnits) {
                         gameplayUnitsMultiplier *= ((GameplayUnits) obj).getType().getIncomeMultiplier();
 
@@ -547,7 +583,7 @@ public class GameWorld extends World {
             int y = ThreadLocalRandom.current().nextInt(height);
 
             // Проверяем, что клетка свободна
-            if (!gameGrid[x][y].isEmpty()) continue;
+            if (!getGameplayTile(x,y).isEmpty()) continue;
 
             WorldTile worldTile = getWorldTile(x, y);
             GameplayUnitsType type = types[ThreadLocalRandom.current().nextInt(types.length)];
@@ -571,14 +607,41 @@ public class GameWorld extends World {
     }
     public void addGameplayUnits(GameplayUnits obj) {
         gameplayUnits.add(obj);
-        gameGrid[obj.getX()][obj.getY()].setContent(obj);
-        GameWorldScreen.getInstance().invalidateCache(false);
+        getGameplayTile(obj.getX(), obj.getY()).setContent(obj);
+
+
+        // Уведомляем CityManager о новом здании (если нужно)
+        if (cityManager != null) {
+            cityManager.onBuildingAdded(obj);
+        }
+
+        if (GameWorldScreen.getInstance() != null) {
+            GameWorldScreen.getInstance().invalidateCache(false);
+        }
+//        gameplayUnits.add(obj);
+//        gameplayGrid[obj.getX()][obj.getY()].setContent(obj);
+//        GameWorldScreen.getInstance().invalidateCache(false);
     }
 
     public void removeGameplayUnits(GameplayUnits obj) {
         gameplayUnits.remove(obj);
-        gameGrid[obj.getX()][obj.getY()].setContent(null);
-        GameWorldScreen.getInstance().invalidateCache(false);
+        getGameplayTile(obj.getX(), obj.getY()).setContent(null);
+
+        // Уведомляем CityManager об удалении здания
+        if (cityManager != null) {
+            cityManager.onBuildingRemoved(obj);
+        }
+
+        if (GameWorldScreen.getInstance() != null) {
+            GameWorldScreen.getInstance().invalidateCache(false);
+        }
+
+//        gameplayUnits.remove(obj);
+//        gameplayGrid[obj.getX()][obj.getY()].setContent(null);
+//        GameWorldScreen.getInstance().invalidateCache(false);
+    }
+    public CityManager getCityManager() {
+        return cityManager;
     }
     @Override
     public World getWorld() {
@@ -659,25 +722,32 @@ public class GameWorld extends World {
             station.updateType();
         }
     }
-    public void initWorldGrid() {
-        this.worldGrid = new WorldTile[width][height];
-        this.gameGrid = new GameTile[width][height];
-        for (int x = 0; x < width; x++) {
-            for (int y = 0; y < height; y++) {
-                worldGrid[x][y] = new WorldTile(x,y);
-                gameGrid[x][y] = new GameTile(x,y);
-            }
-        }
-    }
-    public void initGameGrid() {
-        this.gameGrid = new GameTile[width][height];
-        for (int x = 0; x < width; x++) {
-            for (int y = 0; y < height; y++) {
-                gameGrid[x][y] = new GameTile(x,y);
-            }
-        }
-
-    }
+//    public void initWorldGrid() {
+//     //   this.worldGrid = new WorldTile[width][height];
+//        this.worldGrid = new WorldTile[width * height];
+//        this.gameGrid = new GameTile[width][height];
+//        this.gameplayGrid = new GameTile[width][height];
+//
+//        for (int x = 0; x < width; x++) {
+//            for (int y = 0; y < height; y++) {
+//
+//                worldTile = new WorldTile(x,y);
+//                gameGrid[x][y] = new GameTile(x,y);
+//                gameplayGrid[x][y] = new GameTile(x, y);
+//            }
+//        }
+//    }
+//    public void initGameGrid() {
+//        this.gameGrid = new GameTile[width][height];
+//        this.gameplayGrid = new GameTile[width][height];
+//        for (int x = 0; x < width; x++) {
+//            for (int y = 0; y < height; y++) {
+//                gameGrid[x][y] = new GameTile(x,y);
+//                gameplayGrid[x][y] = new GameTile(x,y);
+//            }
+//        }
+//
+//    }
     public void saveWorld() {
         try {
             MetroSerializer serializer = new MetroSerializer();

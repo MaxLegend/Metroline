@@ -23,10 +23,12 @@ public class World implements Serializable {
     public static final String SAVE_FOLDER = "saves";
     public String SAVE_FILE;
     public Random rand = new Random();
-    protected int width, height;
+    protected short width, height;
 
-    public WorldTile[][] worldGrid;
-    public GameTile[][] gameGrid;
+    //  public WorldTile[][] worldGrid;
+    public WorldTile[] worldGrid;
+    public GameTile[] gameGrid;
+    public GameTile[] gameplayGrid;
 
     public java.util.List<Station> stations = new ArrayList<>();
     public java.util.List<Tunnel> tunnels = new ArrayList<>();
@@ -40,7 +42,7 @@ public class World implements Serializable {
         super();
     }
 
-    public World(WorldScreen screen, int width, int height,boolean hasPassengerCount, boolean hasAbilityPay, boolean hasLandscape, boolean hasRivers, Color worldColor, String saveName) {
+    public World(WorldScreen screen, short width, short height,boolean hasPassengerCount, boolean hasAbilityPay, boolean hasLandscape, boolean hasRivers, int worldColor, String saveName) {
         this.screen = screen;
         this.width = width;
         this.height = height;
@@ -66,8 +68,13 @@ public class World implements Serializable {
         return gameTime;
     }
 
-
-
+    public void initWorldGrid() {
+        worldGrid = new WorldTile[width * height];
+    }
+    public void initGameGrid() {
+        gameGrid = new GameTile[width * height];
+        gameplayGrid = new GameTile[width * height];
+    }
     public Label getLabelForGameObject(GameObject station) {
         for (Label label : labels) {
             if (label.getParentGameObject() == station) {
@@ -142,11 +149,12 @@ public class World implements Serializable {
      */
     public void addLabel(Label label) {
         labels.add(label);
-        gameGrid[label.getX()][label.getY()].setContent(label);
+        getGameTile(label.getX(), label.getY()).setContent(label);
     }
     public void removeLabel(Label label) {
         labels.remove(label);
-        gameGrid[label.getX()][label.getY()].setContent(null);
+        getGameTile(label.getX(), label.getY()).setContent(null);
+
     }
     /**
      * Gets the label at specified coordinates
@@ -156,7 +164,7 @@ public class World implements Serializable {
      */
     public Label getLabelAt(int x, int y) {
         if (x < 0 || x >= width || y < 0 || y >= height) return null;
-        GameObject obj = gameGrid[x][y].getContent();
+        GameObject obj = getGameTile(x, y).getContent();
         return obj instanceof Label ? (Label)obj : null;
     }
 
@@ -179,11 +187,11 @@ public class World implements Serializable {
      * @param station Station to add
      */
     public void addStation(Station station) {
-        if (gameGrid[station.getX()][station.getY()].getContent() != null) {
+        if (getGameTile(station.getX(), station.getY()).getContent() != null) {
             return;
         }
         stations.add(station);
-        gameGrid[station.getX()][station.getY()].setContent(station);
+        getGameTile(station.getX(), station.getY()).setContent(station);
 
         // Передаем имя станции для выбора оптимальной позиции
         PathPoint labelPos = findFreePositionNear(station.getX(), station.getY(), station.getName());
@@ -208,7 +216,7 @@ public class World implements Serializable {
         }
         stations.remove(station);
         // Удаляем метку станции
-        gameGrid[station.getX()][station.getY()].setContent(null);
+        getGameTile(station.getX(), station.getY()).setContent(null);
 
         // Remove any tunnels connected to this station
         tunnels.removeIf(t -> t.getStart() == station || t.getEnd() == station);
@@ -221,7 +229,7 @@ public class World implements Serializable {
      */
     public Station getStationAt(int x, int y) {
         if (x < 0 || x >= width || y < 0 || y >= height) return null;
-        GameObject obj = gameGrid[x][y].getContent();
+        GameObject obj = getGameTile(x, y).getContent();
         return obj instanceof Station ? (Station)obj : null;
     }
 
@@ -455,10 +463,12 @@ public class World implements Serializable {
         return smoothed;
     }
 
+
+
     private void setRiverTile(int x, int y, int radius) {
-        worldGrid[x][y].setPerm(0.3f);
-        worldGrid[x][y].setWater(true);
-        worldGrid[x][y].setWaterDepth(1.0f); // Центр - максимальная глубина
+        getWorldTile(x,y).setPerm(0.3f);
+        getWorldTile(x,y).setWater(true);
+        getWorldTile(x,y).setWaterDepth(1.0f); // Центр - максимальная глубина
 
         for (int dy = -radius; dy <= radius; dy++) {
             for (int dx = -radius; dx <= radius; dx++) {
@@ -469,13 +479,13 @@ public class World implements Serializable {
 
                     if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
                         float perm = 0.3f + (dist/radius) * 0.4f;
-                        worldGrid[nx][ny].setPerm(perm);
+                        getWorldTile(nx,ny).setPerm(perm);
 
                         // Устанавливаем глубину (1 в центре, 0 на краях)
                         float depth = 1.0f - (dist / radius);
                         if (dist < radius * 0.7f) {
-                            worldGrid[nx][ny].setWater(true);
-                            worldGrid[nx][ny].setWaterDepth(depth);
+                            getWorldTile(nx,ny).setWater(true);
+                            getWorldTile(nx,ny).setWaterDepth(depth);
                         }
                     }
                 }
@@ -498,7 +508,7 @@ public class World implements Serializable {
         float[][] originalPerm = new float[width][height];
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                originalPerm[x][y] = worldGrid[x][y].getPerm();
+                originalPerm[x][y] = getWorldTile(x,y).getPerm();
             }
         }
 
@@ -530,7 +540,7 @@ public class World implements Serializable {
                                 }
                             }
                         }
-                        worldGrid[x][y].setPerm(sum / count);
+                        getWorldTile(x,y).setPerm(sum / count);
                     }
                 }
             }
@@ -539,26 +549,60 @@ public class World implements Serializable {
 
     public Color getWorldColorAt(int x, int y) {
         if (x < 0 || x >= width || y < 0 || y >= height) return null;
-        return worldGrid[x][y].getCurrentColor();
+        return getWorldTile(x,y).getCurrentColor();
     }
-    public WorldTile getWorldTile(int x, int y) {
-        return worldGrid[x][y];
+
+    private int index(int x, int y) {
+        return y * width + x;
     }
+//    public WorldTile getWorldTile(int x, int y) {
+//        return getWorldTile(x,y);
+//    }
+public WorldTile getWorldTile(int x, int y) {
+    if (x < 0 || x >= width || y < 0 || y >= height) return null;
+    return worldGrid[index(x, y)];
+}
+    public void setWorldTile(int x, int y, WorldTile tile) {
+        if (x < 0 || x >= width || y < 0 || y >= height) return;
+        worldGrid[index(x, y)] = tile;
+
+    }
+
     public GameTile getGameTile(int x, int y) {
-        return gameGrid[x][y];
+        if (x < 0 || x >= width || y < 0 || y >= height) return null;
+        return gameGrid[index(x, y)];
+    }
+    public void setGameTile(int x, int y, GameTile tile) {
+        if (x < 0 || x >= width || y < 0 || y >= height) return;
+        gameGrid[index(x, y)] = tile;
+    }
+    public GameTile getGameplayTile(int x, int y) {
+        if (x < 0 || x >= width || y < 0 || y >= height) return null;
+        return gameplayGrid[index(x, y)];
+    }
+    public void setGameplayTile(int x, int y, GameTile tile) {
+        if (x < 0 || x >= width || y < 0 || y >= height) return;
+        gameplayGrid[index(x, y)] = tile;
     }
     /**
      * Gets the world grid
      * @return 2D array of world tiles
      */
-    public WorldTile[][] getWorldGrid() { return worldGrid; }
-
+//    public WorldTile[][] getWorldGrid() { return worldGrid; }
+    public WorldTile[] getWorldGrid() {
+        return worldGrid;
+    }
     /**
      * Gets the game grid
      * @return 2D array of game tiles
      */
-    public GameTile[][] getGameGrid() { return gameGrid; }
+    public GameTile[] getGameGrid() { return gameGrid; }
 
+    /**
+     * Gets the gameplay grid
+     * @return 2D array of game tiles
+     */
+    public GameTile[] getGameplayGrid() { return gameplayGrid; }
     public WorldScreen getWorldScreen() {
         if (this instanceof GameWorld) {
             return GameWorldScreen.getInstance();
@@ -575,7 +619,7 @@ public class World implements Serializable {
      * @return Width in tiles
      */
     public int getWidth() { return width; }
-    public void setWidth(int width) {
+    public void setWidth(short width) {
         this.width = width;
     }
     /**
@@ -585,7 +629,7 @@ public class World implements Serializable {
     public int getHeight() {
         return height;
     }
-    public void setHeight(int height) {
+    public void setHeight(short height) {
         this.height = height;
     }
 

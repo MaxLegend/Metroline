@@ -69,14 +69,14 @@ public class SandboxClickHandler {
                         SandboxWorldScreen.getInstance().getWorld().getStationAt(newX, newY) == null) {
                     Label label = SandboxWorldScreen.getInstance().getWorld().getLabelForStation(station);
                     // Remove from old position
-                    SandboxWorldScreen.getInstance().getWorld().getGameGrid()[station.getX()][station.getY()].setContent(null);
+                    SandboxWorldScreen.getInstance().getWorld().getGameTile(station.getX(), station.getY()).setContent(null);
 
                     // Update position
                     station.x = newX;
                     station.y = newY;
 
                     // Add to new position
-                    SandboxWorldScreen.getInstance().getWorld().getGameGrid()[newX][newY].setContent(station);
+                    SandboxWorldScreen.getInstance().getWorld().getGameTile(newX, newY).setContent(station);
 
                     // Recalculate all connected tunnels
                     for (Tunnel t : SandboxWorldScreen.getInstance().getWorld().getTunnels()) {

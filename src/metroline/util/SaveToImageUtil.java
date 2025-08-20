@@ -22,7 +22,7 @@ import java.util.Date;
 // TODO: В глобальные настройки - SCALE_FACTOR качество сохранения мира в PNG
 public class SaveToImageUtil {
     private static final int SCALE_FACTOR = 2; // Увеличение в 2 раза
-    private static final int TILE_SIZE = 32; // Размер клетки в пикселях
+    private static final int TILE_SIZE = 16; // Размер клетки в пикселях
 
     public static void saveWorldToPNG(boolean isSandbox) {
         File screenshotsDir = new File("screenshots");
@@ -85,6 +85,9 @@ public class SaveToImageUtil {
 
         // Сохраняем с максимальным качеством
         ImageIO.write(image, "PNG", file);
+        image.flush(); // освобождает ресурсы изображения
+        image = null;  // убираем ссылку
+        System.gc();
     }
 
     private static void setupHighQualityRendering(Graphics2D g2d) {

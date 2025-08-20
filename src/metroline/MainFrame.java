@@ -557,6 +557,8 @@ public class MainFrame extends JFrame {
             }
         }
     }
+
+
     /**
      * Back to Main menu
      */
@@ -588,11 +590,12 @@ public class MainFrame extends JFrame {
                 if (world != null && world.getGameTime() != null) newTime = world.getGameTime().getDateTimeString();
                 GameTime gameTime = world.getGameTime();
 
-                if (gameTime.checkHourPassed()) {
+                if (gameTime != null && gameTime.checkHourPassed()) {
                     world.updateStationsRevenue();
                     world.updateStationsWear();
                     world.calculateStationsUpkeep();
                     world.calculateTunnelsUpkeep();
+                    world.updateCities();
                 }
                 //
 

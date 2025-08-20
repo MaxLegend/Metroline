@@ -5,6 +5,7 @@ import metroline.core.world.GameWorld;
 import metroline.core.world.SandboxWorld;
 
 
+import metroline.core.world.tiles.WorldTile;
 import metroline.objects.gameobjects.*;
 import metroline.objects.enums.Direction;
 import metroline.MainFrame;
@@ -31,12 +32,12 @@ public class SandboxWorldScreen extends CachedWorldScreen {
     private boolean cacheValid = false; // Флаг валидности кеша
 
     public SandboxWorldScreen(MainFrame parent) {
-        super(parent, new SandboxWorld(widthWorld, heightWorld, Color.WHITE));
+        super(parent, new SandboxWorld(widthWorld, heightWorld, 0xFFFFFF));
         INSTANCE = this;
         this.sandboxClickHandler = new SandboxClickHandler();
         initWorldCache();
     }
-    public void createNewWorld(int width, int height, Color worldColor) {
+    public void createNewWorld(short width, short height, int worldColor) {
         widthWorld = width;
         heightWorld = height;
         this.setWorld(new SandboxWorld(width, height, worldColor));
@@ -196,7 +197,9 @@ public class SandboxWorldScreen extends CachedWorldScreen {
 
             for (int y = 0; y < getWorld().getHeight(); y++) {
                 for (int x = 0; x < getWorld().getWidth(); x++) {
-                    getWorld().getWorldGrid()[x][y].draw(g, 0, 0, 1);
+                    WorldTile tile = getWorld().getWorldTile(x, y);
+                    tile.draw(g, 0, 0, 1);
+            //        getWorld().getWorldGrid()[x*y].draw(g, 0, 0, 1);
                 }
             }
 

@@ -12,34 +12,51 @@ import java.awt.*;
  */
 public class WorldTile extends Tile {
     private float perm; // 0 = can build, 1 = cannot build
-    private Color baseTileColor = new Color(110, 110, 110);
+//    private Color baseTileColor = new Color(110, 110, 110);
+
+    private int baseTileColorRGB = 0x6E6E6E; // (110,110,110)
+    private transient Color cachedBaseTileColor; // создаётся лениво, 1 раз
+
     private boolean isWater; // Новая переменная для воды
     private float abilityPay; // Платежеспособность
     private int passengerCount; // Количество пассажиров
 
     private float waterDepth; // 0 (край реки) - 1 (центр)
-    private static final Color[] WATER_PALETTE = {
-            new Color(77, 158, 204), // Очень светлый голубой (мелководье)
-            new Color(70, 170, 230),  // Светлый голубой
-            new Color(50, 140, 210),  // Средний голубой
-            new Color(48, 143, 222),  // Темный голубой
-            new Color(58, 124, 199)    // Очень темный синий (глубоководье)
-    };
-
+//    private static final Color[] WATER_PALETTE = {
+//            new Color(77, 158, 204), // Очень светлый голубой (мелководье)
+//            new Color(70, 170, 230),  // Светлый голубой
+//            new Color(50, 140, 210),  // Средний голубой
+//            new Color(48, 143, 222),  // Темный голубой
+//            new Color(58, 124, 199)    // Очень темный синий (глубоководье)
+//    };
+    private static final int WATER_STEPS = 64;
+    private static final Color[] WATER_PALETTE = new Color[WATER_STEPS];
+    static {
+        Color c1 = new Color(77, 158, 204);
+        Color c2 = new Color(58, 124, 199);
+        for (int i = 0; i < WATER_STEPS; i++) {
+            float ratio = (float) i / (WATER_STEPS - 1);
+            int r = (int) (c1.getRed() * (1 - ratio) + c2.getRed() * ratio);
+            int g = (int) (c1.getGreen() * (1 - ratio) + c2.getGreen() * ratio);
+            int b = (int) (c1.getBlue() * (1 - ratio) + c2.getBlue() * ratio);
+            WATER_PALETTE[i] = new Color(r, g, b);
+        }
+    }
     public WorldTile() {
-        super(0, 0, 16);
+        super((short) 0, (short) 0, (byte) 16);
     }
-    public WorldTile(int x, int y) {
-        super(x, y, 16);
+    public WorldTile(short x, short y) {
+        super(x, y, (byte) 16);
     }
 
-    public WorldTile(int x, int y, float perm, boolean isWater, float abilityPay, int passengerCount, Color color) {
-        super(x, y, 16);
+    public WorldTile(short x, short y, float perm, boolean isWater, float abilityPay, int passengerCount, int rgbColor) {
+        super(x, y, (byte) 16);
         this.perm = perm;
         this.isWater = isWater;
         this.abilityPay = abilityPay;
         this.passengerCount = passengerCount;
-        this.baseTileColor = color;
+        this.baseTileColorRGB = rgbColor;
+        //  this.baseTileColor = color;
     }
     public void setWaterDepth(float depth) {
         this.waterDepth = Math.min(1, Math.max(0, depth));
@@ -81,12 +98,14 @@ public class WorldTile extends Tile {
         if(isWater) {
             return getAnimatedWaterColor();
         }
+        Color baseColor = getBaseTileColor();
         int range = 50; // Должно совпадать с тем, что используется в draw()
-        int red = Math.max(0, Math.min(255, baseTileColor.getRed() - (int)(perm * range)));
-        int green = Math.max(0, Math.min(255, baseTileColor.getGreen() - (int)(perm * range)));
-        int blue = Math.max(0, Math.min(255, baseTileColor.getBlue() - (int)(perm * range)));
+        int red = Math.max(0, Math.min(255, baseColor.getRed() - (int)(perm * range)));
+        int green = Math.max(0, Math.min(255, baseColor.getGreen() - (int)(perm * range)));
+        int blue = Math.max(0, Math.min(255, baseColor.getBlue() - (int)(perm * range)));
         return new Color(red, green, blue);
     }
+
     /**
      * Gets the building permission value
      * @return Permission value (0-1)
@@ -99,11 +118,15 @@ public class WorldTile extends Tile {
      */
     public void setPerm(float perm) { this.perm = perm; }
 
-    public void setBaseTileColor(Color color) {
-        this.baseTileColor = color;
+    public void setBaseTileColor(int rgb) {
+        this.baseTileColorRGB = rgb;
+        this.cachedBaseTileColor = null; // сброс кеша
     }
     public Color getBaseTileColor() {
-        return baseTileColor;
+        if (cachedBaseTileColor == null) {
+            cachedBaseTileColor = new Color(baseTileColorRGB);
+        }
+        return cachedBaseTileColor;
     }
     public boolean isWater() { return isWater; }
     public void setWater(boolean water) { this.isWater = water; }
@@ -138,10 +161,11 @@ public class WorldTile extends Tile {
 
     private void drawLand(Graphics2D g, int x, int y, int size) {
         // Обычная отрисовка земли
+        Color baseColor = getBaseTileColor();
         int range = 50;
-        int red = Math.max(0, Math.min(255, baseTileColor.getRed() - (int)(perm * range)));
-        int green = Math.max(0, Math.min(255, baseTileColor.getGreen() - (int)(perm * range)));
-        int blue = Math.max(0, Math.min(255, baseTileColor.getBlue() - (int)(perm * range)));
+        int red = Math.max(0, Math.min(255, cachedBaseTileColor.getRed() - (int)(perm * range)));
+        int green = Math.max(0, Math.min(255, cachedBaseTileColor.getGreen() - (int)(perm * range)));
+        int blue = Math.max(0, Math.min(255, cachedBaseTileColor.getBlue() - (int)(perm * range)));
 
         g.setColor(new Color(red, green, blue));
         g.fillRect(x, y, size, size);

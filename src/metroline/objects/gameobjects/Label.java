@@ -55,18 +55,19 @@ public class Label extends GameObject {
                 if (world.getStationAt(newX, newY) == null && (world.getLabelAt(newX, newY) == null || world.getLabelAt(newX, newY) == this)) {
                     if(world instanceof GameWorld w2) {
                         if (w2.getGameplayUnitsAt(newX, newY) == null) {
-                            world.getGameGrid()[getX()][getY()].setContent(null);
+
+                            world.getGameTile(getX(), getY()).setContent(null);
                             this.x = newX;
                             this.y = newY;
-                            world.getGameGrid()[newX][newY].setContent(this);
+                            world.getGameTile(getX(), getY()).setContent(this);
                             return true;
                         }
                     }
                     else {
-                        world.getGameGrid()[getX()][getY()].setContent(null);
+                        world.getGameTile(getX(), getY()).setContent(null);
                         this.x = newX;
                         this.y = newY;
-                        world.getGameGrid()[newX][newY].setContent(this);
+                        world.getGameTile(getX(), getY()).setContent(this);
                         return true;
                     }
                 }

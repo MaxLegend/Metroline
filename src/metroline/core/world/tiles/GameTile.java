@@ -13,10 +13,10 @@ public class GameTile extends Tile {
 
     private transient GameObject content;
     public GameTile() {
-        super(0, 0, 16); // Значения по умолчанию
+        super((short) 0, (short) 0, (byte) 16); // Значения по умолчанию
     }
-    public GameTile(int x, int y) {
-        super(x, y, 16);
+    public GameTile(short x, short y) {
+        super(x, y, (byte) 16);
     }
     /**
      * Gets the game object in this tile

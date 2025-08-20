@@ -5,6 +5,7 @@ import metroline.core.world.GameWorld;
 import metroline.objects.gameobjects.GameConstants;
 import metroline.screens.GameScreen;
 import metroline.screens.worldscreens.normal.GameWorldScreen;
+import metroline.util.ColorUtil;
 import metroline.util.ui.MetrolineButton;
 import metroline.util.ui.MetrolineSlider;
 import metroline.util.LngUtil;
@@ -34,7 +35,7 @@ public class WorldSettingsScreen extends GameScreen {
 
     private MainFrame parent;
     private JButton colorButton; // Кнопка для выбора цвета
-    private Color worldColor = new Color(110, 110, 110); // Цвет по умолчанию
+    private int worldColor = 0x6E6E6E; // Цвет по умолчанию
 
     // Новые слайдеры для экономических констант
     private MetrolineSlider stationBaseCostSlider ;
@@ -190,7 +191,7 @@ public class WorldSettingsScreen extends GameScreen {
         featuresPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
         featuresPanel.setMaximumSize(new Dimension(400, Integer.MAX_VALUE));
 
-        colorButton = StyleUtil.createMetrolineColorableButton(LngUtil.translatable("world.color"), e -> showWindowColorSelection(), worldColor);
+        colorButton = StyleUtil.createMetrolineColorableButton(LngUtil.translatable("world.color"), e -> showWindowColorSelection(), new Color(worldColor));
         abilityPayCheck = StyleUtil.createMetrolineCheckBox(LngUtil.translatable("world.gen_abilityPay_zone"), LngUtil.translatable("world.gen_abilityPay_zone_desc"));
         passengerCountCheck = StyleUtil.createMetrolineCheckBox(LngUtil.translatable("world.gen_passengerCount_zone"),LngUtil.translatable("world.gen_passengerCount_zone_desc"));
         landscapeCheck = StyleUtil.createMetrolineCheckBox(LngUtil.translatable("world.gen_landscape"),LngUtil.translatable("world.gen_landscape_desc"));
@@ -308,7 +309,8 @@ public class WorldSettingsScreen extends GameScreen {
             colorBtn.setFocusPainted(false);
 
             colorBtn.addActionListener(e -> {
-                worldColor = color;
+
+                worldColor = ColorUtil.colorToRGB(color);
                updateColorButtonAppearance();
                 colorDialog.dispose();
             });
@@ -346,19 +348,19 @@ public class WorldSettingsScreen extends GameScreen {
         colorDialog.setVisible(true);
     }
     private void updateColorButtonAppearance() {
-        colorButton.setBackground(worldColor);
+        colorButton.setBackground(new Color(worldColor));
 
 
         // Добавляем новые обработчики с текущим цветом
         colorButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
-                colorButton.setBackground(StyleUtil.changeColorShade(worldColor, 20));
+                colorButton.setBackground(StyleUtil.changeColorShade(new Color(worldColor), 20));
             }
 
             @Override
             public void mouseExited(MouseEvent e) {
-                colorButton.setBackground(worldColor);
+                colorButton.setBackground(new Color(worldColor));
             }
         });
     }
@@ -388,7 +390,7 @@ public class WorldSettingsScreen extends GameScreen {
         GameConstants.GAMEPLAY_UNITS_COUNT = gameplayUnitsCount;
             parent.switchScreen(MainFrame.GAME_SCREEN_NAME);
             GameWorldScreen gameScreen = (GameWorldScreen) parent.getCurrentScreen();
-            gameScreen.createNewWorld((int) width, (int) height,hasPassengerCount,hasAbilityPay,  hasLandscape, hasRivers, worldColor, (int) startMoney);
+            gameScreen.createNewWorld((short) width, (short) height,hasPassengerCount,hasAbilityPay,  hasLandscape, hasRivers, worldColor, (int) startMoney);
             gameScreen.getWorld().setRoundStationsEnabled(roundStations);
             ((GameWorld)gameScreen.getWorld()).setMoney((int) startMoney); // Устанавливаем начальные деньги
             gameScreen.updateMoneyDisplay(); // Обновляем отображение

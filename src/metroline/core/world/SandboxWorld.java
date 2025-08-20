@@ -16,21 +16,24 @@ public class SandboxWorld extends World {
         super();
     }
 
-    public SandboxWorld(int width, int height,  Color worldColor) {
+    public SandboxWorld(short width, short height,  int worldColor) {
         super(null, width, height, false, false, false ,false,worldColor, SAVE_FILE);
         generateWorld(worldColor);
     }
-    public void generateWorld( Color worldColor) {
+    public void generateWorld( int worldColor) {
         //Create world grid
         MetroLogger.logInfo("Generating sandbox world...");
-        worldGrid = new WorldTile[width][height];
-        gameGrid = new GameTile[width][height];
-
-            for (int y = 0; y < height; y++) {
-                for (int x = 0; x < width; x++) {
-                    worldGrid[x][y] = new WorldTile(x, y, 0f, false, 0, 0, Color.DARK_GRAY);
-                    worldGrid[x][y].setBaseTileColor(worldColor);
-                    gameGrid[x][y] = new GameTile(x, y);
+        worldGrid = new WorldTile[width*height];
+        gameGrid = new GameTile[width*height];
+        WorldTile worldTile;
+        GameTile gameTile;
+            for (short y = 0; y < height; y++) {
+                for (short x = 0; x < width; x++) {
+                    worldTile = new WorldTile(x, y, 0f, false, 0, 0, 0x6E6E6E);
+                    setWorldTile(x,y,worldTile);
+                    worldTile.setBaseTileColor(worldColor);
+                    gameTile = new GameTile(x, y);
+                    setGameTile(x, y, gameTile);
                 }
 
         }

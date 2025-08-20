@@ -13,7 +13,7 @@ import java.awt.*;
  * The main class for summarizing all game mechanics for the basics of the world.
  */
 public class WorldScreen extends GameScreen {
-    public static int widthWorld = 100, heightWorld = 100;
+    public static short widthWorld = 100, heightWorld = 100;
     public  World world;
     //Debug
     public boolean debugMode = false;

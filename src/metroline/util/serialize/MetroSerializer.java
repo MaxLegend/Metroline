@@ -230,7 +230,7 @@ public class MetroSerializer {
             writer.write("gameGrid:[\n");
             for (int y = 0; y < world.getHeight(); y++) {
                 for (int x = 0; x < world.getWidth(); x++) {
-                    GameTile tile = world.getGameGrid()[x][y];
+                    GameTile tile = world.getGameTile(x,y);
                     GameObject content = tile.getContent();
                     writer.write(String.format(
                             "{x:%d,y:%d,content:%s}\n",
@@ -276,11 +276,11 @@ public class MetroSerializer {
                 continue;
             }
             if (line.startsWith("width:")) {
-                gameWorld.setWidth(Integer.parseInt(line.substring("width:".length())));
+                gameWorld.setWidth(Short.parseShort(line.substring("width:".length())));
                 continue; // Продолжаем, чтобы не попасть в else if
             }
             if (line.startsWith("height:")) {
-                gameWorld.setHeight(Integer.parseInt(line.substring("height:".length())));
+                gameWorld.setHeight(Short.parseShort(line.substring("height:".length())));
                 // Как только получили width и height, инициализируем сетки
                 if (gameWorld.getWidth() > 0 && gameWorld.getHeight() > 0) {
                     gameWorld.initWorldGrid(); // Инициализируем worldGrid
@@ -461,7 +461,7 @@ public class MetroSerializer {
                         if (!contentStr.equals("null")) {
                             GameObject obj = ParsingUtils.parseGameObject(contentStr, gameWorld, stationIdMap); // Используем вспомогательный метод
                             if (obj != null && gameWorld.gameGrid != null && x < gameWorld.getWidth() && y < gameWorld.getHeight()) {
-                                gameWorld.gameGrid[x][y].setContent(obj);
+                                gameWorld.getGameplayTile(x,y).setContent(obj);
                             }
                         }
                     } catch (Exception e) {

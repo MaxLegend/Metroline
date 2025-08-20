@@ -1,6 +1,7 @@
 package metroline.screens.worldscreens.normal;
 
 import metroline.core.world.GameWorld;
+import metroline.core.world.tiles.GameTile;
 import metroline.objects.gameobjects.*;
 import metroline.MainFrame;
 import metroline.objects.gameobjects.Label;
@@ -13,6 +14,7 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class GameWorldScreen extends CachedWorldScreen {
@@ -42,7 +44,7 @@ public class GameWorldScreen extends CachedWorldScreen {
         INSTANCE = this;
 
         this.worldClickController = new WorldClickController(this);
-        initWorldCache(widthWorld, heightWorld);
+        //  initWorldCache(widthWorld, heightWorld);
         setupRepaintTimer();
 
         lastFpsTime = System.currentTimeMillis();
@@ -57,9 +59,9 @@ public class GameWorldScreen extends CachedWorldScreen {
         repaint();
     }
 
-    public void createNewWorld(int width, int height, boolean hasPassengerCount,
+    public void createNewWorld(short width, short height, boolean hasPassengerCount,
             boolean hasAbilityPay, boolean hasLandscape,
-            boolean hasRivers, Color worldColor, int money) {
+            boolean hasRivers, int worldColor, int money) {
         stopRepaintTimer();
 
         widthWorld = width;
@@ -130,20 +132,24 @@ public class GameWorldScreen extends CachedWorldScreen {
         updatePerformanceCounters();
 
         // Update caches if needed
-        if (!staticCacheValid || worldChanged) {
-            updateStaticWorldCache(widthWorld, heightWorld);
-        }
-        if (!dynamicCacheValid || stationsChanged || tunnelsChanged) {
-            updateDynamicElementsCache(widthWorld, heightWorld);
-        }
+//        if (!staticCacheValid || worldChanged) {
+//            updateStaticWorldCache(widthWorld, heightWorld);
+//        }
 
         // Apply transformations
         AffineTransform oldTransform = g.getTransform();
         g.scale(zoom, zoom);
         g.translate(offsetX, offsetY);
 
+//        if (staticWorldCache != null) {
+//            g.drawImage(staticWorldCache,
+//                    0, 0,
+//                    getWorld().getWidth() * TILE_SIZE, getWorld().getHeight() * TILE_SIZE,
+//                    null);
+//        }
+        renderWorld(g);
         // Draw cached layers
-        g.drawImage(staticWorldCache, 0, 0, null);
+//        g.drawImage(staticWorldCache, 0, 0, null);
 
         // Вместо drawImage(dynamicElementsCache) рисуем динамические элементы напрямую
         drawDynamicWorld(g);
@@ -233,12 +239,109 @@ public class GameWorldScreen extends CachedWorldScreen {
         return stations;
     }
 
+    private void drawDebugInfo(Graphics2D g, GameObject selectedObject) {
+        if (selectedObject != null) {
+            // Save original settings
+            Color oldColor = g.getColor();
+            Font oldFont = g.getFont();
+
+            // Setup debug font
+            g.setColor(new Color(255, 255, 255, 200));
+            g.setFont(new Font("Monospaced", Font.BOLD, 12));
+            FontMetrics metrics = g.getFontMetrics();
+
+            // Determine which grid the object is on
+            String gridType = "Unknown";
+            if (selectedObject instanceof Station || selectedObject instanceof Tunnel || selectedObject instanceof Label) {
+                gridType = "gameGrid (Stations/Tunnels/Labels)";
+            } else if (selectedObject instanceof GameplayUnits) {
+                gridType = "gameplayGrid (GameplayUnits)";
+            }
+
+            // Get object position
+            int x = selectedObject.getX();
+            int y = selectedObject.getY();
+
+            // Prepare debug info
+            String[] debugInfo = {
+                    "=== SELECTED OBJECT DEBUG ===",
+                    String.format("Type: %s", selectedObject.getClass().getSimpleName()),
+                    String.format("Position: %d, %d", x, y),
+                    String.format("Grid: %s", gridType),
+                    "",
+                    "=== OBJECT DETAILS ==="
+            };
+
+            // Add object-specific details
+            List<String> details = new ArrayList<>(Arrays.asList(debugInfo));
+
+            if (selectedObject instanceof Station) {
+                Station station = (Station) selectedObject;
+                details.add(String.format("Name: %s", station.getName()));
+                details.add(String.format("Type: %s", station.getType()));
+                details.add(String.format("Connections: %d", station.getConnections().size()));
+                details.add(String.format("Wear level: %.2f", station.getWearLevel()));
+            }
+            else if (selectedObject instanceof Tunnel) {
+                Tunnel tunnel = (Tunnel) selectedObject;
+                details.add(String.format("Length: %d", tunnel.getLength()));
+                details.add(String.format("Type: %s", tunnel.getType()));
+                details.add(String.format("Start: %s", tunnel.getStart().getName()));
+                details.add(String.format("End: %s", tunnel.getEnd().getName()));
+            }
+            else if (selectedObject instanceof GameplayUnits) {
+                GameplayUnits unit = (GameplayUnits) selectedObject;
+                details.add(String.format("Unit Type: %s", unit.getType()));
+                details.add(String.format("Income Multiplier: %.2f", unit.getType().getIncomeMultiplier()));
+            }
+            else if (selectedObject instanceof Label) {
+                Label label = (Label) selectedObject;
+                details.add(String.format("Text: %s", label.getText()));
+                details.add(String.format("Parent: %s",
+                        label.getParentGameObject() != null ?
+                                label.getParentGameObject().getClass().getSimpleName() : "None"));
+            }
+
+            // Calculate background size
+            int textHeight = metrics.getHeight() * details.size();
+            int textWidth = 0;
+            for (String line : details) {
+                textWidth = Math.max(textWidth, metrics.stringWidth(line));
+            }
+
+            // Position at bottom right
+            int panelWidth = getWidth();
+            int panelHeight = getHeight();
+            int xPos = panelWidth - textWidth - 30;
+            int yPos = panelHeight - textHeight - 30;
+
+            // Draw background
+            g.setColor(new Color(0, 0, 0, 150));
+            g.fillRect(xPos - 10, yPos - 20, textWidth + 20, textHeight + 30);
+
+            // Draw text
+            g.setColor(Color.WHITE);
+            int currentY = yPos;
+            for (String line : details) {
+                g.drawString(line, xPos, currentY);
+                currentY += metrics.getHeight();
+            }
+
+
+
+            // Restore original settings
+            g.setColor(oldColor);
+            g.setFont(oldFont);
+        }
+    }
+
     private void drawDebugInfo(Graphics2D g) {
         drawDebugInfo(g, worldClickController.getSelectedObject());
 
-        BufferCapabilities caps = getGraphicsConfiguration().getBufferCapabilities();
-        g.drawString(String.format("VSync: %b", caps.isPageFlipping()), 20, 50);
+
         drawPerformanceStats(g);
+
+
     }
 
     private void updatePerformanceCounters() {
@@ -265,6 +368,19 @@ public class GameWorldScreen extends CachedWorldScreen {
         renderCount++;
     }
 
+    // Вспомогательный метод для подсчета объектов в сетке
+    private int countObjectsInGrid(GameTile[] grid) {
+        if (grid == null) return 0;
+
+        int count = 0;
+        for (int i = 0; i < grid.length; i++) {
+            if (grid[i] != null && grid[i].getContent() != null) {
+                count++;
+            }
+        }
+        return count;
+    }
+
     private void drawPerformanceStats(Graphics2D g) {
         // Save original settings
         Color oldColor = g.getColor();
@@ -281,6 +397,11 @@ public class GameWorldScreen extends CachedWorldScreen {
         long totalMem = runtime.totalMemory() / (1024 * 1024);
         long avgRenderTime = renderCount > 0 ? (totalRenderTime / renderCount) / 1000 : 0;
 
+        // Подсчитываем объекты в сетках
+        int gameGridObjects = countObjectsInGrid(getWorld().getGameGrid());
+        int gameplayGridObjects = countObjectsInGrid(getWorld().getGameplayGrid());
+        BufferCapabilities caps = getGraphicsConfiguration().getBufferCapabilities();
+
         String[] stats = {
                 "=== PERFORMANCE STATS ===",
                 String.format("FPS: %d (Target: %.1f)", fps, 1000.0/RENDER_TIMER_DELAY),
@@ -291,13 +412,17 @@ public class GameWorldScreen extends CachedWorldScreen {
                 String.format("Used: %d MB / %d MB", usedMem, totalMem),
                 String.format("Max: %d MB", runtime.maxMemory() / (1024 * 1024)),
                 "",
-                "=== RENDER STATS ===",
+                "=== WORLD STATS ===",
+                String.format("World size: %dx%d", getWorld().getWidth(), getWorld().getHeight()),
+                String.format("gameGrid objects: %d", gameGridObjects),
+                String.format("gameplayGrid objects: %d", gameplayGridObjects),
                 String.format("Stations: %d", getWorld().getStations().size()),
                 String.format("Tunnels: %d", getWorld().getTunnels().size()),
                 String.format("Labels: %d", getWorld().getLabels().size()),
                 String.format("Units: %d", getWorld() instanceof GameWorld ?
                         ((GameWorld)getWorld()).getGameplayUnits().size() : 0),
-                String.format("Zoom: %.2f", zoom)
+                String.format("Zoom: %.2f", zoom),
+                String.format("VSync: %b", caps.isPageFlipping())
         };
 
         // Calculate background size
@@ -306,7 +431,7 @@ public class GameWorldScreen extends CachedWorldScreen {
         for (String line : stats) {
             textWidth = Math.max(textWidth, metrics.stringWidth(line));
         }
-
+     //   g.drawString(String.format("VSync: %b", caps.isPageFlipping()), 20, 50);
         // Draw background
         g.setColor(new Color(0, 0, 0, 150));
         g.fillRect(10, 10, textWidth + 20, textHeight + 20);
@@ -323,7 +448,67 @@ public class GameWorldScreen extends CachedWorldScreen {
         g.setColor(oldColor);
         g.setFont(oldFont);
     }
+    private void drawVideoMemoryStats(Graphics2D g) {
+        // Save original settings
+        Color oldColor = g.getColor();
+        Font oldFont = g.getFont();
 
+        g.setColor(new Color(255, 255, 255, 200));
+        g.setFont(new Font("Monospaced", Font.BOLD, 12));
+        FontMetrics metrics = g.getFontMetrics();
+
+        // Получаем GraphicsConfiguration
+        GraphicsConfiguration gc = getGraphicsConfiguration();
+        GraphicsDevice gd = gc.getDevice();
+
+        // Пример через Sun GraphicsDevice API (может не работать на всех JVM)
+        long vramEstimate = -1;
+        try {
+            // Это работает только если underlying device поддерживает DisplayMemory
+            Class<?> clazz = gd.getClass();
+            try {
+                java.lang.reflect.Method m = clazz.getMethod("getAvailableAcceleratedMemory");
+                m.setAccessible(true);
+                vramEstimate = (long) m.invoke(gd);
+            } catch (Exception ignored) {}
+        } catch (Throwable t) {
+            vramEstimate = -1;
+        }
+
+        // Информация о VRAM (если доступна)
+        String[] vramStats;
+        if (vramEstimate > 0) {
+            vramStats = new String[] {
+                    "=== VIDEO MEMORY ===",
+                    String.format("Available VRAM: %.2f MB", vramEstimate / (1024.0 * 1024.0))
+            };
+        } else {
+            vramStats = new String[] {
+                    "=== VIDEO MEMORY ===",
+                    "VRAM info unavailable"
+            };
+        }
+
+        // Draw text
+        int yPos = 20;
+        int textWidth = 0;
+        for (String line : vramStats) {
+            textWidth = Math.max(textWidth, metrics.stringWidth(line));
+        }
+
+        g.setColor(new Color(0, 0, 0, 150));
+        g.fillRect(10, 10, textWidth + 20, metrics.getHeight() * vramStats.length + 10);
+
+        g.setColor(Color.WHITE);
+        for (String line : vramStats) {
+            g.drawString(line, 20, yPos);
+            yPos += metrics.getHeight();
+        }
+
+        // Restore original settings
+        g.setColor(oldColor);
+        g.setFont(oldFont);
+    }
     public void toggleDebugMode() {
         debugMode = !debugMode;
         repaint();

@@ -86,7 +86,7 @@ public abstract class GameObject implements Serializable {
      * Gets the Tile of this coord
      * @return Tile
      */
-    public Tile getTile(int xTile, int yTile) {
+    public Tile getTile(short xTile, short yTile) {
         return new Tile(xTile,yTile);
     }
 

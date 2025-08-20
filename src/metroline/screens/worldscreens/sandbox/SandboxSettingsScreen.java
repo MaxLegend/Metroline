@@ -2,6 +2,7 @@ package metroline.screens.worldscreens.sandbox;
 
 import metroline.MainFrame;
 import metroline.screens.GameScreen;
+import metroline.util.ColorUtil;
 import metroline.util.LngUtil;
 import metroline.util.ui.MetrolineCheckbox;
 import metroline.util.ui.MetrolineSlider;
@@ -31,7 +32,7 @@ public class SandboxSettingsScreen extends GameScreen {
 
     private MainFrame parent;
     private JButton colorButton; // Кнопка для выбора цвета
-    private Color worldColor = new Color(110, 110, 110); // Цвет по умолчанию
+    private int worldColor = 0x6E6E6E; // Цвет по умолчанию
 
 
     public SandboxSettingsScreen(MainFrame parent) {
@@ -143,17 +144,17 @@ public class SandboxSettingsScreen extends GameScreen {
         JButton button = StyleUtil.createMetrolineColorableButton(
                 LngUtil.translatable("world.color"),
                 e -> showColorSelectionDialog(),
-                worldColor
+                new Color(worldColor)
         );
 
         button.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
-                button.setBackground(StyleUtil.changeColorShade(worldColor, 20));
+                button.setBackground(StyleUtil.changeColorShade(new Color(worldColor), 20));
             }
             @Override
             public void mouseExited(MouseEvent e) {
-                button.setBackground(worldColor);
+                button.setBackground(new Color(worldColor));
             }
         });
 
@@ -189,7 +190,7 @@ public class SandboxSettingsScreen extends GameScreen {
         button.setFocusPainted(false);
 
         button.addActionListener(e -> {
-            worldColor = color;
+            worldColor = ColorUtil.colorToRGB(color);
             colorButton.setBackground(color);
             parentDialog.dispose();
         });
@@ -220,8 +221,8 @@ public class SandboxSettingsScreen extends GameScreen {
     }
 
     private void createSandboxWorld() {
-        int width = (int) widthSlider.getValue();
-        int height = (int) heightSlider.getValue();
+        short width = (short) widthSlider.getValue();
+        short height = (short) heightSlider.getValue();
         boolean roundStations = roundStationsCheck.isSelected();
 
         parent.switchScreen(MainFrame.SANDBOX_SCREEN_NAME);

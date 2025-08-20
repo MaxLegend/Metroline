@@ -192,9 +192,10 @@ public class WorldClickController {
         deselectAll();
 
         // Проверяем объекты в порядке приоритета
-        if(tryGameplayObject(x, y)) return;
+
         if (trySelectLabel(x, y)) return;
         if (trySelectStation(x, y)) return;
+        if(tryGameplayObject(x, y)) return;
         if (trySelectTunnel(x, y)) return;
 
 
@@ -342,14 +343,14 @@ public class WorldClickController {
         GameWorld world = (GameWorld) GameWorldScreen.getInstance().getWorld();
 
         // Удаляем из старой позиции
-        world.getGameGrid()[station.getX()][station.getY()].setContent(null);
+        world.getGameTile(station.getX(), station.getY()).setContent(null);
 
         // Обновляем позицию
         station.x = newX;
         station.y = newY;
 
         // Добавляем в новую позицию
-        world.getGameGrid()[newX][newY].setContent(station);
+        world.getGameTile(newX, newY).setContent(station);
 
         // Пересчитываем все связанные туннели
         for (Tunnel t : world.getTunnels()) {
@@ -491,8 +492,7 @@ public class WorldClickController {
         }
 
         // Проверяем, что клетка свободна (нет станции и нет GameplayUnits)
-        return world.getStationAt(x, y) == null &&
-                world.getGameplayUnitsAt(x, y) == null;
+        return world.getStationAt(x, y) == null;
     }
 
 
