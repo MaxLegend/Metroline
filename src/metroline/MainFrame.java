@@ -1,17 +1,9 @@
 package metroline;
 
 
-import javax.swing.*;
-import javax.swing.text.PlainDocument;
-import java.awt.*;
-import java.awt.event.*;
-import java.util.HashMap;
-import java.util.Map;
-
 import metroline.core.time.GameTime;
 import metroline.core.world.GameWorld;
 import metroline.core.world.SandboxWorld;
-import metroline.core.world.World;
 import metroline.objects.gameobjects.GameplayUnits;
 import metroline.objects.gameobjects.Station;
 import metroline.objects.gameobjects.Tunnel;
@@ -23,13 +15,16 @@ import metroline.screens.worldscreens.WorldSettingsScreen;
 import metroline.screens.worldscreens.normal.GameWorldScreen;
 import metroline.screens.worldscreens.sandbox.SandboxSettingsScreen;
 import metroline.screens.worldscreens.sandbox.SandboxWorldScreen;
-
 import metroline.util.IntegerDocumentFilter;
 import metroline.util.LngUtil;
 import metroline.util.MetroLogger;
 import metroline.util.ui.MetrolineButton;
-import metroline.util.ui.MetrolineToggleButton;
-import metroline.util.ui.StyleUtil;
+import metroline.util.ui.MetrolinePopupMenu;
+
+import javax.swing.*;
+import javax.swing.text.PlainDocument;
+import java.awt.*;
+import java.awt.event.*;
 
 /**
  * Main application frame that contains all game screens and toolbar
@@ -45,9 +40,9 @@ public class MainFrame extends JFrame {
     public static final String SANDBOX_SETTINGS_SCREEN_NAME = "sandbox_world_settings";
 
     private GameScreen currentScreen;
+    private String currentScreenName;
 
-
-    private Map<String, GameScreen> screens = new HashMap<>();
+    //  private Map<String, GameScreen> screens = new HashMap<>();
     private boolean isFullscreen = false;
 
 
@@ -59,7 +54,7 @@ public class MainFrame extends JFrame {
 
 
     private JButton legendButton;
-    private MetrolineToggleButton economicLayerButton;
+    private MetrolineButton economicLayerButton;
 
     public JLabel moneyLabel = new JLabel("100");
 
@@ -86,13 +81,13 @@ public class MainFrame extends JFrame {
         super("Metroline");
         INSTANCE = this;
 
-        if (screens.isEmpty()) {
-            screens.put(MAIN_MENU_SCREEN_NAME, new MenuScreen(this));
-            screens.put(SANDBOX_SCREEN_NAME, new SandboxWorldScreen(this));
-            screens.put(GAME_SCREEN_NAME, new GameWorldScreen(this));
-            screens.put(WORLD_SETTINGS_SCREEN_NAME, new WorldSettingsScreen(this));
-            screens.put(SANDBOX_SETTINGS_SCREEN_NAME, new SandboxSettingsScreen(this));
-        }
+//        if (screens.isEmpty()) {
+//            screens.put(MAIN_MENU_SCREEN_NAME, new MenuScreen(this));
+//            screens.put(SANDBOX_SCREEN_NAME, new SandboxWorldScreen(this));
+//            screens.put(GAME_SCREEN_NAME, new GameWorldScreen(this));
+//            screens.put(WORLD_SETTINGS_SCREEN_NAME, new WorldSettingsScreen(this));
+//            screens.put(SANDBOX_SETTINGS_SCREEN_NAME, new SandboxSettingsScreen(this));
+//        }
         initializeWindow(false);
         setupKeyBindings();
         initTimeUpdater();
@@ -100,47 +95,72 @@ public class MainFrame extends JFrame {
     public static MainFrame getInstance() {
         return INSTANCE;
     }
-    private void initializeWindow(boolean preserveState) {
-        try {
+//    private void initializeWindow(boolean preserveState) {
+//        try {
+//
+//            GameScreen previousScreen = currentScreen;
+//            String activeScreenName = getActiveScreenName();
+//            MetroLogger.logInfo("Screen mode: " + (isFullscreen ? "Fullscreen" : "Windowed"));
+//            dispose();
+//
+//            if (isFullscreen) {
+//
+//                setupFullscreenWindow();
+//            } else {
+//
+//                setupWindowedMode();
+//            }
+//
+//            initUI();
+//
+//            if (preserveState && previousScreen != null) {
+//                screens.put(activeScreenName, previousScreen);
+//                switchScreen(activeScreenName);
+//
+//            } else {
+//                switchScreen(MAIN_MENU_SCREEN_NAME);
+//            }
+//
+//            setVisible(true);
+//        } catch (Exception e) {
+//            MetroLogger.logError( "Failed changed screen mode!", e);
+//        }
+//    }
+private void initializeWindow(boolean preserveState) {
+    try {
+        String previousScreenName = currentScreenName;
+        dispose();
 
-            GameScreen previousScreen = currentScreen;
-            String activeScreenName = getActiveScreenName();
-            MetroLogger.logInfo("Screen mode: " + (isFullscreen ? "Fullscreen" : "Windowed"));
-            dispose();
-
-            if (isFullscreen) {
-
-                setupFullscreenWindow();
-            } else {
-
-                setupWindowedMode();
-            }
-
-            initUI();
-
-            if (preserveState && previousScreen != null) {
-                screens.put(activeScreenName, previousScreen);
-                switchScreen(activeScreenName);
-
-            } else {
-                switchScreen(MAIN_MENU_SCREEN_NAME);
-            }
-
-            setVisible(true);
-        } catch (Exception e) {
-            MetroLogger.logError( "Failed changed screen mode!", e);
+        if (isFullscreen) {
+            setupFullscreenWindow();
+        } else {
+            setupWindowedMode();
         }
+
+        initUI();
+
+        if (preserveState && previousScreenName != null) {
+            switchScreen(previousScreenName);
+        } else {
+            switchScreen(MAIN_MENU_SCREEN_NAME);
+        }
+
+        setVisible(true);
+    } catch (Exception e) {
+        MetroLogger.logError("Failed changed screen mode!", e);
     }
-
-
+}
     String getActiveScreenName() {
-        for (Map.Entry<String, GameScreen> entry : screens.entrySet()) {
-            if (entry.getValue() == currentScreen) {
-                return entry.getKey();
-            }
-        }
-        return MAIN_MENU_SCREEN_NAME;
+        return currentScreenName;
     }
+//    String getActiveScreenName() {
+//        for (Map.Entry<String, GameScreen> entry : screens.entrySet()) {
+//            if (entry.getValue() == currentScreen) {
+//                return entry.getKey();
+//            }
+//        }
+//        return MAIN_MENU_SCREEN_NAME;
+//    }
     private void setupKeyBindings() {
         InputMap inputMap = getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
         ActionMap actionMap = getRootPane().getActionMap();
@@ -152,6 +172,17 @@ public class MainFrame extends JFrame {
             }
         });
     }
+//    private void setupKeyBindings() {
+//        InputMap inputMap = getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+//        ActionMap actionMap = getRootPane().getActionMap();
+//        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_F11, 0), "toggleFullscreen");
+//        actionMap.put("toggleFullscreen", new AbstractAction() {
+//            @Override
+//            public void actionPerformed(ActionEvent e) {
+//                toggleFullscreen();
+//            }
+//        });
+//    }
     public void toggleFullscreen() {
         isFullscreen = !isFullscreen;
         initializeWindow(true);
@@ -320,9 +351,9 @@ public class MainFrame extends JFrame {
         );
         panel.add(legendButton, BorderLayout.EAST);
 
-            economicLayerButton = new MetrolineToggleButton(
+            economicLayerButton =  new MetrolineButton(
                     LngUtil.translatable("timebar.economic_layers"),
-                    e -> showEconomicLayerPopupMenu((JButton) e.getSource())
+                    e -> showEconomicLayerPopupMenu((MetrolineButton) e.getSource())
             );
             panel.add(economicLayerButton, BorderLayout.WEST);
 
@@ -351,16 +382,11 @@ public class MainFrame extends JFrame {
         toolBar.setBackground(new Color(60, 60, 60));
 
 
-
         JButton optionsButton = createToolBarButton(
                 "toolbar.game",
-                e -> showOptionsPopupMenu((JButton)e.getSource())
+                e -> showOptionsPopupMenu((JButton) e.getSource())
         );
         toolBar.add(optionsButton);
-//        toolBar.add(createToolBarButton("toolbar.save_game", e -> saveGame()));
-//        toolBar.add(createToolBarButton("toolbar.load_game", e -> loadGame()));
-//        toolBar.add(createToolBarButton("toolbar.back_menu", e -> backToMenu()));
-//        toolBar.add(createToolBarButton("toolbar.exit", e -> exitGame()));
 
         add(toolBar, BorderLayout.NORTH);
     }
@@ -432,7 +458,7 @@ public class MainFrame extends JFrame {
     public void togglePaymentZones() {
         GameWorld.showPaymentZones = !GameWorld.showPaymentZones;
         if (currentScreen instanceof GameWorldScreen) {
-            ((GameWorldScreen)currentScreen).invalidateCache(false);
+            ((GameWorldScreen)currentScreen).invalidateCache();
             currentScreen.repaint();
         }
     }
@@ -440,103 +466,69 @@ public class MainFrame extends JFrame {
     public void togglePassengerZones() {
         GameWorld.showPassengerZones = !GameWorld.showPassengerZones;
         if (currentScreen instanceof GameWorldScreen) {
-            ((GameWorldScreen)currentScreen).invalidateCache(false);
+            ((GameWorldScreen)currentScreen).invalidateCache();
             currentScreen.repaint();
         }
     }
-    private void showEconomicLayerPopupMenu(JButton sourceButton) {
-
-        closePopupMenu();
-        JPanel menuPanel = new JPanel(new GridLayout(0, 1));
-        menuPanel.setBackground(StyleUtil.BACKGROUND_COLOR);
-        menuPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
-        JButton passengerButton = MetrolineButton.createMetrolineInGameButton(LngUtil.translatable("elayer.passenger" ), e -> togglePassengerZones());
-        JButton abilityPayButton = MetrolineButton.createMetrolineInGameButton(LngUtil.translatable("elayer.abilityPay" ), e -> togglePaymentZones());
-
-        passengerButton.setSize(sourceButton.getSize());
-        abilityPayButton.setSize(sourceButton.getSize());
-        menuPanel.add(passengerButton);
-        menuPanel.add(abilityPayButton);
-
-        // Создаем и настраиваем popup-окно
-        currentPopup = new JWindow(this);
-        currentPopup.getContentPane().add(menuPanel);
-        currentPopup.pack();
-
-        // Позиционируем под кнопкой
-
-        Point location = sourceButton.getLocationOnScreen();
-        currentPopup.setLocation(location.x, location.y -18 - sourceButton.getHeight());
-
-        currentPopup.setVisible(true);
-
-        // Добавляем глобальный слушатель кликов
-        outsideClickListener = event -> {
-            if (event.getID() == MouseEvent.MOUSE_PRESSED && currentPopup != null) {
-                MouseEvent mouseEvent = (MouseEvent)event;
-
-                if (!currentPopup.getBounds().contains(mouseEvent.getLocationOnScreen()) &&
-                        !sourceButton.getBounds().contains(mouseEvent.getPoint())) {
-                    closePopupMenu();
-                }
-            }
-        };
-        Toolkit.getDefaultToolkit().addAWTEventListener(outsideClickListener, AWTEvent.MOUSE_EVENT_MASK);
-    }
     private void showOptionsPopupMenu(JButton sourceButton) {
+        MetrolinePopupMenu popupMenu = new MetrolinePopupMenu();
 
-        closePopupMenu();
-        JPanel menuPanel = new JPanel(new GridLayout(0, 1));
-        menuPanel.setBackground(StyleUtil.BACKGROUND_COLOR);
-        menuPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+        // Добавляем пункты меню
+        popupMenu.addMetrolineItem(LngUtil.translatable("toolbar.save_game"), this::saveGame);
+        popupMenu.addMetrolineItem(LngUtil.translatable("toolbar.load_game"), this::loadGame);
+        popupMenu.addMetrolineItem(LngUtil.translatable("toolbar.back_menu"), this::backToMenu);
+        popupMenu.addMetrolineItem(LngUtil.translatable("toolbar.exit"), this::exitGame);
 
-        JButton save_game = createToolBarButton("toolbar.save_game", e -> saveGame());
-        JButton load_game = createToolBarButton("toolbar.load_game", e -> loadGame());
-        JButton back_menu = createToolBarButton("toolbar.back_menu", e -> backToMenu());
-        JButton exit_game = createToolBarButton("toolbar.exit", e -> exitGame());
-
-      //  JButton button = StyleUtil.createMetrolineInGameButton(LngUtil.translatable("options.1" ), e -> {});
-        menuPanel.add(save_game);
-        menuPanel.add(load_game);
-        menuPanel.add(back_menu);
-        menuPanel.add(exit_game);
-
-        // Создаем и настраиваем popup-окно
-        currentPopup = new JWindow(this);
-        currentPopup.getContentPane().add(menuPanel);
-        currentPopup.pack();
-
-        // Позиционируем под кнопкой
-
-        Point location = sourceButton.getLocationOnScreen();
-        currentPopup.setLocation(location.x, location.y + sourceButton.getHeight());
-
-        currentPopup.setVisible(true);
-
-        // Добавляем глобальный слушатель кликов
-        outsideClickListener = event -> {
-            if ( event.getID() == MouseEvent.MOUSE_PRESSED && currentPopup != null) {
-                MouseEvent mouseEvent = (MouseEvent)event;
-
-                if ((!currentPopup.getBounds().contains(mouseEvent.getLocationOnScreen()) &&
-                        !sourceButton.getBounds().contains(mouseEvent.getPoint()) ) || getCurrentScreen() instanceof MenuScreen) {
-                    closePopupMenu();
-                }
-            }
-        };
-        Toolkit.getDefaultToolkit().addAWTEventListener(outsideClickListener, AWTEvent.MOUSE_EVENT_MASK);
+        popupMenu.showUnderComponent(sourceButton);
     }
-
-    private void closePopupMenu() {
-        if (currentPopup != null) {
-            currentPopup.dispose();
-            currentPopup = null;
-        }
-        if (outsideClickListener != null) {
-            Toolkit.getDefaultToolkit().removeAWTEventListener(outsideClickListener);
-            outsideClickListener = null;
-        }
+    private void showEconomicLayerPopupMenu(MetrolineButton sourceButton) {
+        MetrolinePopupMenu popupMenu = new MetrolinePopupMenu();
+        popupMenu.addMetrolineItem(LngUtil.translatable("elayer.passenger"), this::togglePassengerZones);
+        popupMenu.addMetrolineItem(LngUtil.translatable("elayer.abilityPay"), this::togglePaymentZones);
+        popupMenu.showAboveComponent(sourceButton);
     }
+//    private void showEconomicLayerPopupMenu(JButton sourceButton) {
+//
+//        closePopupMenu();
+//        JPanel menuPanel = new JPanel(new GridLayout(0, 1));
+//        menuPanel.setBackground(StyleUtil.BACKGROUND_COLOR);
+//        menuPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+//        JButton passengerButton = MetrolineButton.createMetrolineInGameButton(LngUtil.translatable("elayer.passenger" ), e -> togglePassengerZones());
+//        JButton abilityPayButton = MetrolineButton.createMetrolineInGameButton(LngUtil.translatable("elayer.abilityPay" ), e -> togglePaymentZones());
+//
+//        passengerButton.setSize(sourceButton.getSize());
+//        abilityPayButton.setSize(sourceButton.getSize());
+//        menuPanel.add(passengerButton);
+//        menuPanel.add(abilityPayButton);
+//
+//        // Создаем и настраиваем popup-окно
+//        currentPopup = new JWindow(this);
+//        currentPopup.getContentPane().add(menuPanel);
+//        currentPopup.pack();
+//
+//        // Позиционируем под кнопкой
+//
+//        Point location = sourceButton.getLocationOnScreen();
+//        currentPopup.setLocation(location.x, location.y -18 - sourceButton.getHeight());
+//
+//        currentPopup.setVisible(true);
+//
+//        // Добавляем глобальный слушатель кликов
+//        outsideClickListener = event -> {
+//            if (event.getID() == MouseEvent.MOUSE_PRESSED && currentPopup != null) {
+//                MouseEvent mouseEvent = (MouseEvent)event;
+//
+//                if (!currentPopup.getBounds().contains(mouseEvent.getLocationOnScreen()) &&
+//                        !sourceButton.getBounds().contains(mouseEvent.getPoint())) {
+//                    closePopupMenu();
+//                }
+//            }
+//        };
+//        Toolkit.getDefaultToolkit().addAWTEventListener(outsideClickListener, AWTEvent.MOUSE_EVENT_MASK);
+//    }
+
+
+
     /**
      * Time controller
      */
@@ -615,11 +607,17 @@ public class MainFrame extends JFrame {
      * Save game
      */
     private void saveGame() {
+
         if (currentScreen instanceof SandboxWorldScreen) {
+
             ((SandboxWorldScreen)currentScreen).getWorld().saveWorld();
+
         }
+
         if (currentScreen instanceof GameWorldScreen) {
+
             ((GameWorldScreen)currentScreen).getWorld().saveWorld();
+
         }
         currentScreen.requestFocusInWindow();
     }
@@ -640,29 +638,81 @@ public class MainFrame extends JFrame {
      * Screen switcher
      */
     public void switchScreen(String screenName) {
+        // Удаляем текущий экран
         if (currentScreen != null) {
             remove(currentScreen);
             toolBar.setVisible(false);
+            currentScreen = null; // Позволяем GC собрать старый экран
         }
-//        if (!(screenName.equals(GAME_SCREEN_NAME) || screenName.equals(SANDBOX_SCREEN_NAME))) {
-//            clearLegendWindow();
-//        }
-        InfoWindow.updateWindowsVisibility(this);
-        //     LinesLegendWindow.updateWindowsVisibility(this);
-        boolean isSandboxGameScreen = SANDBOX_SCREEN_NAME.equals(screenName);
-        boolean isGameScreen = GAME_SCREEN_NAME.equals(screenName);
-        currentScreen = screens.get(screenName);
+
+        toolBar.setVisible(false);
+
+        // Создаем новый экран
+        currentScreen = createScreen(screenName);
+        currentScreenName = screenName;
 
         add(currentScreen, BorderLayout.CENTER);
+
+        boolean isSandboxGameScreen = SANDBOX_SCREEN_NAME.equals(screenName);
+        boolean isGameScreen = GAME_SCREEN_NAME.equals(screenName);
         toolBar.setVisible(isGameScreen || isSandboxGameScreen);
-        timePanel.setVisible(isGameScreen|| isSandboxGameScreen);
-        legendButton.setVisible(isGameScreen || isSandboxGameScreen);
+        timePanel.setVisible(isGameScreen || isSandboxGameScreen);
+
+        if (legendButton != null) {
+            legendButton.setVisible(isGameScreen || isSandboxGameScreen);
+        }
 
         revalidate();
         repaint();
         currentScreen.requestFocusInWindow();
-
     }
+    /**
+     * Фабричный метод для создания экранов по требованию
+     */
+    private GameScreen createScreen(String screenName) {
+        switch (screenName) {
+            case MAIN_MENU_SCREEN_NAME:
+                return new MenuScreen(this);
+            case SANDBOX_SCREEN_NAME:
+                return new SandboxWorldScreen(this);
+            case GAME_SCREEN_NAME:
+                return new GameWorldScreen(this);
+            case WORLD_SETTINGS_SCREEN_NAME:
+                return new WorldSettingsScreen(this);
+            case SANDBOX_SETTINGS_SCREEN_NAME:
+                return new SandboxSettingsScreen(this);
+            default:
+                throw new IllegalArgumentException("Unknown screen: " + screenName);
+        }
+    }
+    //    public void switchScreen(String screenName) {
+//        if (currentScreen != null) {
+//            remove(currentScreen);
+//            toolBar.setVisible(false);
+//        }
+//        for( GameScreen s : screens.values()) {
+//            System.out.println("screen " + screens.get(s));
+//        }
+//
+////        if (!(screenName.equals(GAME_SCREEN_NAME) || screenName.equals(SANDBOX_SCREEN_NAME))) {
+////            clearLegendWindow();
+////        }
+//        InfoWindow.updateWindowsVisibility(this);
+//        //     LinesLegendWindow.updateWindowsVisibility(this);
+//        boolean isSandboxGameScreen = SANDBOX_SCREEN_NAME.equals(screenName);
+//        boolean isGameScreen = GAME_SCREEN_NAME.equals(screenName);
+//        currentScreen = screens.get(screenName);
+//
+//        add(currentScreen, BorderLayout.CENTER);
+//        toolBar.setVisible(isGameScreen || isSandboxGameScreen);
+//        timePanel.setVisible(isGameScreen|| isSandboxGameScreen);
+//        legendButton.setVisible(isGameScreen || isSandboxGameScreen);
+//
+//        revalidate();
+//        repaint();
+//        currentScreen.requestFocusInWindow();
+//
+//    }
     public void showInfoPanel(Object selectedObject, int worldX, int worldY) {
         if (selectedObject == null ) {
             return;

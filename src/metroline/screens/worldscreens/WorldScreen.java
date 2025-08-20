@@ -26,6 +26,16 @@ public class WorldScreen extends GameScreen {
     public MouseController mouseController;
     public KeyboardController keyboardController;
 
+    private final Runtime runtime = Runtime.getRuntime();
+    private long lastGCTime = 0;
+    private int frameCount = 0;
+    private volatile boolean gcRequested = false;
+
+    // Настройки GC
+    private static final long GC_MEMORY_THRESHOLD = 50 * 1024 * 1024; // 150MB порог
+    private static final long GC_COOLDOWN_MS = 2000; // 2 секунды между вызовами
+    private static final int GC_FRAME_INTERVAL = 60; // Каждые 60 кадров
+    private static final long MAX_GC_PAUSE_MS = 10; // Максимальная пауза для GC
 
     // Service keys
     public boolean isEscPressed = false;
@@ -68,6 +78,12 @@ public class WorldScreen extends GameScreen {
         this.addMouseMotionListener(mouseController);
         this.addKeyListener(keyboardController);
         requestFocusInWindow();
+    }
+    public void setZoomAndOffset(float newZoom, int newOffsetX, int newOffsetY) {
+        this.zoom = newZoom;
+        this.offsetX = newOffsetX;
+        this.offsetY = newOffsetY;
+        repaint(); // Только один вызов repaint!
     }
     public World getWorld() {
         return world;
@@ -153,6 +169,91 @@ public class WorldScreen extends GameScreen {
         super.setVisible(visible);
         if (visible) {
             requestFocusInWindow();
+        }
+    }
+
+    void incrementalGarbageCollection() {
+        frameCount++;
+        long usedMemory = runtime.totalMemory() - runtime.freeMemory();
+        long currentTime = System.currentTimeMillis();
+
+        // Условия для запуска GC
+        boolean shouldRunGC = (frameCount % GC_FRAME_INTERVAL == 0) &&
+                (usedMemory > GC_MEMORY_THRESHOLD) &&
+                (currentTime - lastGCTime > GC_COOLDOWN_MS) &&
+                !gcRequested;
+
+        if (shouldRunGC) {
+            startBackgroundGC();
+        }
+
+        // Логирование памяти каждые 120 кадров
+        if (frameCount % 120 == 0) {
+            logMemoryUsage();
+        }
+    }
+
+    private void startBackgroundGC() {
+        gcRequested = true;
+        lastGCTime = System.currentTimeMillis();
+
+        new Thread(() -> {
+            try {
+                long startTime = System.nanoTime();
+
+                // Soft GC - менее агрессивный
+                System.gc();
+                System.runFinalization();
+
+                long gcTime = (System.nanoTime() - startTime) / 1000000;
+
+                System.out.println(String.format(
+                        "Background GC: %dms, Memory: %dMB -> %dMB",
+                        gcTime,
+                        (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024,
+                        (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024
+                ));
+
+            } catch (Exception e) {
+                System.err.println("GC thread error: " + e.getMessage());
+            } finally {
+                gcRequested = false;
+            }
+        }, "GC-Thread").start();
+    }
+
+    public void controlFrameRate(long frameStartTime) {
+        long frameTimeNs = System.nanoTime() - frameStartTime;
+        long frameTimeMs = frameTimeNs / 1000000;
+        long targetFrameTimeMs = 1000 / 144; // ~7ms для 144 FPS
+
+        if (frameTimeMs < targetFrameTimeMs) {
+            try {
+                // Небольшая пауза для точного контроля FPS
+                Thread.sleep(targetFrameTimeMs - frameTimeMs);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
+    private void logMemoryUsage() {
+        long used = runtime.totalMemory() - runtime.freeMemory();
+        long max = runtime.maxMemory();
+
+        System.out.println(String.format(
+                "Memory: %dMB / %dMB (%.1f%%) - GC: %s",
+                used / 1024 / 1024,
+                max / 1024 / 1024,
+                (used * 100.0 / max),
+                gcRequested ? "active" : "idle"
+        ));
+    }
+
+    // Метод для ручного вызова GC извне (например, при переключении экранов)
+    public void requestImmediateGC() {
+        if (!gcRequested) {
+            startBackgroundGC();
         }
     }
 }

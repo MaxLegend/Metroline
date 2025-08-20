@@ -1,10 +1,11 @@
 package metroline.screens.worldscreens.normal;
 
+import metroline.MainFrame;
 import metroline.core.world.GameWorld;
 import metroline.core.world.tiles.GameTile;
-import metroline.objects.gameobjects.*;
-import metroline.MainFrame;
 import metroline.objects.gameobjects.Label;
+import metroline.objects.gameobjects.*;
+import metroline.screens.GameScreen;
 import metroline.screens.panel.InfoWindow;
 import metroline.screens.render.StationRender;
 import metroline.screens.worldscreens.CachedWorldScreen;
@@ -12,7 +13,6 @@ import metroline.screens.worldscreens.CachedWorldScreen;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
-import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -44,12 +44,13 @@ public class GameWorldScreen extends CachedWorldScreen {
         INSTANCE = this;
 
         this.worldClickController = new WorldClickController(this);
-        //  initWorldCache(widthWorld, heightWorld);
+     //   this.updateStaticWorldCache(widthWorld,heightWorld);
         setupRepaintTimer();
 
         lastFpsTime = System.currentTimeMillis();
         lastWorldUpdateTime = lastFpsTime;
     }
+
 
     public void handleWorldClick(int x, int y) {
         if (x < 0 || x >= getWorld().getWidth() || y < 0 || y >= getWorld().getHeight()) {
@@ -72,9 +73,10 @@ public class GameWorldScreen extends CachedWorldScreen {
         worldClickController = new WorldClickController(this);
         ((GameWorld)getWorld()).generateRandomGameplayUnits((int)GameConstants.GAMEPLAY_UNITS_COUNT);
 
-        invalidateCache(true);
+        invalidateCache();
         setupRepaintTimer();
         repaint();
+
     }
 
     private void setupRepaintTimer() {
@@ -96,11 +98,27 @@ public class GameWorldScreen extends CachedWorldScreen {
         }
     }
 
-    public void close() {
-        stopRepaintTimer();
-        new ArrayList<>(infoWindows).forEach(InfoWindow::dispose);
-        infoWindows.clear();
-    }
+//    public void close() {
+//        stopRepaintTimer();
+//        new ArrayList<>(infoWindows).forEach(InfoWindow::dispose);
+//        infoWindows.clear();
+//
+//        // Очищаем контроллеры
+//        if (worldClickController != null) {
+//       //     worldClickController.cleanup();
+//            worldClickController = null;
+//        }
+//
+//        // Очищаем мир
+//        if (getWorld() != null) {
+//            //      getWorld().cleanup();
+//            setWorld(null); // ← Важно!
+//        }
+//
+//        invalidateCache();
+//        new ArrayList<>(infoWindows).forEach(InfoWindow::dispose);
+//        infoWindows.clear();
+//    }
 
     public void updateMoneyDisplay() {
         if (getWorld() instanceof GameWorld) {
@@ -125,33 +143,20 @@ public class GameWorldScreen extends CachedWorldScreen {
 
     @Override
     protected void paintComponent(Graphics gr) {
+        GameScreen currentScreen = MainFrame.getInstance().getCurrentScreen();
+
         long renderStartTime = System.nanoTime();
         super.paintComponent(gr);
         Graphics2D g = (Graphics2D)gr;
 
         updatePerformanceCounters();
 
-        // Update caches if needed
-//        if (!staticCacheValid || worldChanged) {
-//            updateStaticWorldCache(widthWorld, heightWorld);
-//        }
-
-        // Apply transformations
         AffineTransform oldTransform = g.getTransform();
         g.scale(zoom, zoom);
         g.translate(offsetX, offsetY);
 
-//        if (staticWorldCache != null) {
-//            g.drawImage(staticWorldCache,
-//                    0, 0,
-//                    getWorld().getWidth() * TILE_SIZE, getWorld().getHeight() * TILE_SIZE,
-//                    null);
-//        }
         renderWorld(g);
-        // Draw cached layers
-//        g.drawImage(staticWorldCache, 0, 0, null);
-
-        // Вместо drawImage(dynamicElementsCache) рисуем динамические элементы напрямую
+      //  drawStaticWorld(g);
         drawDynamicWorld(g);
 
         // Рисуем выделения поверх всего
@@ -168,51 +173,51 @@ public class GameWorldScreen extends CachedWorldScreen {
         updateRenderStats(renderStartTime);
     }
 
-    @Override
-    protected void drawDynamicWorld(Graphics2D g) {
-        AffineTransform originalTransform = g.getTransform();
-
-        // Туннели
-        for (Tunnel tunnel : getWorld().getTunnels()) {
-            tunnel.draw(g, 0, 0, 1);
-        }
-
-        // Станции
-        if(getWorld().isRoundStationsEnabled()) {
-            // Сначала рисуем цветные кольца и переходы
-            for (Station station : getWorld().getStations()) {
-                StationRender.drawWorldColorRing(station, g, 0, 0, 1);
-                StationRender.drawRoundTransfer(station, g, 0, 0, 1);
-            }
-            // Затем сами станции в правильном порядке
-            for (Station station : getAllStationsSorted()) {
-                StationRender.drawRoundStation(station, g, 0, 0, 1);
-            }
-        } else {
-            // Квадратные станции
-            for (Station station : getWorld().getStations()) {
-                StationRender.drawWorldColorSquare(station, g, 0, 0, 1);
-                StationRender.drawRoundTransfer(station, g, 0, 0, 1);
-            }
-            for (Station station : getAllStationsSorted()) {
-                StationRender.drawSquareStation(station, g, 0, 0, 1);
-            }
-        }
-
-        // Игровые объекты
-        if (getWorld() instanceof GameWorld) {
-            for (GameplayUnits unit : ((GameWorld)getWorld()).getGameplayUnits()) {
-                unit.draw(g, 0, 0, 1);
-            }
-        }
-
-        // Метки
-        for (Label label : getWorld().getLabels()) {
-            label.draw(g, 0, 0, 1);
-        }
-
-        g.setTransform(originalTransform);
-    }
+//    @Override
+//    protected void drawDynamicWorld(Graphics2D g) {
+//        AffineTransform originalTransform = g.getTransform();
+//
+//        // Туннели
+//        for (Tunnel tunnel : getWorld().getTunnels()) {
+//            tunnel.draw(g, 0, 0, 1);
+//        }
+//
+//        // Станции
+//        if(getWorld().isRoundStationsEnabled()) {
+//            // Сначала рисуем цветные кольца и переходы
+//            for (Station station : getWorld().getStations()) {
+//                StationRender.drawWorldColorRing(station, g, 0, 0, 1);
+//                StationRender.drawRoundTransfer(station, g, 0, 0, 1);
+//            }
+//            // Затем сами станции в правильном порядке
+//            for (Station station : getAllStationsSorted()) {
+//                StationRender.drawRoundStation(station, g, 0, 0, 1);
+//            }
+//        } else {
+//            // Квадратные станции
+//            for (Station station : getWorld().getStations()) {
+//                StationRender.drawWorldColorSquare(station, g, 0, 0, 1);
+//                StationRender.drawRoundTransfer(station, g, 0, 0, 1);
+//            }
+//            for (Station station : getAllStationsSorted()) {
+//                StationRender.drawSquareStation(station, g, 0, 0, 1);
+//            }
+//        }
+//
+//        // Игровые объекты
+//        if (getWorld() instanceof GameWorld) {
+//            for (GameplayUnits unit : ((GameWorld)getWorld()).getGameplayUnits()) {
+//                unit.draw(g, 0, 0, 1);
+//            }
+//        }
+//
+//        // Метки
+//        for (Label label : getWorld().getLabels()) {
+//            label.draw(g, 0, 0, 1);
+//        }
+//
+//        g.setTransform(originalTransform);
+//    }
 
     private void drawSelections(Graphics2D g) {
         if(getWorld().isRoundStationsEnabled()) {
@@ -448,67 +453,7 @@ public class GameWorldScreen extends CachedWorldScreen {
         g.setColor(oldColor);
         g.setFont(oldFont);
     }
-    private void drawVideoMemoryStats(Graphics2D g) {
-        // Save original settings
-        Color oldColor = g.getColor();
-        Font oldFont = g.getFont();
 
-        g.setColor(new Color(255, 255, 255, 200));
-        g.setFont(new Font("Monospaced", Font.BOLD, 12));
-        FontMetrics metrics = g.getFontMetrics();
-
-        // Получаем GraphicsConfiguration
-        GraphicsConfiguration gc = getGraphicsConfiguration();
-        GraphicsDevice gd = gc.getDevice();
-
-        // Пример через Sun GraphicsDevice API (может не работать на всех JVM)
-        long vramEstimate = -1;
-        try {
-            // Это работает только если underlying device поддерживает DisplayMemory
-            Class<?> clazz = gd.getClass();
-            try {
-                java.lang.reflect.Method m = clazz.getMethod("getAvailableAcceleratedMemory");
-                m.setAccessible(true);
-                vramEstimate = (long) m.invoke(gd);
-            } catch (Exception ignored) {}
-        } catch (Throwable t) {
-            vramEstimate = -1;
-        }
-
-        // Информация о VRAM (если доступна)
-        String[] vramStats;
-        if (vramEstimate > 0) {
-            vramStats = new String[] {
-                    "=== VIDEO MEMORY ===",
-                    String.format("Available VRAM: %.2f MB", vramEstimate / (1024.0 * 1024.0))
-            };
-        } else {
-            vramStats = new String[] {
-                    "=== VIDEO MEMORY ===",
-                    "VRAM info unavailable"
-            };
-        }
-
-        // Draw text
-        int yPos = 20;
-        int textWidth = 0;
-        for (String line : vramStats) {
-            textWidth = Math.max(textWidth, metrics.stringWidth(line));
-        }
-
-        g.setColor(new Color(0, 0, 0, 150));
-        g.fillRect(10, 10, textWidth + 20, metrics.getHeight() * vramStats.length + 10);
-
-        g.setColor(Color.WHITE);
-        for (String line : vramStats) {
-            g.drawString(line, 20, yPos);
-            yPos += metrics.getHeight();
-        }
-
-        // Restore original settings
-        g.setColor(oldColor);
-        g.setFont(oldFont);
-    }
     public void toggleDebugMode() {
         debugMode = !debugMode;
         repaint();

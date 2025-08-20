@@ -1,49 +1,63 @@
 package metroline.screens.worldscreens.sandbox;
 
 
-import metroline.core.world.GameWorld;
-import metroline.core.world.SandboxWorld;
-
-
-import metroline.core.world.tiles.WorldTile;
-import metroline.objects.gameobjects.*;
-import metroline.objects.enums.Direction;
 import metroline.MainFrame;
+import metroline.core.world.SandboxWorld;
+import metroline.core.world.tiles.WorldTile;
 import metroline.objects.gameobjects.Label;
+import metroline.objects.gameobjects.Station;
+import metroline.objects.gameobjects.Tunnel;
 import metroline.screens.render.StationRender;
 import metroline.screens.worldscreens.CachedWorldScreen;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
-import java.awt.image.BufferedImage;
-
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+
 
 
 /**
  * World screen that displays and interacts with the game world
  */
 public class SandboxWorldScreen extends CachedWorldScreen {
+
+    // Performance tracking
+    private int fps;
+    private long lastFpsTime;
+    private int frameCount;
+    private long totalRenderTime;
+    private int renderCount;
+    private int worldUpdates;
+    private long lastWorldUpdateTime;
+
+    private static final int FPS_UPDATE_INTERVAL = 1000;
+    private static final int RENDER_TIMER_DELAY = 16; // ~60 FPS
+
     public static SandboxWorldScreen INSTANCE;
     public SandboxClickHandler sandboxClickHandler;
-    private BufferedImage worldCache; // Кешированное изображение мира
     private boolean cacheValid = false; // Флаг валидности кеша
 
     public SandboxWorldScreen(MainFrame parent) {
         super(parent, new SandboxWorld(widthWorld, heightWorld, 0xFFFFFF));
         INSTANCE = this;
         this.sandboxClickHandler = new SandboxClickHandler();
-        initWorldCache();
+
     }
+
+
     public void createNewWorld(short width, short height, int worldColor) {
         widthWorld = width;
         heightWorld = height;
+
         this.setWorld(new SandboxWorld(width, height, worldColor));
         invalidateCache();
+
         repaint();
+
     }
+
+
     /**
      * Handles mouse click on the world
      * @param x X coordinate in world space
@@ -70,17 +84,19 @@ public class SandboxWorldScreen extends CachedWorldScreen {
         repaint();
     }
 
-    public static SandboxWorldScreen getInstance() {
+    public static synchronized SandboxWorldScreen getInstance() {
+        if (INSTANCE == null) {
+            throw new IllegalStateException("SandboxWorldScreen not initialized");
+        }
         return INSTANCE;
     }
-    private void initWorldCache() {
-        // Создаем кеш достаточного размера
-        int cacheWidth = widthWorld * 32;
-        int cacheHeight = heightWorld * 32;
-        worldCache = new BufferedImage(cacheWidth, cacheHeight, BufferedImage.TYPE_INT_ARGB);
-    }
-    public void invalidateCache() {
-        cacheValid = false;
+    public void close() {
+        // Останавливаем все таймеры, очищаем ресурсы
+        if (sandboxClickHandler != null) {
+       //     sandboxClickHandler.cleanup();
+            sandboxClickHandler = null;
+        }
+        invalidateCache();
     }
 
     @Override
@@ -88,18 +104,14 @@ public class SandboxWorldScreen extends CachedWorldScreen {
         super.paintComponent(g);
         Graphics2D g2d = (Graphics2D)g;
 
-        // Обновляем кеш при необходимости
-        if (!cacheValid) {
-            updateWorldCache();
-        }
+
 
         // Применяем трансформации
         AffineTransform oldTransform = g2d.getTransform();
         g2d.scale(zoom, zoom);
         g2d.translate(offsetX, offsetY);
 
-        // Рисуем кешированный мир
-        g2d.drawImage(worldCache, 0, 0, null);
+        renderWorld(g2d);
 
         for (Tunnel tunnel : getWorld().getTunnels()) {
             tunnel.draw(g2d, 0, 0, 1);
@@ -158,7 +170,7 @@ public class SandboxWorldScreen extends CachedWorldScreen {
 
         // Рисуем debug-информацию
         if (debugMode) {
-            drawDebugInfo(g2d);
+              drawPerformanceStats(g2d);
         }
     }
     public java.util.List<Station> getAllStationsSorted() {
@@ -170,27 +182,7 @@ public class SandboxWorldScreen extends CachedWorldScreen {
         });
         return stations;
     }
-    private void updateWorldCache() {
-        if (worldCache == null ||
-                worldCache.getWidth() != widthWorld * 32 ||
-                worldCache.getHeight() != heightWorld * 32) {
-            initWorldCache();
-        }
 
-        Graphics2D cacheGraphics = worldCache.createGraphics();
-        try {
-            // Очищаем кеш
-            cacheGraphics.setBackground(new Color(0, 0, 0, 0));
-            cacheGraphics.clearRect(0, 0, worldCache.getWidth(), worldCache.getHeight());
-
-            // Рисуем статичные элементы в кеш
-            cacheGraphics.scale(2, 2);
-            drawStaticWorld(cacheGraphics);
-        } finally {
-            cacheGraphics.dispose();
-        }
-        cacheValid = true;
-    }
     public void drawStaticWorld(Graphics2D g) {
         // Рисуем сетку
         AffineTransform originalTransform = g.getTransform();
@@ -206,117 +198,67 @@ public class SandboxWorldScreen extends CachedWorldScreen {
         g.setTransform(originalTransform);
     }
 
-    /**
-     * Рисует глобальную отладочную информацию
-     */
-    private void drawDebugInfo(Graphics2D g) {
-        g.setFont(debugFont);
-        g.setColor(Color.YELLOW);
+    private void drawPerformanceStats(Graphics2D g) {
+        // Save original settings
+        Color oldColor = g.getColor();
+        Font oldFont = g.getFont();
 
-        int yPos = 60; // Начальная позиция по Y
+        // Setup debug font
+        g.setColor(new Color(255, 255, 255, 200));
+        g.setFont(new Font("Monospaced", Font.BOLD, 12));
+        FontMetrics metrics = g.getFontMetrics();
 
-        // Глобальная информация
-        g.drawString("=== GLOBAL DEBUG INFO ===", 10, yPos);
-        yPos += 15;
-        g.drawString("Stations: " + getWorld().getStations().size(), 10, yPos);
-        yPos += 15;
-        g.drawString("Tunnels: " + getWorld().getTunnels().size(), 10, yPos);
-        yPos += 15;
-        g.drawString("Labels: " + getWorld().getLabels().size(), 10, yPos);
-        yPos += 15;
-        g.drawString("Zoom: " + String.format("%.2f", zoom), 10, yPos);
-        yPos += 15;
-        g.drawString("Offset: (" + offsetX + "," + offsetY + ")", 10, yPos);
-        yPos += 15;
+        // Prepare performance data
+        Runtime runtime = Runtime.getRuntime();
+        long usedMem = (runtime.totalMemory() - runtime.freeMemory()) / (1024 * 1024);
+        long totalMem = runtime.totalMemory() / (1024 * 1024);
+        long avgRenderTime = renderCount > 0 ? (totalRenderTime / renderCount) / 1000 : 0;
 
-        // Информация о выбранной станции
-        if (sandboxClickHandler.getSelectedObject() instanceof Station) {
-            Station station = (Station) sandboxClickHandler.getSelectedObject();
-            yPos += 15;
-            g.drawString("=== SELECTED STATION ===", 10, yPos);
-            yPos += 15;
-            g.drawString("Hash: " + station.hashCode(), 10, yPos);
-            yPos += 15;
-            g.drawString("Position: (" + station.getX() + "," + station.getY() + ")", 10, yPos);
-            yPos += 15;
-            g.drawString("Name: " + station.getName(), 10, yPos);
-            yPos += 15;
-            g.drawString("Type: " + station.getType(), 10, yPos);
-            yPos += 15;
-            g.drawString("Color: " + String.format("#%06X", (0xFFFFFF & station.getColor().getRGB())), 10, yPos);
-            yPos += 15;
 
-            if (!getWorld().getLabelsForStation(station).isEmpty()) {
-                g.drawString("Labels (" + getWorld().getLabelsForStation(station).size() + "):", 10, yPos);
-                yPos += 15;
+        BufferCapabilities caps = getGraphicsConfiguration().getBufferCapabilities();
 
-                for (Label label : getWorld().getLabelsForStation(station)) {
-                    g.drawString("- '" + label.getText() + "' at (" +
-                            label.getX() + "," + label.getY() + ")", 20, yPos);
-                    yPos += 15;
-                }
-            }
-            // Информация о соединениях
-            if (!station.getConnections().isEmpty()) {
-                g.drawString("Connections:", 10, yPos);
-                yPos += 15;
+        String[] stats = {
+                "=== PERFORMANCE STATS ===",
+                String.format("FPS: %d (Target: %.1f)", fps, 1000.0/RENDER_TIMER_DELAY),
+                String.format("Render: %d μs (avg)", avgRenderTime),
+                String.format("World updates: %d/s", worldUpdates),
+                "",
+                "=== MEMORY USAGE ===",
+                String.format("Used: %d MB / %d MB", usedMem, totalMem),
+                String.format("Max: %d MB", runtime.maxMemory() / (1024 * 1024)),
+                "",
+                "=== WORLD STATS ===",
+                String.format("World size: %dx%d", getWorld().getWidth(), getWorld().getHeight()),
+                String.format("Stations: %d", getWorld().getStations().size()),
+                String.format("Tunnels: %d", getWorld().getTunnels().size()),
+                String.format("Labels: %d", getWorld().getLabels().size()),
+                String.format("Zoom: %.2f", zoom),
+                String.format("VSync: %b", caps.isPageFlipping())
+        };
 
-                for (Map.Entry<Direction, Station> entry : station.getConnections().entrySet()) {
-                    g.drawString("- " + entry.getKey() + " -> Station " + entry.getValue().getName(), 20, yPos);
-                    yPos += 15;
-                }
-            }
+        // Calculate background size
+        int textHeight = metrics.getHeight() * stats.length;
+        int textWidth = 0;
+        for (String line : stats) {
+            textWidth = Math.max(textWidth, metrics.stringWidth(line));
         }
-        else if (sandboxClickHandler.getSelectedObject() instanceof Label) {
-            Label label = (Label) sandboxClickHandler.getSelectedObject();
-            yPos += 15;
-            g.drawString("=== SELECTED LABEL ===", 10, yPos);
-            yPos += 15;
-            g.drawString("Hash: " + label.hashCode(), 10, yPos);
-            yPos += 15;
-            g.drawString("Text: '" + label.getText() + "'", 10, yPos);
-            yPos += 15;
-            g.drawString("Position: (" + label.getX() + "," + label.getY() + ")", 10, yPos);
-            yPos += 15;
-            g.drawString("Parent Station: " + label.getParentGameObject().getName() +
-                    " (" + label.getParentGameObject().getX() + "," +
-                    label.getParentGameObject().getY() + ")", 10, yPos);
-            yPos += 15;
-        }
-        // Информация о выбранном туннеле
-        else if (sandboxClickHandler.getSelectedObject() instanceof Tunnel) {
-            Tunnel tunnel = (Tunnel) sandboxClickHandler.getSelectedObject();
-            yPos += 15;
-            g.drawString("=== SELECTED TUNNEL ===", 10, yPos);
-            yPos += 15;
-            g.drawString("Hash: " + tunnel.hashCode(), 10, yPos);
-            yPos += 15;
+        //   g.drawString(String.format("VSync: %b", caps.isPageFlipping()), 20, 50);
+        // Draw background
+        g.setColor(new Color(0, 0, 0, 150));
+        g.fillRect(10, 10, textWidth + 20, textHeight + 20);
 
-            // Информация о станциях
-            Station start = tunnel.getStart();
-            Station end = tunnel.getEnd();
-            g.drawString("From: " + start.getName() + " (" + start.getX() + "," + start.getY() + ")", 10, yPos);
-            yPos += 15;
-            g.drawString("To: " + end.getName() + " (" + end.getX() + "," + end.getY() + ")", 10, yPos);
-            yPos += 15;
-
-            // Информация о точках пути
-            g.drawString("Path points (" + tunnel.getPath().size() + "):", 10, yPos);
-            yPos += 15;
-
-            for (int i = 0; i < tunnel.getPath().size(); i++) {
-                PathPoint p = tunnel.getPath().get(i);
-                String pointType = (i == 0) ? "START" : (i == tunnel.getPath().size()-1) ? "END" : "CTRL";
-                g.drawString(pointType + " " + i + ": (" + p.getX() + "," + p.getY() + ")", 20, yPos);
-                yPos += 15;
-            }
+        // Draw text
+        g.setColor(Color.WHITE);
+        int yPos = 30;
+        for (String line : stats) {
+            g.drawString(line, 20, yPos);
+            yPos += metrics.getHeight();
         }
 
-        // Убираем старые методы drawTunnelDebugInfo и drawStationDebugInfo
-        // так как вся информация теперь выводится в одном месте
+        // Restore original settings
+        g.setColor(oldColor);
+        g.setFont(oldFont);
     }
-
-
 
 
 

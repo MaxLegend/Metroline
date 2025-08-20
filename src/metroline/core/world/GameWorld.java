@@ -1,29 +1,29 @@
 package metroline.core.world;
 
+import metroline.MainFrame;
 import metroline.core.time.ConstructionTimeProcessor;
 import metroline.core.time.GameTime;
 import metroline.core.world.cities.CityManager;
 import metroline.core.world.tiles.GameTile;
-
 import metroline.core.world.tiles.WorldTile;
 import metroline.objects.enums.Direction;
 import metroline.objects.enums.GameplayUnitsType;
-import metroline.objects.gameobjects.*;
 import metroline.objects.enums.StationType;
 import metroline.objects.enums.TunnelType;
-import metroline.MainFrame;
-import metroline.objects.gameobjects.Label;
+import metroline.objects.gameobjects.*;
 import metroline.screens.panel.LinesLegendWindow;
 import metroline.screens.worldscreens.normal.GameWorldScreen;
 import metroline.screens.worldscreens.sandbox.SandboxWorldScreen;
-import metroline.util.*;
+import metroline.util.LngUtil;
+import metroline.util.MetroLogger;
+import metroline.util.PerlinNoise;
+import metroline.util.VoronoiNoise;
 import metroline.util.serialize.MetroSerializer;
 import metroline.util.ui.UserInterfaceUtil;
 
-import java.awt.*;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.util.*;
-import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -68,12 +68,14 @@ public class GameWorld extends World {
      * @throws IOException Если возникает ошибка при чтении.
      */
     public GameWorld(BufferedReader reader) throws IOException {
-        super(); // Вызываем базовый конструктор World()
+           super(); // Вызываем базовый конструктор World()
+
 
         this.mainFrame = MainFrame.getInstance();
         processor = new ConstructionTimeProcessor(gameTime, this);
         processor.initTransientFields(); // Инициализируем transient поля
         worldSerializer = new MetroSerializer();
+
         worldSerializer.recreateWorld(reader, this);
 
 
@@ -616,7 +618,7 @@ public class GameWorld extends World {
         }
 
         if (GameWorldScreen.getInstance() != null) {
-            GameWorldScreen.getInstance().invalidateCache(false);
+            GameWorldScreen.getInstance().invalidateCache();
         }
 //        gameplayUnits.add(obj);
 //        gameplayGrid[obj.getX()][obj.getY()].setContent(obj);
@@ -633,7 +635,7 @@ public class GameWorld extends World {
         }
 
         if (GameWorldScreen.getInstance() != null) {
-            GameWorldScreen.getInstance().invalidateCache(false);
+            GameWorldScreen.getInstance().invalidateCache();
         }
 
 //        gameplayUnits.remove(obj);

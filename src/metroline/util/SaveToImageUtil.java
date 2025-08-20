@@ -4,10 +4,9 @@ import metroline.core.world.World;
 import metroline.objects.gameobjects.Label;
 import metroline.objects.gameobjects.Station;
 import metroline.objects.gameobjects.Tunnel;
-import metroline.screens.worldscreens.CachedWorldScreen;
-import metroline.screens.worldscreens.sandbox.SandboxWorldScreen;
 import metroline.screens.worldscreens.WorldScreen;
 import metroline.screens.worldscreens.normal.GameWorldScreen;
+import metroline.screens.worldscreens.sandbox.SandboxWorldScreen;
 import metroline.util.ui.UserInterfaceUtil;
 
 import javax.imageio.ImageIO;
@@ -104,7 +103,7 @@ public class SaveToImageUtil {
         if (screen instanceof SandboxWorldScreen) {
             ((SandboxWorldScreen)screen).drawStaticWorld(g2d);
         } else if (screen instanceof GameWorldScreen) {
-            ((GameWorldScreen)screen).drawStaticWorld(g2d);
+                 ((GameWorldScreen)screen).drawStaticWorld(g2d);
         }
 
         // Рисуем туннели

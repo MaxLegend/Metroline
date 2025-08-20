@@ -6,11 +6,19 @@ import metroline.objects.gameobjects.PathPoint;
 import metroline.objects.gameobjects.Station;
 import metroline.objects.gameobjects.Tunnel;
 import metroline.objects.gameobjects.Label;
+import metroline.util.MetroLogger;
+
 import java.awt.*;
 import java.util.Map;
 
 
 public class DebugInfoRenderer {
+    public static void logMemoryUsage(String context) {
+        Runtime runtime = Runtime.getRuntime();
+        long usedMB = (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024;
+        long maxMB = runtime.maxMemory() / 1024 / 1024;
+        MetroLogger.logInfo(context + " - Memory: " + usedMB + "MB / " + maxMB + "MB");
+    }
     public static void renderDebugInfo(Graphics2D g, Object obj, World world, int startY) {
         int yPos = startY;
 

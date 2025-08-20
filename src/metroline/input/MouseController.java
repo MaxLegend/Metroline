@@ -2,11 +2,11 @@ package metroline.input;
 
 import metroline.objects.gameobjects.GameObject;
 import metroline.objects.gameobjects.PathPoint;
+import metroline.screens.worldscreens.WorldScreen;
 import metroline.screens.worldscreens.normal.GameWorldScreen;
 import metroline.screens.worldscreens.normal.WorldClickController;
 import metroline.screens.worldscreens.sandbox.SandboxClickHandler;
 import metroline.screens.worldscreens.sandbox.SandboxWorldScreen;
-import metroline.screens.worldscreens.WorldScreen;
 
 import javax.swing.*;
 import java.awt.*;
@@ -195,6 +195,42 @@ public class MouseController extends MouseAdapter {
     /**
      * Обработка колесика мыши (масштабирование)
      */
+//    private void handleMouseWheel(MouseWheelEvent e) {
+//        float currentZoom = screen.getZoom();
+//        int currentOffsetX = screen.getOffsetX();
+//        int currentOffsetY = screen.getOffsetY();
+//
+//        // Получаем позицию курсора в мировых координатах ДО изменения зума
+//        PathPoint worldPosBefore = screen.screenToWorld(e.getX(), e.getY());
+//        if (worldPosBefore == null) return;
+//
+//        // Вычисляем новый зум
+//        float zoomFactor = 1.1f;
+//        if (e.getWheelRotation() > 0) {
+//            zoomFactor = 1.0f / zoomFactor;
+//        }
+//
+//        float newZoom = currentZoom * zoomFactor;
+//        newZoom = Math.max(0.1f, Math.min(3.0f, newZoom));
+//
+//        if (Math.abs(currentZoom - newZoom) < 0.01f) return;
+//
+//        // ВЫЧИСЛЯЕМ ВСЕ ИЗМЕНЕНИЯ ПЕРЕД УСТАНОВКОЙ
+//        // Вычисляем новую позицию курсора в экранных координатах после изменения зума
+//        Point screenPosAfter = screen.worldToScreen(worldPosBefore.x, worldPosBefore.y);
+//        if (screenPosAfter == null) return;
+//
+//        // Корректируем смещение
+//        int dx = e.getX() - screenPosAfter.x;
+//        int dy = e.getY() - screenPosAfter.y;
+//
+//        int newOffsetX = currentOffsetX + dx;
+//        int newOffsetY = currentOffsetY + dy;
+//
+//        // УСТАНАВЛИВАЕМ ВСЕ ЗНАЧЕНИЯ ОДНОВРЕМЕННО
+//        screen.setZoomAndOffset(newZoom, newOffsetX, newOffsetY);
+//    }
+
     private void handleMouseWheel(MouseWheelEvent e) {
         float currentZoom = screen.getZoom();
         int currentOffsetX = screen.getOffsetX();
@@ -214,10 +250,10 @@ public class MouseController extends MouseAdapter {
         newZoom = Math.max(0.1f, Math.min(3.0f, newZoom));
 
         if (Math.abs(currentZoom - newZoom) < 0.01f) return;
-
+     //   DebugInfoRenderer.logMemoryUsage("Before zoom");
         // Устанавливаем новый зум
         screen.setZoom(newZoom);
-
+   //     DebugInfoRenderer.logMemoryUsage("After zoom");
         // Вычисляем новую позицию курсора в экранных координатах после изменения зума
         Point screenPosAfter = screen.worldToScreen(worldPosBefore.x, worldPosBefore.y);
         if (screenPosAfter == null) return;

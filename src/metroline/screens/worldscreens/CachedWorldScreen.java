@@ -18,8 +18,11 @@ import java.awt.image.BufferedImage;
 import java.awt.image.VolatileImage;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 
+
+//TODO Починить белый экран при переключении в полноэкранный и обратно.
+//TODO Сделать определенное кэширование для динамических объектов с перерисовкой только при добавлении.
+//TODO Починить все что сломалось. Починить слои. Добавить еще слоев. Убрать множество окон для одного объекта
 public abstract class CachedWorldScreen extends WorldScreen {
     protected static final int TILE_SIZE = 32;
     protected static final int CACHE_SCALE = 2;
@@ -34,6 +37,8 @@ public abstract class CachedWorldScreen extends WorldScreen {
     protected Font debugFont = new Font("Monospaced", Font.PLAIN, 12);
     public LinesLegendWindow legendWindow;
 
+    private Runtime RUNTIME = Runtime.getRuntime();
+
     public CachedWorldScreen(MainFrame parent, World world) {
         super(parent, world);
     }
@@ -41,7 +46,7 @@ public abstract class CachedWorldScreen extends WorldScreen {
     public void setLegendWindow(LinesLegendWindow legendWindow) {
         this.legendWindow = legendWindow;
         if (getWorld() instanceof GameWorld) {
-            ((GameWorld)getWorld()).setLegendWindow(legendWindow);
+            ((GameWorld) getWorld()).setLegendWindow(legendWindow);
         }
     }
 
@@ -82,15 +87,15 @@ public abstract class CachedWorldScreen extends WorldScreen {
         return gc.createCompatibleImage(width, height, Transparency.TRANSLUCENT);
     }
 
-    public void invalidateCache(boolean invalidateStatic) {
-        if (invalidateStatic) {
+    public void invalidateCache() {
+
             staticCacheValid = false;
             worldChanged = true;
-        }
+
 
     }
 
-//    protected void updateStaticWorldCache(int width, int height) {
+    //    protected void updateStaticWorldCache(int width, int height) {
 //        if (needToRecreateCache(staticWorldCache, width, height)) {
 //            staticWorldCache = createCompatibleVolatileImage(width * TILE_SIZE, height * TILE_SIZE);
 //        }
@@ -110,26 +115,40 @@ public abstract class CachedWorldScreen extends WorldScreen {
 //        staticCacheValid = true;
 //        worldChanged = false;
 //    }
-protected void updateStaticWorldCache(int width, int height) {
-    if (needToRecreateCache(staticWorldCache, width, height)) {
-        if (staticWorldCache != null) staticWorldCache.flush();
-        staticWorldCache = createCompatibleVolatileImage(width * TILE_SIZE, height * TILE_SIZE);
-    }
+    protected void updateStaticWorldCache(int width, int height) {
+        boolean needsRecreation = needToRecreateCache(staticWorldCache, width, height);
 
-        validateVolatileImage(staticWorldCache, () -> {
-        Graphics2D g = staticWorldCache.createGraphics();
-        try {
-            clearImage(g, staticWorldCache);
-            g.scale(CACHE_SCALE, CACHE_SCALE);
-            drawStaticWorld(g);
-        } finally {
-            g.dispose();
+        if (needsRecreation) {
+            if (staticWorldCache != null) {
+                staticWorldCache.flush();
+            }
+            if(width >0 && height >0)
+            staticWorldCache = createCompatibleVolatileImage(width * TILE_SIZE, height * TILE_SIZE);
         }
-    });
 
-    staticCacheValid = true;
-    worldChanged = false;
-}
+        // Валидация без рекурсивных вызовов
+
+            int validateResult = staticWorldCache.validate(getGraphicsConfiguration());
+            if (validateResult == VolatileImage.IMAGE_INCOMPATIBLE) {
+                staticWorldCache.flush();
+                staticWorldCache = createCompatibleVolatileImage(width * TILE_SIZE, height * TILE_SIZE);
+                validateResult = staticWorldCache.validate(getGraphicsConfiguration());
+            }
+
+            if (validateResult != VolatileImage.IMAGE_OK) {
+                Graphics2D g = staticWorldCache.createGraphics();
+                try {
+                    clearImage(g, staticWorldCache);
+                    g.scale(CACHE_SCALE, CACHE_SCALE);
+                    drawStaticWorld(g);
+                } finally {
+                    g.dispose();
+                }
+
+        }
+        staticCacheValid = true;
+        worldChanged = false;
+    }
 
     private boolean needToRecreateCache(VolatileImage cache, int width, int height) {
         return cache == null ||
@@ -143,84 +162,67 @@ protected void updateStaticWorldCache(int width, int height) {
         g.setComposite(AlphaComposite.SrcOver);
     }
 
-    private void clearImage(Graphics2D g, BufferedImage image) {
-        g.setComposite(AlphaComposite.Clear);
-        g.fillRect(0, 0, image.getWidth(), image.getHeight());
-        g.setComposite(AlphaComposite.SrcOver);
-    }
+
     public void renderWorld(Graphics2D g) {
-        // Если кэш недействителен или потерялся, перерисовать
+        long frameStartTime = System.nanoTime();
         if (!staticCacheValid || !validateVolatileImage(staticWorldCache, () -> updateStaticWorldCache(getWorld().getWidth(), getWorld().getHeight()))) {
             updateStaticWorldCache(getWorld().getWidth(), getWorld().getHeight());
         }
         drawVolatileImage(g, staticWorldCache, 0, 0, () -> updateStaticWorldCache(getWorld().getWidth(), getWorld().getHeight()));
+        // Инкрементальная сборка мусора
+        incrementalGarbageCollection();
+
+        // Контроль FPS
+        controlFrameRate(frameStartTime);
     }
-    // Метод для проверки и восстановления VolatileImage
-//    protected boolean validateVolatileImage(VolatileImage image) {
-//        if (image == null) return false;
-//
-//        int validateResult = image.validate(getGraphicsConfiguration());
-//
-//        if (validateResult == VolatileImage.IMAGE_RESTORED) {
-//            // Содержимое было восстановлено, нужно перерисовать
-//            return false;
-//        } else if (validateResult == VolatileImage.IMAGE_INCOMPATIBLE) {
-//            // Изображение стало несовместимым, нужно пересоздать
-//            return false;
-//        }
-//
-//        return true;
-//    }
+
     protected void drawVolatileImage(Graphics2D g, VolatileImage image, int x, int y, Runnable redrawContent) {
         if (image == null) return;
 
-        boolean drawn = false;
-        do {
+        int maxAttempts = 3; // Защита от бесконечного цикла
+        int attempts = 0;
+
+        while (attempts < maxAttempts) {
             int result = image.validate(getGraphicsConfiguration());
 
             switch (result) {
                 case VolatileImage.IMAGE_OK:
                     g.drawImage(image, x, y, null);
-                    drawn = true;
-                    break;
+                    return; // Успешно нарисовали
 
                 case VolatileImage.IMAGE_RESTORED:
-                    if (redrawContent != null) redrawContent.run();
+                    if (redrawContent != null) {
+                        redrawContent.run();
+                    }
                     g.drawImage(image, x, y, null);
-                    drawn = true;
-                    break;
+                    return;
 
                 case VolatileImage.IMAGE_INCOMPATIBLE:
-                    // Пересоздаём VolatileImage и перерисовываем
-                    VolatileImage newImage = createCompatibleVolatileImage(image.getWidth(), image.getHeight());
-                    if (redrawContent != null) redrawContent.run();
-                    g.drawImage(newImage, x, y, null);
-                    drawn = true;
-                    break;
+                    // Пересоздаём изображение
+                    if (staticWorldCache != null) {
+                        staticWorldCache.flush();
+                    }
+                    staticWorldCache = createCompatibleVolatileImage(
+                            getWorld().getWidth() * TILE_SIZE,
+                            getWorld().getHeight() * TILE_SIZE
+                    );
+                    if (redrawContent != null) {
+                        redrawContent.run();
+                    }
+                    g.drawImage(staticWorldCache, x, y, null);
+                    return;
             }
-        } while (!drawn);
-    }
-    // Метод для безопасного рисования VolatileImage
-    protected void drawVolatileImage(Graphics2D g, VolatileImage image, int x, int y) {
-        if (image == null) return;
 
-        do {
-            int validateResult = image.validate(getGraphicsConfiguration());
+            attempts++;
+            try {
+                Thread.sleep(10); // Небольшая задержка
+            } catch (InterruptedException ignored) {}
+        }
 
-            if (validateResult == VolatileImage.IMAGE_OK) {
-                g.drawImage(image, x, y, null);
-                break;
-            } else if (validateResult == VolatileImage.IMAGE_RESTORED) {
-                // Нужно перерисовать содержимое, но мы уже делаем это в update методах
-                g.drawImage(image, x, y, null);
-                break;
-            } else if (validateResult == VolatileImage.IMAGE_INCOMPATIBLE) {
-                // Изображение стало несовместимым, нужно пересоздать
-                // Это обрабатывается в needToRecreateCache
-                break;
-            }
-        } while (true);
+        // Если не удалось нарисовать после нескольких попыток
+        System.err.println("Failed to draw volatile image after " + maxAttempts + " attempts");
     }
+
 
     protected void drawDynamicWorld(Graphics2D g) {
         AffineTransform originalTransform = g.getTransform();
@@ -265,7 +267,7 @@ protected void updateStaticWorldCache(int width, int height) {
 
     protected void drawGameplayUnits(Graphics2D g) {
         if (getWorld() instanceof GameWorld) {
-            for (GameplayUnits unit : ((GameWorld)getWorld()).getGameplayUnits()) {
+            for (GameplayUnits unit : ((GameWorld) getWorld()).getGameplayUnits()) {
                 unit.draw(g, 0, 0, 1);
             }
         }
@@ -276,6 +278,7 @@ protected void updateStaticWorldCache(int width, int height) {
             label.draw(g, 0, 0, 1);
         }
     }
+
 
     protected List<Station> getAllStationsSorted() {
         List<Station> stations = new ArrayList<>(getWorld().getStations());
@@ -299,10 +302,7 @@ protected void updateStaticWorldCache(int width, int height) {
         g.setTransform(originalTransform);
     }
 
-    public void notifyWorldChanged() {
-        worldChanged = true;
-        invalidateCache(true);
-    }
+
 
     protected void drawDebugInfo(Graphics2D g, Object selectedObject) {
         g.setFont(debugFont);

@@ -2,13 +2,15 @@ package metroline.util.ui;
 
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicScrollBarUI;
-import javax.swing.plaf.basic.BasicSliderUI;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 public class StyleUtil {
 
     public static final Color BACKGROUND_COLOR = new Color(30, 30, 30);
+    public static final Color BACKGROUND_COLOR2 = new Color(60, 60, 60);
     public static final Color FOREGROUND_COLOR = new Color(220, 220, 220);
 
     public static JLabel createMetrolineLabel(String text, int swing) {

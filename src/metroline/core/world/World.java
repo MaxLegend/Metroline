@@ -9,6 +9,7 @@ import metroline.objects.gameobjects.Label;
 import metroline.screens.worldscreens.normal.GameWorldScreen;
 import metroline.screens.worldscreens.WorldScreen;
 import metroline.util.*;
+import metroline.util.serialize.MetroSerializer;
 import metroline.util.ui.UserInterfaceUtil;
 
 import java.awt.*;
@@ -637,36 +638,14 @@ public WorldTile getWorldTile(int x, int y) {
      * SAVE AND LOAD SECTIONS
      */
     public void saveWorld() {
-        File saveDir = new File(GameWorld.SAVE_FOLDER);
-        if (!saveDir.exists()) {
-            saveDir.mkdir();
-        }
-        File saveFile = new File(GameWorld.SAVE_FOLDER + File.separator + SAVE_FILE);
-
-
-        // Создаем временный объект только с нужными данными
-        World saveData = new World();
-        saveData.width = this.width;
-        saveData.height = this.height;
-        saveData.worldGrid = this.worldGrid;
-        saveData.gameGrid = this.gameGrid;
-        saveData.stations = this.stations;
-        saveData.tunnels = this.tunnels;
-        saveData.labels = this.labels;
-        saveData.gameTime = this.gameTime;
-        saveData.roundStationsEnabled = this.roundStationsEnabled;
-
-        saveData.SAVE_FILE = this.SAVE_FILE;
-
         try {
-            // Проверка сериализуемости перед сохранением
-            new ObjectOutputStream(new ByteArrayOutputStream()).writeObject(this);
-        } catch (IOException e) {
-            MetroLogger.logError("World is not serializable", e);
-            return;
-        }
-        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(saveFile))) {
-            oos.writeObject(saveData);
+            MetroSerializer serializer = new MetroSerializer();
+            if (this instanceof GameWorld) {
+                serializer.saveWorld((GameWorld) this, SAVE_FILE);
+            } else if (this instanceof SandboxWorld) {
+                // Если у SandboxWorld свой формат сохранения
+           //     serializer.saveWorld((GameWorld) this, SAVE_FILE); // или адаптируйте под SandboxWorld
+            }
 
             MetroLogger.logInfo("World successfully saved");
             UserInterfaceUtil.showTimedMessage(LngUtil.translatable("world.saved"), false, 2000);
@@ -677,46 +656,131 @@ public WorldTile getWorldTile(int x, int y) {
     }
 
     public boolean loadWorld() {
-        File saveFile = new File(GameWorld.SAVE_FOLDER + File.separator + SAVE_FILE);
+        try {
+            MetroSerializer serializer = new MetroSerializer();
 
-        if (!saveFile.exists()) {
-            return false;
-        }
+            if (this instanceof GameWorld) {
+                GameWorld loaded = serializer.loadWorld(SAVE_FILE);
+                copyWorldData(loaded);
+            } else if (this instanceof SandboxWorld) {
+//                GameWorld loaded = serializer.loadWorld(SAVE_FILE);
+//                copyWorldData(loaded);
+            }
 
-        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(saveFile))) {
-            World loaded = (World) ois.readObject();
-
-            this.width = loaded.width;
-            this.height = loaded.height;
-            this.worldGrid = loaded.worldGrid;
-            this.gameGrid = loaded.gameGrid;
-            this.stations = loaded.stations;
-            this.tunnels = loaded.tunnels;
-            this.labels = loaded.labels;
-            this.gameTime = loaded.gameTime;
-            this.roundStationsEnabled = loaded.roundStationsEnabled;
-
-           this.SAVE_FILE = loaded.SAVE_FILE;
-
-
-            if (loaded.getGameTime() != null) {
-                loaded.getGameTime().start();
+            if (this.gameTime != null) {
+                this.gameTime.start();
             } else {
-                loaded.gameTime = new GameTime();
-                loaded.gameTime.start();
+                this.gameTime = new GameTime();
+                this.gameTime.start();
             }
 
             if (this.screen != null) {
                 this.screen.reinitializeControllers();
             }
+
             MetroLogger.logInfo("World successfully loaded");
             UserInterfaceUtil.showTimedMessage(LngUtil.translatable("world.loaded"), false, 2000);
             return true;
         } catch (Exception ex) {
             ex.printStackTrace();
             MetroLogger.logError("Failed to load world", ex);
-            UserInterfaceUtil. showTimedMessage(LngUtil.translatable("world.not_loaded") + ex.getMessage(), true, 2000);
+            UserInterfaceUtil.showTimedMessage(LngUtil.translatable("world.not_loaded") + ex.getMessage(), true, 2000);
         }
         return false;
     }
+    private void copyWorldData(World source) {
+        this.width = source.width;
+        this.height = source.height;
+        this.worldGrid = source.worldGrid;
+        this.gameGrid = source.gameGrid;
+        this.stations = source.stations;
+        this.tunnels = source.tunnels;
+        this.labels = source.labels;
+        this.gameTime = source.gameTime;
+        this.roundStationsEnabled = source.roundStationsEnabled;
+        this.SAVE_FILE = source.SAVE_FILE;
+    }
+//    public void saveWorld() {
+//        File saveDir = new File(GameWorld.SAVE_FOLDER);
+//        if (!saveDir.exists()) {
+//            saveDir.mkdir();
+//        }
+//        File saveFile = new File(GameWorld.SAVE_FOLDER + File.separator + SAVE_FILE);
+//
+//
+//        // Создаем временный объект только с нужными данными
+//        World saveData = new World();
+//        saveData.width = this.width;
+//        saveData.height = this.height;
+//        saveData.worldGrid = this.worldGrid;
+//        saveData.gameGrid = this.gameGrid;
+//        saveData.stations = this.stations;
+//        saveData.tunnels = this.tunnels;
+//        saveData.labels = this.labels;
+//        saveData.gameTime = this.gameTime;
+//        saveData.roundStationsEnabled = this.roundStationsEnabled;
+//
+//        saveData.SAVE_FILE = this.SAVE_FILE;
+//
+//        try {
+//            // Проверка сериализуемости перед сохранением
+//            new ObjectOutputStream(new ByteArrayOutputStream()).writeObject(this);
+//        } catch (IOException e) {
+//            MetroLogger.logError("World is not serializable", e);
+//            return;
+//        }
+//        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(saveFile))) {
+//            oos.writeObject(saveData);
+//
+//            MetroLogger.logInfo("World successfully saved");
+//            UserInterfaceUtil.showTimedMessage(LngUtil.translatable("world.saved"), false, 2000);
+//        } catch (IOException ex) {
+//            MetroLogger.logError("Failed to save world", ex);
+//            UserInterfaceUtil.showTimedMessage(LngUtil.translatable("world.not_saved") + ex.getMessage(), true, 2000);
+//        }
+//    }
+//
+//    public boolean loadWorld() {
+//        File saveFile = new File(GameWorld.SAVE_FOLDER + File.separator + SAVE_FILE);
+//
+//        if (!saveFile.exists()) {
+//            return false;
+//        }
+//
+//        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(saveFile))) {
+//            World loaded = (World) ois.readObject();
+//
+//            this.width = loaded.width;
+//            this.height = loaded.height;
+//            this.worldGrid = loaded.worldGrid;
+//            this.gameGrid = loaded.gameGrid;
+//            this.stations = loaded.stations;
+//            this.tunnels = loaded.tunnels;
+//            this.labels = loaded.labels;
+//            this.gameTime = loaded.gameTime;
+//            this.roundStationsEnabled = loaded.roundStationsEnabled;
+//
+//           this.SAVE_FILE = loaded.SAVE_FILE;
+//
+//
+//            if (loaded.getGameTime() != null) {
+//                loaded.getGameTime().start();
+//            } else {
+//                loaded.gameTime = new GameTime();
+//                loaded.gameTime.start();
+//            }
+//
+//            if (this.screen != null) {
+//                this.screen.reinitializeControllers();
+//            }
+//            MetroLogger.logInfo("World successfully loaded");
+//            UserInterfaceUtil.showTimedMessage(LngUtil.translatable("world.loaded"), false, 2000);
+//            return true;
+//        } catch (Exception ex) {
+//            ex.printStackTrace();
+//            MetroLogger.logError("Failed to load world", ex);
+//            UserInterfaceUtil. showTimedMessage(LngUtil.translatable("world.not_loaded") + ex.getMessage(), true, 2000);
+//        }
+//        return false;
+//    }
 }

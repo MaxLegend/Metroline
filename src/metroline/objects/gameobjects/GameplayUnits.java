@@ -117,7 +117,7 @@ public class GameplayUnits extends GameObject {
         // Рисуем иконку
         BufferedImage icon = icons.get(type);
         if (icon != null) {
-            int iconSize = (int)(size * 0.8); // 80% от размера клетки
+            int iconSize = (int)(size * 1); // 80% от размера клетки
             int iconX = drawX + (size - iconSize) / 2;
             int iconY = drawY + (size - iconSize) / 2;
             g.drawImage(icon, iconX, iconY, iconSize, iconSize, null);

@@ -3,7 +3,6 @@ package metroline.objects.gameobjects;
 import metroline.core.world.World;
 import metroline.core.world.tiles.WorldTile;
 import metroline.objects.enums.TunnelType;
-import metroline.screens.worldscreens.sandbox.SandboxWorldScreen;
 
 import java.awt.*;
 import java.awt.geom.Area;
@@ -335,14 +334,16 @@ public class Tunnel extends GameObject {
         }
 
         // Debug-отрисовка контрольных точек
-        if (SandboxWorldScreen.getInstance().debugMode && (selected || pathPoint != null)) {
-            g2d.setColor(Color.LIGHT_GRAY);
-            for (PathPoint p : path) {
-                int x = (int)((p.getX() * 32 + offsetX + 16) * zoom);
-                int y = (int)((p.getY() * 32 + offsetY + 16) * zoom);
-                g2d.fillOval(x - 3, y - 3, 6, 6);
-            }
-        }
+//        if(SandboxWorldScreen.getInstance() != null || GameWorldScreen.getInstance() != null) {
+//        if (SandboxWorldScreen.getInstance().debugMode && (selected || pathPoint != null)) {
+//            g2d.setColor(Color.LIGHT_GRAY);
+//            for (PathPoint p : path) {
+//                int x = (int) ((p.getX() * 32 + offsetX + 16) * zoom);
+//                int y = (int) ((p.getY() * 32 + offsetY + 16) * zoom);
+//                g2d.fillOval(x - 3, y - 3, 6, 6);
+//            }
+//        }
+//        }
     }
 
     private GeneralPath createPathShape(List<PathPoint> path, int offsetX, int offsetY, float zoom) {

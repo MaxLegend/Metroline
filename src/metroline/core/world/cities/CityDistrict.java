@@ -246,9 +246,9 @@ public class CityDistrict {
             world.addGameplayUnits(building);
 
             // Логируем плотную застройку
-            if (isCloseToCenter(position)) {
-                MetroLogger.logInfo("Dense building added at (" + position.x + "," + position.y + ")");
-            }
+//            if (isCloseToCenter(position)) {
+//                MetroLogger.logInfo("Dense building added at (" + position.x + "," + position.y + ")");
+//            }
 
             return true;
         }
