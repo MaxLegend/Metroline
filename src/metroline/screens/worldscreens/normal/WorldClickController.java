@@ -140,37 +140,7 @@ public class WorldClickController {
 
         GameWorldScreen.getInstance().repaint();
     }
-//    /**
-//     * Ctrl+Click - создание туннелей
-//     */
-//    public void handleCtrlClick(int x, int y) {
-//        GameWorld world = (GameWorld) WorldGameScreen.getInstance().getWorld();
-//        Station station = world.getStationAt(x, y);
-//
-//        if (station == null) return;
-//
-//        if (selectedStation != null && selectedStation != station) {
-//            // Создаем туннель между двумя станциями
-//            Tunnel tunnel = new Tunnel(world, selectedStation, station, TunnelType.PLANNED);
-//            world.addTunnel(tunnel);
-//
-//            // Снимаем выделение
-//            selectedStation.setSelected(false);
-//            selectedStation = null;
-//        } else {
-//            // Выбираем/снимаем выделение со станции
-//            if (selectedStation == station) {
-//                station.setSelected(false);
-//                selectedStation = null;
-//            } else {
-//                deselectAll();
-//                station.setSelected(true);
-//                selectedStation = station;
-//            }
-//        }
-//
-//        WorldGameScreen.getInstance().repaint();
-//    }
+
 
     /**
      * Shift+Click - строительство/удаление станций
@@ -250,24 +220,7 @@ public class WorldClickController {
         }
         GameWorldScreen.getInstance().repaint();
     }
-//    private void handleExistingStation(Station station) {
-//        if (screen.isAltPressed) {
-//            // Alt+Shift - начало разрушения станции
-//            GameWorld gameWorld = (GameWorld) WorldGameScreen.getInstance().getWorld();
-//            gameWorld.startDestroyingStation(station);
-//        } else {
-//            // Обычный Shift - изменение типа станции
-//            if (station.getType() == StationType.PLANNED) {
-//                WorldGameScreen.getInstance().getWorld().removeStation(station);
-//            } else if (station.getType() == StationType.CLOSED) {
-//            //    station.setType(StationType.REGULAR);
-//                station.updateType();
-//            } else {
-//                station.setType(StationType.CLOSED);
-//            }
-//        }
-//        WorldGameScreen.getInstance().repaint();
-//    }
+
 
     /**
      * Создание новой станции
@@ -503,7 +456,7 @@ public class WorldClickController {
     /**
      * Снятие выделения со всех объектов
      */
-    private void deselectAll() {
+    public void deselectAll() {
         GameWorld world = (GameWorld) GameWorldScreen.getInstance().getWorld();
 
         for (Station station : world.getStations()) {

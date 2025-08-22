@@ -1,7 +1,10 @@
 package metroline.input;
 
+import metroline.MainFrame;
 import metroline.screens.GameScreen;
 import metroline.screens.worldscreens.WorldScreen;
+import metroline.screens.worldscreens.sandbox.SandboxWorldScreen;
+import metroline.util.SaveToImageUtil;
 
 import java.awt.*;
 import java.awt.event.KeyAdapter;
@@ -35,43 +38,55 @@ public class KeyboardController extends KeyAdapter {
             }
             return;
         }
-        if(screen instanceof WorldScreen worldScreen) {
+        if(screen instanceof GameScreen) {
+            if(screen instanceof WorldScreen worldScreen) {
+                // Обработка специальных комбинаций
+                if (e.isShiftDown() && e.getKeyCode() == KeyEvent.VK_A) {
+                    MainFrame.getInstance().mainFrameUI.toggleToolbar();
+                    e.consume();
+                }
+                if (e.isControlDown() && e.getKeyCode() == KeyEvent.VK_S) {
+                    SaveToImageUtil.saveWorldToPNG(screen instanceof SandboxWorldScreen);
+                    e.consume();
+                }
+                if (e.isControlDown() && e.getKeyCode() == KeyEvent.VK_D) {
+                    worldScreen.toggleDebugMode();
+                    e.consume();
+                }
+            }
+            if(screen instanceof WorldScreen worldScreen) {
+                switch (e.getKeyCode()) {
+                    case KeyEvent.VK_CONTROL:
+                        worldScreen.isCtrlPressed = true;
+                        break;
+                    case KeyEvent.VK_SHIFT:
+                        worldScreen.isShiftPressed = true;
+                        break;
+                    case KeyEvent.VK_SPACE:
+                        worldScreen.isSpacePressed = true;
+                        break;
+                    case KeyEvent.VK_A:
+                        worldScreen.isAPressed = true;
+                        break;
+                    case KeyEvent.VK_C:
+                        worldScreen.isCPressed = true;
+                        break;
+                    case KeyEvent.VK_ESCAPE:
+                        worldScreen.isEscPressed = true;
+                        break;
+                    case KeyEvent.VK_ALT:
+                        worldScreen.isAltPressed = true;
+                        break;
+                }
 
-            if (e.isControlDown() && e.getKeyCode() == KeyEvent.VK_S) {
-           //     SaveToImageUtil.saveWorldToPNG(screen instanceof SandboxWorldScreen);
+            }
+            if(e.getKeyCode() == KeyEvent.VK_F11) {
+                MainFrame.getInstance().toggleFullscreen();
                 e.consume();
             }
-            if (e.isControlDown() && e.getKeyCode() == KeyEvent.VK_D) {
-                worldScreen.toggleDebugMode();
-                e.consume();
-            }
-        }
-        if(screen instanceof WorldScreen worldScreen) {
-        switch (e.getKeyCode()) {
-            case KeyEvent.VK_CONTROL:
-                worldScreen.isCtrlPressed = true;
-                break;
-            case KeyEvent.VK_SHIFT:
-                worldScreen.isShiftPressed = true;
-                break;
-            case KeyEvent.VK_SPACE:
-                worldScreen.isSpacePressed = true;
-                break;
-            case KeyEvent.VK_A:
-                worldScreen.isAPressed = true;
-                break;
-            case KeyEvent.VK_C:
-                worldScreen.isCPressed = true;
-                break;
-            case KeyEvent.VK_ESCAPE:
-                worldScreen.isEscPressed = true;
-                break;
-            case KeyEvent.VK_ALT:
-                worldScreen.isAltPressed = true;
-                break;
-        }
 
         }
+
     }
     @Override
     public void keyReleased(KeyEvent e) {

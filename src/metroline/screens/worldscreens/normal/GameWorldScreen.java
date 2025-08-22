@@ -98,32 +98,10 @@ public class GameWorldScreen extends CachedWorldScreen {
         }
     }
 
-//    public void close() {
-//        stopRepaintTimer();
-//        new ArrayList<>(infoWindows).forEach(InfoWindow::dispose);
-//        infoWindows.clear();
-//
-//        // Очищаем контроллеры
-//        if (worldClickController != null) {
-//       //     worldClickController.cleanup();
-//            worldClickController = null;
-//        }
-//
-//        // Очищаем мир
-//        if (getWorld() != null) {
-//            //      getWorld().cleanup();
-//            setWorld(null); // ← Важно!
-//        }
-//
-//        invalidateCache();
-//        new ArrayList<>(infoWindows).forEach(InfoWindow::dispose);
-//        infoWindows.clear();
-//    }
-
     public void updateMoneyDisplay() {
         if (getWorld() instanceof GameWorld) {
             float money = ((GameWorld)getWorld()).getMoney();
-            parent.moneyLabel.setText(String.format("%.2f M", money));
+            parent.mainFrameUI.moneyLabel.setText(String.format("%.2f M", money));
         }
     }
 

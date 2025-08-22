@@ -240,6 +240,8 @@ public class MetroSerializer {
                 }
             }
             writer.write("]\n");
+
+
         }
     }
 

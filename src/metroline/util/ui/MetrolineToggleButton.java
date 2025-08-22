@@ -1,12 +1,14 @@
 package metroline.util.ui;
 
-import metroline.util.LngUtil;
+import metroline.MainFrame;
+import metroline.util.ui.tooltip.CursorTooltip;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
 
 public class MetrolineToggleButton extends JToggleButton {
     public static final Color DEFAULT_BACKGROUND = new Color(60, 60, 60);
@@ -14,8 +16,9 @@ public class MetrolineToggleButton extends JToggleButton {
     public static final Color PRESSED_BACKGROUND = new Color(79, 155, 155);
     public static final Color SELECTED_BACKGROUND = new Color(50, 120, 120);
     public static final Color DEFAULT_FOREGROUND = Color.WHITE;
-    public static final Font DEFAULT_FONT = new Font("Sans Serif", Font.BOLD, 13);
 
+    public static final Font DEFAULT_FONT = new Font("Sans Serif", Font.BOLD, 13);
+    private String tooltipText = "";
     public MetrolineToggleButton(String text) {
         super(text);
         initDefaultStyle();
@@ -36,36 +39,48 @@ public class MetrolineToggleButton extends JToggleButton {
     public MetrolineToggleButton(String iconText, String tooltip, ActionListener action) {
         super(iconText);
         initIconStyle();
-        setLocalizedTooltip(tooltip);
+        setToolTipText(tooltip);
         addActionListener(action);
     }
 
-    public void setLocalizedTooltip(String tooltipKey) {
-        if (tooltipKey != null && !tooltipKey.isEmpty()) {
-            this.setToolTipText(LngUtil.translatable(tooltipKey));
-            this.addPropertyChangeListener("ancestor", evt -> {
-                if (this.getToolTipText() != null) {
-                    this.setToolTipText(LngUtil.translatable(tooltipKey));
-                }
-            });
-        }
+    @Override
+    public String getToolTipText() {
+        return "";
     }
-
+    public void setTooltipText(String text) {
+        this.tooltipText = text;
+        // Отключаем стандартные тултипы
+        super.setToolTipText(null);
+    }
+    public String getTooltipText() {
+        return tooltipText;
+    }
     private void initDefaultStyle() {
         setForeground(DEFAULT_FOREGROUND);
-        setFont(DEFAULT_FONT);
+        setFont(new Font("Segoe UI Symbol", Font.PLAIN, 14)); // Шрифт с поддержкой Unicode
         setBackground(DEFAULT_BACKGROUND);
-        setBorder(BorderFactory.createEmptyBorder(5, 15, 5, 15));
+        setBorder(BorderFactory.createEmptyBorder(5, 8, 5, 8));
         setFocusPainted(false);
         setContentAreaFilled(false);
         setOpaque(true);
+        setPreferredSize(new Dimension(35, 25));
 
+        mouseReactions();
+    }
+    public void mouseReactions() {
         addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
                 if (!isSelected()) {
                     setBackground(HOVER_BACKGROUND);
                 }
+                // Показываем тултип у курсора
+                Point mousePos = e.getPoint();
+                SwingUtilities.convertPointToScreen(mousePos, MetrolineToggleButton.this);
+                Point framePos = MainFrame.INSTANCE.getLocationOnScreen();
+                CursorTooltip.showTooltip(tooltipText,
+                        mousePos.x - framePos.x,
+                        mousePos.y - framePos.y);
             }
 
             @Override
@@ -73,26 +88,30 @@ public class MetrolineToggleButton extends JToggleButton {
                 if (!isSelected()) {
                     setBackground(DEFAULT_BACKGROUND);
                 }
+                // Скрываем тултип
+                CursorTooltip.hideTooltip();
             }
 
-            @Override
-            public void mousePressed(MouseEvent e) {
-                if (!isSelected()) {
-                    setBackground(PRESSED_BACKGROUND);
-                }
-            }
+        });
 
+// Добавляем MotionListener для обновления при движении внутри кнопки
+        addMouseMotionListener(new MouseMotionAdapter() {
             @Override
-            public void mouseReleased(MouseEvent e) {
-                if (!isSelected()) {
-                    setBackground(HOVER_BACKGROUND);
+            public void mouseMoved(MouseEvent e) {
+                if (CursorTooltip.isVisible() &&
+                        CursorTooltip.getCurrentText().equals(tooltipText)) {
+                    Point mousePos = e.getPoint();
+                    SwingUtilities.convertPointToScreen(mousePos, MetrolineToggleButton.this);
+                    Point framePos = MainFrame.INSTANCE.getLocationOnScreen();
+                    CursorTooltip.showTooltip(tooltipText,
+                            mousePos.x - framePos.x,
+                            mousePos.y - framePos.y);
                 }
             }
         });
-
         addItemListener(e -> {
             if (isSelected()) {
-                setBackground(SELECTED_BACKGROUND);
+                setBackground(PRESSED_BACKGROUND);
             } else {
                 setBackground(DEFAULT_BACKGROUND);
             }
@@ -193,9 +212,17 @@ public class MetrolineToggleButton extends JToggleButton {
 
         // Рисуем фон с закругленными углами
         g2.setColor(getBackground());
-        g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+        g2.fillRoundRect(0, 0, getWidth(), getHeight(), 6, 6);
 
-        super.paintComponent(g2);
+        // Рисуем текст
+        g2.setColor(getForeground());
+        g2.setFont(getFont());
+        FontMetrics fm = g2.getFontMetrics();
+        Rectangle stringBounds = fm.getStringBounds(getText(), g2).getBounds();
+        int textX = (getWidth() - stringBounds.width) / 2;
+        int textY = (getHeight() - stringBounds.height) / 2 + fm.getAscent();
+        g2.drawString(getText(), textX, textY);
+
         g2.dispose();
     }
 

@@ -95,27 +95,11 @@ public abstract class CachedWorldScreen extends WorldScreen {
 
     }
 
-    //    protected void updateStaticWorldCache(int width, int height) {
-//        if (needToRecreateCache(staticWorldCache, width, height)) {
-//            staticWorldCache = createCompatibleVolatileImage(width * TILE_SIZE, height * TILE_SIZE);
-//        }
-//
-//        // Проверяем и восстанавливаем изображение если необходимо
-//        validateVolatileImage(staticWorldCache);
-//
-//        Graphics2D g = staticWorldCache.createGraphics();
-//        try {
-//            clearImage(g, staticWorldCache);
-//            g.scale(CACHE_SCALE, CACHE_SCALE);
-//            drawStaticWorld(g);
-//        } finally {
-//            g.dispose();
-//        }
-//
-//        staticCacheValid = true;
-//        worldChanged = false;
-//    }
     protected void updateStaticWorldCache(int width, int height) {
+        if (width <= 0 || height <= 0) {
+            staticCacheValid = false;
+            return;
+        }
         boolean needsRecreation = needToRecreateCache(staticWorldCache, width, height);
 
         if (needsRecreation) {
@@ -123,27 +107,27 @@ public abstract class CachedWorldScreen extends WorldScreen {
                 staticWorldCache.flush();
             }
             if(width >0 && height >0)
-            staticWorldCache = createCompatibleVolatileImage(width * TILE_SIZE, height * TILE_SIZE);
+                staticWorldCache = createCompatibleVolatileImage(width * TILE_SIZE, height * TILE_SIZE);
         }
 
         // Валидация без рекурсивных вызовов
 
-            int validateResult = staticWorldCache.validate(getGraphicsConfiguration());
-            if (validateResult == VolatileImage.IMAGE_INCOMPATIBLE) {
-                staticWorldCache.flush();
-                staticWorldCache = createCompatibleVolatileImage(width * TILE_SIZE, height * TILE_SIZE);
-                validateResult = staticWorldCache.validate(getGraphicsConfiguration());
-            }
+        int validateResult = staticWorldCache.validate(getGraphicsConfiguration());
+        if (validateResult == VolatileImage.IMAGE_INCOMPATIBLE) {
+            staticWorldCache.flush();
+            staticWorldCache = createCompatibleVolatileImage(width * TILE_SIZE, height * TILE_SIZE);
+            validateResult = staticWorldCache.validate(getGraphicsConfiguration());
+        }
 
-            if (validateResult != VolatileImage.IMAGE_OK) {
-                Graphics2D g = staticWorldCache.createGraphics();
-                try {
-                    clearImage(g, staticWorldCache);
-                    g.scale(CACHE_SCALE, CACHE_SCALE);
-                    drawStaticWorld(g);
-                } finally {
-                    g.dispose();
-                }
+        if (validateResult != VolatileImage.IMAGE_OK) {
+            Graphics2D g = staticWorldCache.createGraphics();
+            try {
+                clearImage(g, staticWorldCache);
+                g.scale(CACHE_SCALE, CACHE_SCALE);
+                drawStaticWorld(g);
+            } finally {
+                g.dispose();
+            }
 
         }
         staticCacheValid = true;

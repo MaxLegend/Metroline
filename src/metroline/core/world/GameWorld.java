@@ -525,7 +525,7 @@ public class GameWorld extends World {
         money -= amount;
 
         if (MainFrame.getInstance() != null) {
-            MainFrame.getInstance().updateMoneyDisplay(money);
+            MainFrame.getInstance().mainFrameUI.updateMoneyDisplay(money);
         }
 
         return true;
@@ -537,7 +537,7 @@ public class GameWorld extends World {
         money += amount;
 
         if (MainFrame.getInstance() != null) {
-            MainFrame.getInstance().updateMoneyDisplay(money);
+            MainFrame.getInstance().mainFrameUI.updateMoneyDisplay(money);
         }
 
         return true;
@@ -546,7 +546,7 @@ public class GameWorld extends World {
     public void setMoney(int amount) {
         this.money = amount;
         if (MainFrame.getInstance() != null) {
-            MainFrame.getInstance().updateMoneyDisplay(money);
+            MainFrame.getInstance().mainFrameUI.updateMoneyDisplay(money);
         }
     }
 
