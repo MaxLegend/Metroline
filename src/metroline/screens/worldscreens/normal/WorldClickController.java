@@ -1,16 +1,18 @@
 package metroline.screens.worldscreens.normal;
 
 import metroline.core.world.GameWorld;
+import metroline.input.KeyboardController;
 import metroline.objects.enums.StationColors;
 import metroline.objects.enums.StationType;
 import metroline.objects.enums.TunnelType;
-import metroline.objects.gameobjects.*;
 import metroline.objects.gameobjects.Label;
+import metroline.objects.gameobjects.*;
 import metroline.util.MetroLogger;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
@@ -38,23 +40,44 @@ public class WorldClickController {
      * Основной обработчик кликов
      */
     public void mainClickHandler(int x, int y) {
-        if (screen.isAltPressed && screen.isShiftPressed) {
-            handleAltShiftClick(x, y); // Alt+Shift - разрушение станции
-        } else if (screen.isAltPressed) {
-            handleAltClick(x, y); // Alt - альтернативные действия
-        } else if (screen.isShiftPressed && screen.isCPressed) {
+        KeyboardController keyboard = KeyboardController.getInstance();
+        boolean isShiftPressed = keyboard.isKeyPressed(KeyEvent.VK_SHIFT);
+        boolean isCtrlPressed = keyboard.isKeyPressed(KeyEvent.VK_CONTROL);
+        boolean isAltPressed = keyboard.isKeyPressed(KeyEvent.VK_ALT);
+        boolean isCPressed = keyboard.isKeyPressed(KeyEvent.VK_C);
+        boolean isAPressed = keyboard.isKeyPressed(KeyEvent.VK_A);
+        if (isAltPressed && isShiftPressed || screen.isAltPressed && screen.isShiftPressed) {
+            handleAltShiftClick(x, y);
+        } else if (isAltPressed || screen.isAltPressed) {
+            handleAltClick(x, y);
+        } else if (isShiftPressed && isCPressed || screen.isShiftPressed && screen.isCPressed) {
             ((GameWorld)screen.getWorld()).updateLegendWindow();
-            showColorSelectionPopup(x, y); // Shift+C - выбор цвета
-        } else if (screen.isShiftPressed) {
+            showColorSelectionPopup(x, y);
+        } else if (isShiftPressed || screen.isShiftPressed) {
             ((GameWorld)screen.getWorld()).updateLegendWindow();
-            handleShiftClick(x, y); // Shift - строительство/удаление
-        } else if (screen.isCtrlPressed) {
-            handleCtrlClick(x, y); // Ctrl - создание туннелей
+            handleShiftClick(x, y);
+        } else if (isCtrlPressed || screen.isCtrlPressed) {
+            handleCtrlClick(x, y);
         } else {
-
-            handleDefaultLeftClick(x, y); // Обычный клик - выбор объектов
-
+            handleDefaultLeftClick(x, y);
         }
+//        if (screen.isAltPressed && screen.isShiftPressed) {
+//            handleAltShiftClick(x, y); // Alt+Shift - разрушение станции
+//        } else if (screen.isAltPressed) {
+//            handleAltClick(x, y); // Alt - альтернативные действия
+//        } else if (screen.isShiftPressed && screen.isCPressed) {
+//            ((GameWorld)screen.getWorld()).updateLegendWindow();
+//            showColorSelectionPopup(x, y); // Shift+C - выбор цвета
+//        } else if (screen.isShiftPressed) {
+//            ((GameWorld)screen.getWorld()).updateLegendWindow();
+//            handleShiftClick(x, y); // Shift - строительство/удаление
+//        } else if (screen.isCtrlPressed) {
+//            handleCtrlClick(x, y); // Ctrl - создание туннелей
+//        } else {
+//
+//            handleDefaultLeftClick(x, y); // Обычный клик - выбор объектов
+//
+//        }
     }
     public void handleAltShiftClick(int x, int y) {
         Station station = GameWorldScreen.getInstance().getWorld().getStationAt(x, y);

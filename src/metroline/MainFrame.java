@@ -1,6 +1,7 @@
 package metroline;
 
 
+import metroline.input.KeyboardController;
 import metroline.objects.gameobjects.GameplayUnits;
 import metroline.objects.gameobjects.Station;
 import metroline.objects.gameobjects.Tunnel;
@@ -22,7 +23,7 @@ import java.util.ArrayList;
 
 /**
  * Main application frame that contains all game screens and toolbar
- * TODO: Реструктуризация, вынос всех отображений в отдельный класс - тут только вызовы
+ * TODO: РАЗОБРАТЬСЯ, ПОЧЕМУ ОПЯТЬ КТО ТО ВЫЗЫВАЕТ КАСКАД. НАЙТИ СПОСОБ ВООБЩЕ ЗАПРЕТИТЬ ПЕРЕРИСОВКУ ЭКРАНА
  * @author Tesmio
  */
 public class MainFrame extends JFrame {
@@ -32,7 +33,7 @@ public class MainFrame extends JFrame {
     public static final String GAME_SCREEN_NAME = "gamescreen";
     public static final String WORLD_SETTINGS_SCREEN_NAME = "world_settings";
     public static final String SANDBOX_SETTINGS_SCREEN_NAME = "sandbox_world_settings";
-
+    private boolean repaintBlocked = false;
     private GameScreen currentScreen;
     private String currentScreenName;
 
@@ -63,6 +64,7 @@ public class MainFrame extends JFrame {
     public MainFrame() {
         super("Metroline");
         INSTANCE = this;
+        KeyboardController.initialize(this);
         mainFrameUI = new MainFrameUI(this);
         addMouseListener(new MouseAdapter() {
             @Override
@@ -70,6 +72,7 @@ public class MainFrame extends JFrame {
                 CursorTooltip.hideTooltip();
             }
         });
+
         initializeWindow(false);
 
 
@@ -83,6 +86,14 @@ public class MainFrame extends JFrame {
 
     public ArrayList getTranslatables() {
         return translatables;
+    }
+    public void safeRepaint() {
+        if (!repaintBlocked) {
+            super.repaint();
+        }
+    }
+    public void setRepaintBlocked(boolean blocked) {
+        this.repaintBlocked = blocked;
     }
     private void initializeWindow(boolean preserveState) {
         try {
@@ -108,44 +119,80 @@ public class MainFrame extends JFrame {
     String getActiveScreenName() {
         return currentScreenName;
     }
-
-    public void toggleFullscreen() {
-    GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-    GraphicsDevice gd = ge.getDefaultScreenDevice();
-
-    if (!isFullscreen) {
-        // Переход в полноэкранный режим
-        dispose(); // Важно: dispose() перед изменением режима
-        setUndecorated(true);
-
-        if (gd.isFullScreenSupported()) {
-            gd.setFullScreenWindow(this);
-        } else {
-            setExtendedState(JFrame.MAXIMIZED_BOTH);
-        }
-        if (currentScreen instanceof CachedWorldScreen) {
-           ((CachedWorldScreen) currentScreen).invalidateCache();
-       }
+    private void setupFullscreenWindow() {
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setUndecorated(true); // Убираем стандартную рамку - на время отладки.
+        setLayout(new BorderLayout());
+        getContentPane().setBackground(new Color(30, 30, 30));
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
         isFullscreen = true;
-    } else {
-
-        dispose();
-        gd.setFullScreenWindow(null);
-        setUndecorated(false);
-        setVisible(true);
-        if (currentScreen instanceof CachedWorldScreen) {
-            ((CachedWorldScreen) currentScreen).invalidateCache();
-        }
+    }
+    /**
+     * Set to windowed mode
+     */
+    private void setupWindowedMode() {
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setUndecorated(false); // Стандартная рамка окна
+        setLayout(new BorderLayout());
+        getContentPane().setBackground(new Color(30, 30, 30));
+        setSize(1100, 600);
+        setLocationRelativeTo(null); // Центрируем окно
         isFullscreen = false;
     }
+    public void toggleFullscreen() {
+        KeyboardController.getInstance().clearAllKeys();
+        setRepaintBlocked(true);
+
+        try {
+
+            if (getCurrentScreen() instanceof CachedWorldScreen) {
+                ((CachedWorldScreen) getCurrentScreen()).invalidateCache();
+            }
+            GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+            GraphicsDevice gd = ge.getDefaultScreenDevice();
+
+            if (!isFullscreen) {
+                // Переход в полноэкранный режим
+                dispose(); // Важно: dispose() перед изменением режима
+                setUndecorated(true);
+
+                if (gd.isFullScreenSupported()) {
+                    gd.setFullScreenWindow(this);
+                } else {
+                    setExtendedState(JFrame.MAXIMIZED_BOTH);
+                }
+                if (currentScreen instanceof CachedWorldScreen) {
+                    ((CachedWorldScreen) currentScreen).invalidateCache();
+                }
+                isFullscreen = true;
+            } else {
+
+                dispose();
+                gd.setFullScreenWindow(null);
+                setUndecorated(false);
+                setVisible(true);
+                if (currentScreen instanceof CachedWorldScreen) {
+                    ((CachedWorldScreen) currentScreen).invalidateCache();
+                }
+                isFullscreen = false;
+            }
 
 
-    revalidate();
-    repaint();
+            revalidate();
+            repaint();
 
-    if (currentScreen != null) {
-        currentScreen.requestFocusInWindow();
-    }
+            if (currentScreen != null) {
+                currentScreen.requestFocusInWindow();
+            }
+        } finally {
+            setRepaintBlocked(false);
+            super.repaint(); // один финальный repaint
+        }
+//        if (isFullscreen) {
+//            setupFullscreenWindow();
+//        } else {
+//            setupWindowedMode();
+//        }
 }
 
     public void updateTranslations() {
@@ -172,33 +219,7 @@ public class MainFrame extends JFrame {
     }
 
 
-    public void showInfoPanel(Object selectedObject, int worldX, int worldY) {
-        if (selectedObject == null ) {
-            return;
-        }
-        if(currentScreen instanceof GameWorldScreen screen) {
-            // Получаем экранные координаты
-            Point screenPoint = screen.worldToScreen(worldX, worldY);
-            Point windowPoint = new Point(screenPoint);
-            SwingUtilities.convertPointToScreen(windowPoint, this);
 
-            // Создаем новое окно для каждого объекта
-
-            InfoWindow newWindow = new InfoWindow(this);
-
-            if (selectedObject instanceof Station) {
-                newWindow.displayStationInfo((Station) selectedObject, windowPoint);
-            } else if (selectedObject instanceof Tunnel) {
-                newWindow.displayTunnelInfo((Tunnel) selectedObject, windowPoint);
-            }else if (selectedObject instanceof Label) {
-                newWindow.displayLabelInfo((Label) selectedObject, windowPoint);
-            }else if (selectedObject instanceof GameplayUnits) {
-                newWindow.displayGameplayUnitsInfo((GameplayUnits) selectedObject, windowPoint);
-            }
-
-            screen.infoWindows.add(newWindow);
-        }
-    }
 
     /**
      * Get current GameScreen

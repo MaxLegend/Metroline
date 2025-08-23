@@ -300,7 +300,33 @@ public class GameWorldScreen extends CachedWorldScreen {
             }
         }
     }
+    public void showInfoPanel(Object selectedObject, int worldX, int worldY) {
+        if (selectedObject == null ) {
+            return;
+        }
+        if(parent.getCurrentScreen() instanceof GameWorldScreen screen) {
+            // Получаем экранные координаты
+            Point screenPoint = screen.worldToScreen(worldX, worldY);
+            Point windowPoint = new Point(screenPoint);
+            SwingUtilities.convertPointToScreen(windowPoint, parent);
 
+            // Создаем новое окно для каждого объекта
+
+            InfoWindow newWindow = new InfoWindow(parent);
+
+            if (selectedObject instanceof Station) {
+                newWindow.displayStationInfo((Station) selectedObject, windowPoint);
+            } else if (selectedObject instanceof Tunnel) {
+                newWindow.displayTunnelInfo((Tunnel) selectedObject, windowPoint);
+            }else if (selectedObject instanceof java.awt.Label) {
+                newWindow.displayLabelInfo((java.awt.Label) selectedObject, windowPoint);
+            }else if (selectedObject instanceof GameplayUnits) {
+                newWindow.displayGameplayUnitsInfo((GameplayUnits) selectedObject, windowPoint);
+            }
+
+            screen.infoWindows.add(newWindow);
+        }
+    }
     private void updateRenderStats(long renderStartTime) {
         long renderDuration = System.nanoTime() - renderStartTime;
         totalRenderTime += renderDuration;

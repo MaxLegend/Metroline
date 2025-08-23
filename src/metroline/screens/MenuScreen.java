@@ -1,6 +1,7 @@
 package metroline.screens;
 
 import metroline.MainFrame;
+import metroline.input.KeyboardController;
 import metroline.screens.worldscreens.normal.GameWorldScreen;
 import metroline.screens.worldscreens.sandbox.SandboxWorldScreen;
 import metroline.util.ui.MetrolineButton;
@@ -76,11 +77,12 @@ public class MenuScreen extends GameScreen {
 
     @Override
     public void onActivate() {
-
+        KeyboardController.getInstance().setCurrentWorldScreen(this);
+        requestFocusInWindow();
     }
 
     @Override
     public void onDeactivate() {
-
+        KeyboardController.getInstance().setCurrentWorldScreen(null);
     }
 }

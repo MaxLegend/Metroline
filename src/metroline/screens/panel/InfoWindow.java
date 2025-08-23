@@ -22,6 +22,7 @@ import java.awt.event.*;
 import metroline.core.world.GameWorld;
 
 
+
 public class InfoWindow extends JWindow {
     private JLabel titleLabel;
     private JLabel infoLabel;
@@ -135,7 +136,7 @@ public class InfoWindow extends JWindow {
         updateTimer.start();
 
         initNameEditComponents();
-   //     initWearComponents();
+        //     initWearComponents();
         // Установка начального размера
         pack();
         KeyboardFocusManager.getCurrentKeyboardFocusManager()
@@ -472,7 +473,7 @@ public class InfoWindow extends JWindow {
             infoLabel.setText(info.toString());
             updateProgress();
         }
-     else if (currentObject instanceof GameplayUnits) {
+        else if (currentObject instanceof GameplayUnits) {
             GameplayUnits gUnits = (GameplayUnits) currentObject;
             titleLabel.setText(LngUtil.translatable(gUnits.getType().getLocalizedName()));
             StringBuilder info = new StringBuilder("<html>");
@@ -531,13 +532,13 @@ public class InfoWindow extends JWindow {
 
     @Override
     public void setVisible(boolean visible) {
-            if (visible) {
-                setAlwaysOnTop(true);
-                updateInfo();
-                pack();
-            }
-            super.setVisible(visible && getOwner().isVisible());
+        if (visible) {
+            setAlwaysOnTop(true);
+            updateInfo();
+            pack();
         }
+        super.setVisible(visible && getOwner().isVisible());
+    }
 
 
 
@@ -559,10 +560,10 @@ public class InfoWindow extends JWindow {
             float repairCost = station.calculateRepairCost(station);
 
             if (world.canAfford(repairCost)) {
-                    world.removeMoney(repairCost);
-                    station.repair();
-                    updateInfo();
-                    GameWorldScreen.getInstance().repaint();
+                world.removeMoney(repairCost);
+                station.repair();
+                updateInfo();
+                GameWorldScreen.getInstance().repaint();
 
             } else {
                 UserInterfaceUtil.showTimedMessage("station.not_enough_money", false, 2000);
@@ -571,6 +572,4 @@ public class InfoWindow extends JWindow {
     }
 
 
-    }
-
-
+}

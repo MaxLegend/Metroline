@@ -1,11 +1,10 @@
 package metroline.screens.worldscreens;
 
+import metroline.MainFrame;
 import metroline.core.world.World;
-import metroline.input.KeyboardController;
 import metroline.input.MouseController;
 import metroline.objects.gameobjects.PathPoint;
 import metroline.screens.GameScreen;
-import metroline.MainFrame;
 
 import java.awt.*;
 
@@ -24,7 +23,7 @@ public class WorldScreen extends GameScreen {
 
     //Central click handler
     public MouseController mouseController;
-    public KeyboardController keyboardController;
+ //   public KeyboardController keyboardController;
 
     private final Runtime runtime = Runtime.getRuntime();
     private long lastGCTime = 0;
@@ -56,27 +55,27 @@ public class WorldScreen extends GameScreen {
         this.world = worldIn;
         // Initialize controllers
         mouseController = new MouseController(this);
-        keyboardController = new KeyboardController(this);
+  //      keyboardController = new KeyboardController(this);
         addMouseListener(mouseController);
         addMouseMotionListener(mouseController);
         addMouseWheelListener(mouseController);
-        addKeyListener(keyboardController);
+  //      addKeyListener(keyboardController);
     }
 
     public void reinitializeControllers() {
         // Удаляем старые слушатели
         this.removeMouseListener(mouseController);
         this.removeMouseMotionListener(mouseController);
-        this.removeKeyListener(keyboardController);
+  //      this.removeKeyListener(keyboardController);
 
         // Создаем новые контроллеры
         this.mouseController = new MouseController(this);
-        this.keyboardController = new KeyboardController(this);
+  //      this.keyboardController = new KeyboardController(this);
 
         // Добавляем слушатели
         this.addMouseListener(mouseController);
         this.addMouseMotionListener(mouseController);
-        this.addKeyListener(keyboardController);
+   //     this.addKeyListener(keyboardController);
         requestFocusInWindow();
     }
     public void setZoomAndOffset(float newZoom, int newOffsetX, int newOffsetY) {
@@ -94,7 +93,7 @@ public class WorldScreen extends GameScreen {
 
     @Override
     public void onActivate() {
-        requestFocusInWindow();
+
     }
 
     @Override

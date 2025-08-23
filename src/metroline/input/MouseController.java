@@ -106,7 +106,7 @@ public class MouseController extends MouseAdapter {
             }
         } else if (screen instanceof GameWorldScreen gScreen) {
             GameObject selectedObject = gScreen.getWorld().getGameObjectAt(worldPos.x, worldPos.y);
-            gScreen.parent.showInfoPanel(selectedObject, worldPos.x, worldPos.y);
+            gScreen.showInfoPanel(selectedObject, worldPos.x, worldPos.y);
         }
     }
 
@@ -247,7 +247,7 @@ public class MouseController extends MouseAdapter {
         }
 
         float newZoom = currentZoom * zoomFactor;
-        newZoom = Math.max(0.1f, Math.min(3.0f, newZoom));
+        newZoom = Math.max(0.6f, Math.min(3.0f, newZoom));
 
         if (Math.abs(currentZoom - newZoom) < 0.01f) return;
      //   DebugInfoRenderer.logMemoryUsage("Before zoom");

@@ -2,6 +2,7 @@ package metroline.screens.worldscreens;
 
 import metroline.MainFrame;
 import metroline.core.world.GameWorld;
+import metroline.input.KeyboardController;
 import metroline.objects.gameobjects.GameConstants;
 import metroline.screens.GameScreen;
 import metroline.screens.worldscreens.normal.GameWorldScreen;
@@ -421,12 +422,13 @@ public class WorldSettingsScreen extends GameScreen {
         String formatted = String.format("%,d ₽", moneySlider.getValue());
         moneyValueLabel.setText(formatted);
 
-
+        KeyboardController.getInstance().setCurrentWorldScreen(this);
+        requestFocusInWindow();
     }
 
     @Override
     public void onDeactivate() {
-
+        KeyboardController.getInstance().setCurrentWorldScreen(null);
     }
 
 
