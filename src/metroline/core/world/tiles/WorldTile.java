@@ -151,18 +151,6 @@ public class WorldTile extends Tile {
         g.setColor(new Color(red, green, blue));
         g.fillRect(x, y, size, size);
 
-        int layerColor = 180 + (int)(55 * abilityPay);
-        // Отрисовка платежеспособности (красный)
-        if (GameWorld.showPaymentZones && abilityPay > 0) {
-            g.setColor(new Color(layerColor, 0, 0, 180));
-            g.fillRect(x, y, size, size);
-        }
-
-        // Отрисовка пассажиропотока (зеленый)
-        if (GameWorld.showPassengerZones && passengerCount > 0) {
-            g.setColor(new Color(0, layerColor, 0, 180));
-            g.fillRect(x, y, size, size);
-        }
     }
 
 }

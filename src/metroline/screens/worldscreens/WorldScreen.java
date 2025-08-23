@@ -31,7 +31,7 @@ public class WorldScreen extends GameScreen {
     private volatile boolean gcRequested = false;
 
     // Настройки GC
-    private static final long GC_MEMORY_THRESHOLD = 50 * 1024 * 1024; // 150MB порог
+    private static final long GC_MEMORY_THRESHOLD = 120 * 1024 * 1024; // 150MB порог
     private static final long GC_COOLDOWN_MS = 2000; // 2 секунды между вызовами
     private static final int GC_FRAME_INTERVAL = 60; // Каждые 60 кадров
     private static final long MAX_GC_PAUSE_MS = 10; // Максимальная пауза для GC

@@ -1,8 +1,10 @@
 package metroline.input;
 
 import metroline.MainFrame;
+import metroline.core.world.GameWorld;
 import metroline.screens.GameScreen;
 import metroline.screens.worldscreens.WorldScreen;
+import metroline.screens.worldscreens.normal.GameWorldScreen;
 import metroline.util.SaveToImageUtil;
 
 import java.awt.*;
@@ -31,6 +33,8 @@ public class KeyboardController {
             instance = new KeyboardController(mainFrame);
         }
     }
+
+
 
     public static KeyboardController getInstance() {
         return instance;
@@ -67,7 +71,8 @@ public class KeyboardController {
         }
 
         if (e.isControlDown() && e.getKeyCode() == KeyEvent.VK_S) {
-            if(currentScreen instanceof WorldScreen worldScreen) {
+            System.out.println("SAve MODE" + currentScreen );
+            if(mainFrame.getCurrentScreen() instanceof GameWorldScreen worldScreen) {
                 boolean isSandbox = worldScreen != null &&
                         worldScreen.getClass().getSimpleName().contains("Sandbox");
                 SaveToImageUtil.saveWorldToPNG(isSandbox);
@@ -77,7 +82,9 @@ public class KeyboardController {
         }
 
         if (e.isControlDown() && e.getKeyCode() == KeyEvent.VK_D) {
-            if(currentScreen instanceof WorldScreen worldScreen && currentScreen != null) {
+
+            if(mainFrame.getCurrentScreen() instanceof GameWorldScreen worldScreen) {
+
                 worldScreen.toggleDebugMode();
             }
             e.consume();
@@ -91,7 +98,7 @@ public class KeyboardController {
         }
 
         // Передаем обработку текущему WorldScreen
-        if (currentScreen != null) {
+        if (mainFrame.getCurrentScreen() != null) {
             handleWorldScreenKeyPressed(e);
         }
     }
@@ -100,24 +107,36 @@ public class KeyboardController {
         // Обновляем состояния клавиш для WorldScreen
         updateWorldScreenKeyStates();
 
-        // Дополнительная обработка для WorldScreen
-        switch (e.getKeyCode()) {
-            case KeyEvent.VK_ESCAPE:
-                if(currentScreen instanceof WorldScreen worldScreen) worldScreen.isEscPressed = true;
-                break;
-            // Добавьте другие специальные обработки по необходимости
+        if(mainFrame.getCurrentScreen() instanceof GameWorldScreen worldScreen) {
+            GameWorld world = (GameWorld) worldScreen.getWorld();
+            // Дополнительная обработка для WorldScreen
+            switch (e.getKeyCode()) {
+                case KeyEvent.VK_ESCAPE:
+                    worldScreen.isEscPressed = true;
+                    break;
+                case KeyEvent.VK_A:
+                    mainFrame.mainFrameUI.toggleGameplayUnits();
+                    break;
+                case KeyEvent.VK_S:
+                    mainFrame.mainFrameUI.togglePaymentZones();
+                    break;
+                case KeyEvent.VK_D:
+                    mainFrame.mainFrameUI.togglePassengerZones();
+                    break;
+
+            }
         }
     }
 
     private void handleKeyReleased(KeyEvent e) {
         // Обновляем состояния для WorldScreen при отпускании клавиш
-        if (currentScreen != null) {
+        if (mainFrame.getCurrentScreen() != null) {
             updateWorldScreenKeyStates();
         }
     }
 
     public void setCurrentWorldScreen(GameScreen screen) {
-        this.currentScreen = screen;
+        mainFrame.setCurrentScreen(screen);
         // При смене экрана обновляем состояния клавиш
         if (screen != null) {
             updateWorldScreenKeyStates();
@@ -125,8 +144,8 @@ public class KeyboardController {
     }
 
     private void updateWorldScreenKeyStates() {
-        if (currentScreen != null) {
-            if(currentScreen instanceof WorldScreen worldScreen) {
+        if (mainFrame.getCurrentScreen() != null) {
+            if(mainFrame.getCurrentScreen() instanceof WorldScreen worldScreen) {
                 worldScreen.isAltPressed = isKeyPressed(KeyEvent.VK_ALT);
                 worldScreen.isCtrlPressed = isKeyPressed(KeyEvent.VK_CONTROL);
                 worldScreen.isSpacePressed = isKeyPressed(KeyEvent.VK_SPACE);
@@ -145,13 +164,13 @@ public class KeyboardController {
 
     public void clearAllKeys() {
         pressedKeys.clear();
-        if (currentScreen != null) {
+        if (mainFrame.getCurrentScreen() != null) {
             resetWorldScreenKeyStates();
         }
     }
 
     private void resetWorldScreenKeyStates() {
-        if(currentScreen instanceof WorldScreen worldScreen) {
+        if(mainFrame.getCurrentScreen() instanceof WorldScreen worldScreen) {
             worldScreen.isAltPressed = false;
             worldScreen.isCtrlPressed = false;
             worldScreen.isSpacePressed = false;
@@ -162,144 +181,3 @@ public class KeyboardController {
         }
     }
 }
-//public class KeyboardController extends KeyAdapter {
-//    private GameScreen screen;
-//    private Set<Integer> pressedKeys = new HashSet<>();
-//    public KeyboardController(GameScreen screen) {
-//        this.screen = screen;
-//        KeyboardFocusManager.getCurrentKeyboardFocusManager()
-//                            .addKeyEventDispatcher(this::dispatchKeyEvent);
-//    }
-//
-//
-//    /*********************************
-//     * KEY HANDLER METHODS SECTION
-//     *********************************/
-//    public void setScreen(GameScreen newScreen) {
-//        this.screen = newScreen;
-//        if (newScreen != null) {
-//            newScreen.setFocusable(true);
-//            newScreen.requestFocusInWindow();
-//        }
-//    }
-//    @Override
-//    public void keyPressed(KeyEvent e) {
-//        if (screen == null || !screen.hasFocus()) {
-//            if (screen != null) {
-//                screen.requestFocusInWindow();
-//            }
-//            return;
-//        }
-//        if (!screen.hasFocus()) {
-//            screen.requestFocusInWindow();
-//            return; // Пропускаем обработку в этом кадре
-//        }
-//        if(screen instanceof GameScreen) {
-//            if(screen instanceof WorldScreen worldScreen) {
-//                // Обработка специальных комбинаций
-//                if (e.isShiftDown() && e.getKeyCode() == KeyEvent.VK_A) {
-//                    MainFrame.getInstance().mainFrameUI.toggleToolbar();
-//                    e.consume();
-//                }
-//                if (e.isControlDown() && e.getKeyCode() == KeyEvent.VK_S) {
-//                    SaveToImageUtil.saveWorldToPNG(screen instanceof SandboxWorldScreen);
-//                    e.consume();
-//                }
-//                if (e.isControlDown() && e.getKeyCode() == KeyEvent.VK_D) {
-//                    worldScreen.toggleDebugMode();
-//                    e.consume();
-//                }
-//            }
-//            if(screen instanceof WorldScreen worldScreen) {
-//                switch (e.getKeyCode()) {
-//                    case KeyEvent.VK_CONTROL:
-//                        worldScreen.isCtrlPressed = true;
-//                        break;
-//                    case KeyEvent.VK_SHIFT:
-//                        worldScreen.isShiftPressed = true;
-//                        break;
-//                    case KeyEvent.VK_SPACE:
-//                        worldScreen.isSpacePressed = true;
-//                        break;
-//                    case KeyEvent.VK_A:
-//                        worldScreen.isAPressed = true;
-//                        break;
-//                    case KeyEvent.VK_C:
-//                        worldScreen.isCPressed = true;
-//                        break;
-//                    case KeyEvent.VK_ESCAPE:
-//                        worldScreen.isEscPressed = true;
-//                        break;
-//                    case KeyEvent.VK_ALT:
-//                        worldScreen.isAltPressed = true;
-//                        break;
-//                }
-//
-//            }
-//            if(e.getKeyCode() == KeyEvent.VK_F11) {
-//                MainFrame.getInstance().toggleFullscreen();
-//                e.consume();
-//            }
-//
-//        }
-//
-//    }
-//    @Override
-//    public void keyReleased(KeyEvent e) {
-//        if(screen instanceof WorldScreen worldScreen) {
-//
-//
-//            switch (e.getKeyCode()) {
-//                case KeyEvent.VK_CONTROL:
-//                    worldScreen.isCtrlPressed = false;
-//                    break;
-//                case KeyEvent.VK_SHIFT:
-//                    worldScreen.isShiftPressed = false;
-//                    break;
-//                case KeyEvent.VK_SPACE:
-//                    worldScreen.isSpacePressed = false;
-//                    break;
-//                case KeyEvent.VK_A:
-//                    worldScreen.isAPressed = false;
-//                    break;
-//                case KeyEvent.VK_C:
-//                    worldScreen.isCPressed = false;
-//                    break;
-//                case KeyEvent.VK_ESCAPE:
-//                    worldScreen.isEscPressed = false;
-//                    break;
-//                case KeyEvent.VK_ALT:
-//                    worldScreen.isAltPressed = false;
-//                    break;
-//            }
-//        }
-//    }
-//
-//    /*********************************
-//     * KEY HANDLER AUXILIARY METHODS
-//     *********************************/
-//
-//    private boolean dispatchKeyEvent(KeyEvent e) {
-//        switch (e.getID()) {
-//            case KeyEvent.KEY_PRESSED:
-//                pressedKeys.add(e.getKeyCode());
-//                updateKeyStates();
-//                break;
-//            case KeyEvent.KEY_RELEASED:
-//                pressedKeys.remove(e.getKeyCode());
-//                updateKeyStates();
-//                break;
-//        }
-//        return false;
-//    }
-//    private void updateKeyStates() {
-//        if(screen instanceof WorldScreen sbScreen) {
-//            sbScreen.isAltPressed = pressedKeys.contains(KeyEvent.VK_ALT);
-//            sbScreen.isCtrlPressed = pressedKeys.contains(KeyEvent.VK_CONTROL);
-//            sbScreen.isSpacePressed = pressedKeys.contains(KeyEvent.VK_SPACE);
-//            sbScreen.isShiftPressed = pressedKeys.contains(KeyEvent.VK_SHIFT);
-//            sbScreen.isCPressed = pressedKeys.contains(KeyEvent.VK_C);
-//            sbScreen.isAPressed = pressedKeys.contains(KeyEvent.VK_A);
-//        }
-//    }
-//}

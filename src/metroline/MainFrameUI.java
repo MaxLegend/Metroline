@@ -453,6 +453,7 @@ public class MainFrameUI {
                     world.updateStationsWear();
                     world.calculateStationsUpkeep();
                     world.calculateTunnelsUpkeep();
+
                     world.updateCities();
                 }
                 //
@@ -512,11 +513,18 @@ public class MainFrameUI {
             ((GameWorldScreen)currentScreen).getWorld().loadWorld();
         }
     }
-
+    public void toggleGameplayUnits() {
+        GameWorld.showGameplayUnits = !GameWorld.showGameplayUnits;
+        if (currentScreen instanceof GameWorldScreen) {
+            ((GameWorldScreen)currentScreen).invalidateCache();
+            currentScreen.repaint();
+        }
+    }
     public void togglePaymentZones() {
         GameWorld.showPaymentZones = !GameWorld.showPaymentZones;
         if (currentScreen instanceof GameWorldScreen) {
             ((GameWorldScreen)currentScreen).invalidateCache();
+            ((GameWorldScreen)currentScreen).invalidateZonesCache();
             currentScreen.repaint();
         }
     }
@@ -525,6 +533,7 @@ public class MainFrameUI {
         GameWorld.showPassengerZones = !GameWorld.showPassengerZones;
         if (currentScreen instanceof GameWorldScreen) {
             ((GameWorldScreen)currentScreen).invalidateCache();
+            ((GameWorldScreen)currentScreen).invalidateZonesCache();
             currentScreen.repaint();
         }
     }
@@ -543,6 +552,7 @@ public class MainFrameUI {
         MetrolinePopupMenu popupMenu = new MetrolinePopupMenu();
         popupMenu.addMetrolineItem(LngUtil.translatable("elayer.passenger"), this::togglePassengerZones);
         popupMenu.addMetrolineItem(LngUtil.translatable("elayer.abilityPay"), this::togglePaymentZones);
+        popupMenu.addMetrolineItem(LngUtil.translatable("elayer.gameplayUnits"), this::toggleGameplayUnits);
         popupMenu.showAboveComponent(sourceButton);
     }
     public void switchScreen(String screenName) {

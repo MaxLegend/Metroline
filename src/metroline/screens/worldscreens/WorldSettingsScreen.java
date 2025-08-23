@@ -27,7 +27,7 @@ public class WorldSettingsScreen extends GameScreen {
     };
     private MetrolineSlider moneySlider;
     private MetrolineLabel moneyValueLabel = new MetrolineLabel("M");;
-    private MetrolineLabel moneyTextLabel = new MetrolineLabel("world.start_money", SwingConstants.RIGHT);
+    private MetrolineLabel moneyTextLabel;
 
     private MetrolineSlider widthSlider;
     private MetrolineSlider heightSlider;
@@ -49,8 +49,8 @@ public class WorldSettingsScreen extends GameScreen {
 
     // Метки для новых слайдеров
     private MetrolineLabel centerTitle = new MetrolineLabel("create_world_title", SwingConstants.CENTER);
-    private MetrolineLabel widthLabel = new MetrolineLabel("M");
-    private MetrolineLabel heightLabel = new MetrolineLabel("M");
+    private MetrolineLabel widthLabel;
+    private MetrolineLabel heightLabel;
     private MetrolineLabel stationBaseCostValueLabel = new MetrolineLabel("M");
     private MetrolineLabel tunnelCostPerSegmentValueLabel= new MetrolineLabel("M");
     private MetrolineLabel stationBaseRevenueValueLabel= new MetrolineLabel("M");
@@ -135,10 +135,12 @@ public class WorldSettingsScreen extends GameScreen {
         sizePanel.setBackground(StyleUtil.BACKGROUND_COLOR);
         sizePanel.setMaximumSize(new Dimension(600, 80));
 
+        widthLabel = new MetrolineLabel(widthSlider.getValue() + " M");
         widthLabel.setForeground(StyleUtil.FOREGROUND_COLOR);
         widthLabel.setFont(new Font("Sans Serif", Font.BOLD, 13));
 
-      //  MetrolineLabel heightLabel = StyleUtil.createMetrolineLabel("" + heightSlider.getValueSuffix(), SwingConstants.CENTER);
+
+        heightLabel = new MetrolineLabel(heightSlider.getValue() + " M");
         heightLabel.setForeground(StyleUtil.FOREGROUND_COLOR);
         heightLabel.setFont(new Font("Sans Serif", Font.BOLD, 13));
 
@@ -161,6 +163,7 @@ public class WorldSettingsScreen extends GameScreen {
 
         moneySlider = new MetrolineSlider("world.start_money_desc",50, 10000, 2000, 100);
 
+        moneyTextLabel = new MetrolineLabel(moneySlider.getValue() + " M");
         moneyTextLabel.setFont(new Font("Sans Serif", Font.BOLD, 13));
         addRow(centerPanel, "world.start_money", moneySlider, moneyTextLabel);
         centerPanel.add(moneyPanel);
@@ -240,12 +243,12 @@ public class WorldSettingsScreen extends GameScreen {
         economyPanel.add(Box.createRigidArea(new Dimension(0, 20)));
 
         // Create economic sliders
-        stationBaseCostSlider = new MetrolineSlider("world.station_cost_desc", 0.1f, 20, 2, 0.1f);
-        tunnelCostPerSegmentSlider = new MetrolineSlider("world.tunnel_segment_cost_desc",0.1f, 10, 2, 0.1f);
-        stationBaseRevenueSlider = new MetrolineSlider("world.station_revenue_desc",0.1f, 5, 2, 0.1f);
-        baseStationUpkeepSlider = new MetrolineSlider("world.station_upkeep_desc",0.1f, 8, 0.5f, 0.1f);
-        baseTunnelUpkeepSlider = new MetrolineSlider("world.tunnel_upkeep_desc",0.1f, 2, 0.2f, 0.1f);
-        gameplayUnitsCountSlider = new MetrolineSlider("world.gameplay_units_desc",5f, 100, 20, 1f);
+        stationBaseCostSlider = new MetrolineSlider("world.station_cost_desc", 0.1f, 20, GameConstants.STATION_BASE_COST, 0.1f);
+        tunnelCostPerSegmentSlider = new MetrolineSlider("world.tunnel_segment_cost_desc",0.1f, 10, GameConstants.TUNNEL_COST_PER_SEGMENT, 0.1f);
+        stationBaseRevenueSlider = new MetrolineSlider("world.station_revenue_desc",0.1f, 5, GameConstants.STATION_BASE_REVENUE, 0.1f);
+        baseStationUpkeepSlider = new MetrolineSlider("world.station_upkeep_desc",0.1f, 8, GameConstants.BASE_STATION_UPKEEP, 0.1f);
+        baseTunnelUpkeepSlider = new MetrolineSlider("world.tunnel_upkeep_desc",0.1f, 2, GameConstants.BASE_TUNNEL_UPKEEP_PER_SEGMENT, 0.1f);
+        gameplayUnitsCountSlider = new MetrolineSlider("world.gameplay_units_desc",5f, 100, GameConstants.GAMEPLAY_UNITS_COUNT, 1f);
 
         // Add economic sliders to panel
         addRow(economyPanel, "world.station_cost", stationBaseCostSlider, stationBaseCostValueLabel);

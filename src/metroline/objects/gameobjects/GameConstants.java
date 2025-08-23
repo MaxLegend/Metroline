@@ -8,19 +8,31 @@ import java.util.concurrent.TimeUnit;
 
 public class GameConstants {
 
-    static final long MAX_LIFETIME = TimeUnit.DAYS.toMillis(20 * 365); // 20 лет
-    static final long REPAIR_THRESHOLD = TimeUnit.DAYS.toMillis(15 * 365); // 15 лет
-    static final long ABANDONED_THRESHOLD = TimeUnit.DAYS.toMillis(4 * 365); // 4 года для закрытых станций
+    static final long MAX_LIFETIME = TimeUnit.DAYS.toMillis(20 * 365);
+    static final long REPAIR_THRESHOLD = TimeUnit.DAYS.toMillis(15 * 365);
+    static final long ABANDONED_THRESHOLD = TimeUnit.DAYS.toMillis(11 * 365);
+
+//    public static  long STATION_DESTROY_TIME = 6048000000l;
+//    public static  long TUNNEL_DESTROY_TIME = 6048000000l;
+//    public static  long STATION_BUILD_TIME = 6048000000l;
+//    public static  long TUNNEL_BUILD_TIME = 6048000000l;
+
+    public static float COST_STANDART_TRAIN = 1000;
+
+    public static  long STATION_DESTROY_TIME = 604800l;
+    public static  long TUNNEL_DESTROY_TIME = 604800l;
+    public static  long STATION_BUILD_TIME = 604800l;
+    public static  long TUNNEL_BUILD_TIME = 604800l;
     // Константы стоимости
-    public static  float STATION_BASE_COST = 100;
-    public static  float TUNNEL_COST_PER_SEGMENT = 10;
+    public static  float STATION_BASE_COST = 1.5f;
+    public static  float TUNNEL_COST_PER_SEGMENT = 1;
 
     public static float STATION_BASE_REVENUE = 2;
 
-    public static  float BASE_STATION_UPKEEP = 1.0f; // Базовое содержание станции
-    public static  float BASE_TUNNEL_UPKEEP_PER_SEGMENT = 2.0f; // Базовое содержание за сегмент туннеля
+    public static  float BASE_STATION_UPKEEP = 0.2f; // Базовое содержание станции
+    public static  float BASE_TUNNEL_UPKEEP_PER_SEGMENT = 0.1f; // Базовое содержание за сегмент туннеля
 
-    public static  float GAMEPLAY_UNITS_COUNT = 40;
+    public static  float GAMEPLAY_UNITS_COUNT = 10;
     public static  float BASE_STATION_DEMOLITION_COST = 10;
     public static  float STATION_REPAIR_BASE_COST = 10;
 

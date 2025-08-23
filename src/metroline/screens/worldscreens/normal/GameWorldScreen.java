@@ -3,6 +3,7 @@ package metroline.screens.worldscreens.normal;
 import metroline.MainFrame;
 import metroline.core.world.GameWorld;
 import metroline.core.world.tiles.GameTile;
+import metroline.input.KeyboardController;
 import metroline.objects.gameobjects.Label;
 import metroline.objects.gameobjects.*;
 import metroline.screens.GameScreen;
@@ -12,6 +13,8 @@ import metroline.screens.worldscreens.CachedWorldScreen;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,11 +47,11 @@ public class GameWorldScreen extends CachedWorldScreen {
         INSTANCE = this;
 
         this.worldClickController = new WorldClickController(this);
-     //   this.updateStaticWorldCache(widthWorld,heightWorld);
         setupRepaintTimer();
 
         lastFpsTime = System.currentTimeMillis();
         lastWorldUpdateTime = lastFpsTime;
+
         parent.updateLanguage();
     }
 
@@ -88,6 +91,7 @@ public class GameWorldScreen extends CachedWorldScreen {
         repaintTimer = new Timer(RENDER_TIMER_DELAY, e -> {
             worldClickController.checkConstructionProgress();
             infoWindows.forEach(InfoWindow::updateInfo);
+            ((GameWorld)getWorld()).updateTrains();;
             repaint();
         });
         repaintTimer.start();
@@ -122,7 +126,6 @@ public class GameWorldScreen extends CachedWorldScreen {
 
     @Override
     protected void paintComponent(Graphics gr) {
-        GameScreen currentScreen = MainFrame.getInstance().getCurrentScreen();
 
         long renderStartTime = System.nanoTime();
         super.paintComponent(gr);
@@ -137,7 +140,7 @@ public class GameWorldScreen extends CachedWorldScreen {
         renderWorld(g);
       //  drawStaticWorld(g);
         drawDynamicWorld(g);
-
+        drawTrains(g);
         // Рисуем выделения поверх всего
         drawSelections(g);
 
@@ -151,8 +154,26 @@ public class GameWorldScreen extends CachedWorldScreen {
 
         updateRenderStats(renderStartTime);
     }
+    public void addCustomKeyListeners() {
+        addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.isControlDown() && e.getKeyCode() == KeyEvent.VK_T) {
 
+                    e.consume();
+                }
+            }
+        });
 
+        setFocusable(true);
+        requestFocusInWindow();
+    }
+    private void drawTrains(Graphics2D g) {
+        GameWorld gameWorld = (GameWorld) getWorld();
+        for (Train train : gameWorld.getTrains()) {
+            train.draw(g, 0, 0, 1);
+        }
+    }
     private void drawSelections(Graphics2D g) {
         if(getWorld().isRoundStationsEnabled()) {
             for (Station station : getWorld().getStations()) {
@@ -417,5 +438,19 @@ public class GameWorldScreen extends CachedWorldScreen {
     public void toggleDebugMode() {
         debugMode = !debugMode;
         repaint();
+    }
+
+    @Override
+    public void onActivate() {
+        KeyboardController.getInstance().setCurrentWorldScreen(this);
+        requestFocusInWindow();
+        super.onActivate();
+
+    }
+
+    @Override
+    public void onDeactivate() {
+        KeyboardController.getInstance().setCurrentWorldScreen(null);
+        super.onDeactivate();
     }
 }

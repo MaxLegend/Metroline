@@ -9,12 +9,14 @@ import metroline.objects.gameobjects.Tunnel;
 import java.util.HashMap;
 import java.util.Map;
 
+import static metroline.objects.gameobjects.GameConstants.STATION_DESTROY_TIME;
+import static metroline.objects.gameobjects.GameConstants.TUNNEL_BUILD_TIME;
+import static metroline.objects.gameobjects.GameConstants.STATION_BUILD_TIME;
+import static metroline.objects.gameobjects.GameConstants.TUNNEL_DESTROY_TIME;
+
 public class ConstructionTimeProcessor {
 
-    public long STATION_DESTROY_TIME = 6048000000l;
-    private  long TUNNEL_DESTROY_TIME = 6048000000l;
-    private  long STATION_BUILD_TIME = 6048000000l;
-    private  long TUNNEL_BUILD_TIME = 6048000000l;
+
 
     public GameWorld world;
 
@@ -204,31 +206,31 @@ public class ConstructionTimeProcessor {
             return STATION_DESTROY_TIME;
         }
 
-        public void setSTATION_DESTROY_TIME(long STATION_DESTROY_TIME) {
-            this.STATION_DESTROY_TIME = STATION_DESTROY_TIME;
+        public void setStationDestroyTime(long stationDestroyTime) {
+            STATION_DESTROY_TIME = stationDestroyTime;
         }
 
         public long getTunnelDestroyTime() {
             return TUNNEL_DESTROY_TIME;
         }
 
-        public void setTUNNEL_DESTROY_TIME(long TUNNEL_DESTROY_TIME) {
-            this.TUNNEL_DESTROY_TIME = TUNNEL_DESTROY_TIME;
+        public void setTunnelDestroyTime(long tunnelDestroyTime) {
+            TUNNEL_DESTROY_TIME = tunnelDestroyTime;
         }
 
         public long getStationBuildTime() {
             return STATION_BUILD_TIME;
         }
 
-        public void setSTATION_BUILD_TIME(long STATION_BUILD_TIME) {
-            this.STATION_BUILD_TIME = STATION_BUILD_TIME;
+        public void setStationBuildTime(long stationBuildTime) {
+            STATION_BUILD_TIME = stationBuildTime;
         }
 
         public long getTunnelBuildTime() {
             return TUNNEL_BUILD_TIME;
         }
 
-        public void setTunnelBuildTime(long TUNNEL_BUILD_TIME) {
-            this.TUNNEL_BUILD_TIME = TUNNEL_BUILD_TIME;
+        public void setTunnelBuildTime(long tunnelBuildTime) {
+            TUNNEL_BUILD_TIME = tunnelBuildTime;
         }
     }

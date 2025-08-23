@@ -128,7 +128,9 @@ public class MetrolineSlider extends JComponent implements SwingConstants, ITran
             valueLabel.setText(String.format("%.1f%s", value, valueSuffix));
         }
     }
-
+    public void setValueSuffix(String suffix) {
+         valueSuffix = suffix;
+    }
     public String getValueSuffix() {
         return valueSuffix;
     }

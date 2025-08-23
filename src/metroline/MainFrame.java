@@ -37,7 +37,6 @@ public class MainFrame extends JFrame {
     private GameScreen currentScreen;
     private String currentScreenName;
 
-    //  private Map<String, GameScreen> screens = new HashMap<>();
 
     private boolean isFullscreen = false;
 
@@ -64,7 +63,11 @@ public class MainFrame extends JFrame {
     public MainFrame() {
         super("Metroline");
         INSTANCE = this;
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setFocusable(true);
+        setFocusTraversalKeysEnabled(false);
         KeyboardController.initialize(this);
+
         mainFrameUI = new MainFrameUI(this);
         addMouseListener(new MouseAdapter() {
             @Override
@@ -80,6 +83,8 @@ public class MainFrame extends JFrame {
 
 
     }
+
+
     public static MainFrame getInstance() {
         return INSTANCE;
     }
@@ -119,80 +124,44 @@ public class MainFrame extends JFrame {
     String getActiveScreenName() {
         return currentScreenName;
     }
-    private void setupFullscreenWindow() {
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setUndecorated(true); // Убираем стандартную рамку - на время отладки.
-        setLayout(new BorderLayout());
-        getContentPane().setBackground(new Color(30, 30, 30));
-        setExtendedState(JFrame.MAXIMIZED_BOTH);
-        isFullscreen = true;
-    }
-    /**
-     * Set to windowed mode
-     */
-    private void setupWindowedMode() {
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setUndecorated(false); // Стандартная рамка окна
-        setLayout(new BorderLayout());
-        getContentPane().setBackground(new Color(30, 30, 30));
-        setSize(1100, 600);
-        setLocationRelativeTo(null); // Центрируем окно
-        isFullscreen = false;
-    }
-    public void toggleFullscreen() {
-        KeyboardController.getInstance().clearAllKeys();
-        setRepaintBlocked(true);
 
-        try {
-
-            if (getCurrentScreen() instanceof CachedWorldScreen) {
-                ((CachedWorldScreen) getCurrentScreen()).invalidateCache();
-            }
-            GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-            GraphicsDevice gd = ge.getDefaultScreenDevice();
-
-            if (!isFullscreen) {
-                // Переход в полноэкранный режим
-                dispose(); // Важно: dispose() перед изменением режима
-                setUndecorated(true);
-
-                if (gd.isFullScreenSupported()) {
-                    gd.setFullScreenWindow(this);
-                } else {
-                    setExtendedState(JFrame.MAXIMIZED_BOTH);
-                }
-                if (currentScreen instanceof CachedWorldScreen) {
-                    ((CachedWorldScreen) currentScreen).invalidateCache();
-                }
-                isFullscreen = true;
-            } else {
-
-                dispose();
-                gd.setFullScreenWindow(null);
-                setUndecorated(false);
-                setVisible(true);
-                if (currentScreen instanceof CachedWorldScreen) {
-                    ((CachedWorldScreen) currentScreen).invalidateCache();
-                }
-                isFullscreen = false;
-            }
-
-
-            revalidate();
-            repaint();
-
-            if (currentScreen != null) {
-                currentScreen.requestFocusInWindow();
-            }
-        } finally {
-            setRepaintBlocked(false);
-            super.repaint(); // один финальный repaint
+public void toggleFullscreen() {
+    try {
+        if (!isFullscreen) {
+            // Переход в "полноэкранный" режим (на самом деле просто максимизированное окно)
+            dispose();
+            setExtendedState(JFrame.MAXIMIZED_BOTH);
+            setUndecorated(true);
+            setVisible(true);
+            isFullscreen = true;
+        } else {
+            // Возврат в оконный режим
+            dispose();
+            setUndecorated(false);
+            setExtendedState(JFrame.NORMAL);
+            setSize(1100, 600);
+            setLocationRelativeTo(null);
+            setVisible(true);
+            isFullscreen = false;
         }
-//        if (isFullscreen) {
-//            setupFullscreenWindow();
-//        } else {
-//            setupWindowedMode();
-//        }
+
+
+    } catch (Exception e) {
+        MetroLogger.logError("Failed to toggle fullscreen", e);
+
+        // Аварийное восстановление
+        try {
+            dispose();
+            setUndecorated(false);
+            setExtendedState(JFrame.NORMAL);
+            setSize(1100, 600);
+            setLocationRelativeTo(null);
+            setVisible(true);
+            isFullscreen = false;
+        } catch (Exception ex) {
+            MetroLogger.logError("Critical: failed to recover window state", ex);
+        }
+    }
 }
 
     public void updateTranslations() {
@@ -216,10 +185,13 @@ public class MainFrame extends JFrame {
     }
     public void switchScreen(String screenName) {
         mainFrameUI.switchScreen(screenName);
+
     }
 
 
-
+    public void setCurrentScreen(GameScreen screen) {
+        this.currentScreen = screen;
+    }
 
     /**
      * Get current GameScreen

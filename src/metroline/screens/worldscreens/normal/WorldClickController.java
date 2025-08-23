@@ -18,6 +18,8 @@ import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import java.util.List;
 
+import static metroline.objects.gameobjects.GameConstants.COST_STANDART_TRAIN;
+
 public class WorldClickController {
     // Выбранные объекты
     public static Station selectedStation = null;
@@ -53,7 +55,8 @@ public class WorldClickController {
         } else if (isShiftPressed && isCPressed || screen.isShiftPressed && screen.isCPressed) {
             ((GameWorld)screen.getWorld()).updateLegendWindow();
             showColorSelectionPopup(x, y);
-        } else if (isShiftPressed || screen.isShiftPressed) {
+        }
+        else if (isShiftPressed || screen.isShiftPressed) {
             ((GameWorld)screen.getWorld()).updateLegendWindow();
             handleShiftClick(x, y);
         } else if (isCtrlPressed || screen.isCtrlPressed) {
@@ -61,23 +64,7 @@ public class WorldClickController {
         } else {
             handleDefaultLeftClick(x, y);
         }
-//        if (screen.isAltPressed && screen.isShiftPressed) {
-//            handleAltShiftClick(x, y); // Alt+Shift - разрушение станции
-//        } else if (screen.isAltPressed) {
-//            handleAltClick(x, y); // Alt - альтернативные действия
-//        } else if (screen.isShiftPressed && screen.isCPressed) {
-//            ((GameWorld)screen.getWorld()).updateLegendWindow();
-//            showColorSelectionPopup(x, y); // Shift+C - выбор цвета
-//        } else if (screen.isShiftPressed) {
-//            ((GameWorld)screen.getWorld()).updateLegendWindow();
-//            handleShiftClick(x, y); // Shift - строительство/удаление
-//        } else if (screen.isCtrlPressed) {
-//            handleCtrlClick(x, y); // Ctrl - создание туннелей
-//        } else {
-//
-//            handleDefaultLeftClick(x, y); // Обычный клик - выбор объектов
-//
-//        }
+
     }
     public void handleAltShiftClick(int x, int y) {
         Station station = GameWorldScreen.getInstance().getWorld().getStationAt(x, y);
@@ -128,6 +115,12 @@ public class WorldClickController {
         }
 
         if (selectedStation != null && selectedStation != station) {
+            if (!selectedStation.getColor().equals(station.getColor())) {
+                // Станции разных цветов - не соединяем
+                selectedStation.setSelected(false);
+                selectedStation = null;
+                return;
+            }
             // Проверяем, что обе станции построены
             boolean bothBuilt =
                     selectedStation.getType() == StationType.TRANSIT ||
@@ -222,7 +215,7 @@ public class WorldClickController {
      */
     private void handleExistingStation(Station station) {
         // Запрещаем действия с разрушающейся/строящейся/закрытой станцией
-        if (station.getType() == StationType.DESTROYED ||
+        if (station.getType() == StationType.DEPO ||station.getType() == StationType.DESTROYED ||
                 station.getType() == StationType.BUILDING) {
             return;
         }
@@ -254,9 +247,10 @@ public class WorldClickController {
         }
 
         if (GameWorldScreen.getInstance().isCPressed) {
-            // Ctrl+C - выбор цвета
+
             showColorSelectionPopup(x, y);
-        } else {
+        }
+        else {
             // Создаем новую станцию
             Station station = new Station(
                     GameWorldScreen.getInstance().getWorld(),
@@ -471,10 +465,45 @@ public class WorldClickController {
         return world.getStationAt(x, y) == null;
     }
 
+    public void handleRightClick(int x, int y) {
+        KeyboardController keyboard = KeyboardController.getInstance();
+        boolean isShiftPressed = keyboard.isKeyPressed(KeyEvent.VK_SHIFT);
+
+        GameWorld world = (GameWorld) GameWorldScreen.getInstance().getWorld();
+        GameObject clickedObject = world.getGameObjectAt(x, y);
+
+        if (clickedObject instanceof Station) {
+            Station station = (Station) clickedObject;
+
+            // Shift+ПКМ - превращение в депо
+            if (isShiftPressed || screen.isShiftPressed) {
+                // Проверяем, что станция может быть превращена в депо
+                world.addTrainToStation(station, Train.TrainType.EXPRESS);
+
+                if (station.getType() != StationType.DEPO &&
+                        station.getType() != StationType.PLANNED &&
+                        station.getType() != StationType.BUILDING &&
+                        station.getType() != StationType.DESTROYED) {
+
+                    station.setType(StationType.DEPO);
+                    GameWorldScreen.getInstance().repaint();
+                }
+            } else {
+                // Обычный ПКМ - добавление поезда (только не для депо)
+                if(station.getType() == StationType.DEPO) {
+                    world.addTrainToStation(station, Train.TrainType.STANDART);
+                    world.removeMoney(COST_STANDART_TRAIN); //TODO Добавить типы поездов и цены на них
+                }
+            }
+        }
+    }
+
 
     /*********************************
      * СЛУЖЕБНЫЕ МЕТОДЫ
      *********************************/
+
+
 
     /**
      * Снятие выделения со всех объектов

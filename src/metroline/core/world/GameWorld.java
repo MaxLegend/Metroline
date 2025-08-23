@@ -36,9 +36,12 @@ public class GameWorld extends World {
     public float money;
     private MetroSerializer worldSerializer;
     private ConstructionTimeProcessor processor;
+    public static boolean showGameplayUnits = false;
     public static boolean showPaymentZones = false;
     public static boolean showPassengerZones = false;
     private List<GameplayUnits> gameplayUnits = new ArrayList<>();
+    private List<Train> trains = new ArrayList<>();
+    private long lastTrainsUpdateTime;
 
     private CityManager cityManager;
 
@@ -58,7 +61,7 @@ public class GameWorld extends World {
 
         generateWorld(hasPassengerCount, hasAbilityPay, hasLandscape, hasRivers, worldColor);
         this.cityManager = new CityManager(this);
-
+        this.lastTrainsUpdateTime = System.nanoTime();
     }
     /**
      * Создает новый GameWorld, загружая его состояние из BufferedReader.
@@ -165,6 +168,22 @@ public class GameWorld extends World {
         applyGradient();
         MetroLogger.logInfo("World successfully created!");
     }
+    public void addTrainToStation(Station station, Train.TrainType trainType) {
+        if (station == null) return;
+
+        Train train = new Train(this,station, trainType);
+        trains.add(train);
+        MetroLogger.logInfo("Train added to station: " + station.getName());
+    }
+
+    // Метод для удаления поезда
+    public void removeTrain(Train train) {
+        trains.remove(train);
+    }
+
+    public List<Train> getTrains() {
+        return trains;
+    }
     public void updateCities() {
         // Обновляем систему городка
         if (cityManager != null) {
@@ -174,7 +193,15 @@ public class GameWorld extends World {
         // Обновляем состояние всех игровых объектов
         updateGameplayUnits();
     }
+    public void updateTrains() {
+        long currentTime = System.nanoTime();
+        long deltaTime = currentTime - lastTrainsUpdateTime;
+        lastTrainsUpdateTime = currentTime;
 
+        for (Train train : trains) {
+            train.update(deltaTime);
+        }
+    }
     private void updateGameplayUnits() {
         for (GameplayUnits unit : gameplayUnits) {
             unit.updateCondition();
@@ -450,6 +477,7 @@ public class GameWorld extends World {
 
         // Итоговый расчет
         revenue = revenue * permModifier * abilityPayModifier * passengerModifier;
+
         float gameplayUnitsMultiplier = 1.0f;
         for (int dx = -1; dx <= 1; dx++) {
             for (int dy = -1; dy <= 1; dy++) {
@@ -508,6 +536,7 @@ public class GameWorld extends World {
 
             float revenue = calculateStationRevenue(station);
             addMoney(revenue);
+
         }
     }
 
@@ -606,6 +635,10 @@ public class GameWorld extends World {
             }
         }
 
+    }
+
+    public void addTrain(Train train) {
+        trains.add(train);
     }
     public void addGameplayUnits(GameplayUnits obj) {
         gameplayUnits.add(obj);
@@ -724,32 +757,7 @@ public class GameWorld extends World {
             station.updateType();
         }
     }
-//    public void initWorldGrid() {
-//     //   this.worldGrid = new WorldTile[width][height];
-//        this.worldGrid = new WorldTile[width * height];
-//        this.gameGrid = new GameTile[width][height];
-//        this.gameplayGrid = new GameTile[width][height];
-//
-//        for (int x = 0; x < width; x++) {
-//            for (int y = 0; y < height; y++) {
-//
-//                worldTile = new WorldTile(x,y);
-//                gameGrid[x][y] = new GameTile(x,y);
-//                gameplayGrid[x][y] = new GameTile(x, y);
-//            }
-//        }
-//    }
-//    public void initGameGrid() {
-//        this.gameGrid = new GameTile[width][height];
-//        this.gameplayGrid = new GameTile[width][height];
-//        for (int x = 0; x < width; x++) {
-//            for (int y = 0; y < height; y++) {
-//                gameGrid[x][y] = new GameTile(x,y);
-//                gameplayGrid[x][y] = new GameTile(x,y);
-//            }
-//        }
-//
-//    }
+
     public void saveWorld() {
         try {
             MetroSerializer serializer = new MetroSerializer();
@@ -789,6 +797,7 @@ public class GameWorld extends World {
             this.worldGrid = loadedWorld.worldGrid; // Ссылка
             this.gameGrid = loadedWorld.gameGrid;
             this.gameplayGrid = loadedWorld.gameplayGrid;  // Ссылка
+            this.trains = loadedWorld.trains;
             this.stations = loadedWorld.stations;   // Ссылка
             this.gameplayUnits = loadedWorld.gameplayUnits; // Ссылка
             this.tunnels = loadedWorld.tunnels;     // Ссылка

@@ -91,7 +91,12 @@ public class StationRender {
         int   drawY = cellCenterY - drawSize / 2;
 
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        if (station.getType() == StationType.DEPO) {
+            g2d.setColor(station.getColor());
+            g2d.setStroke(new BasicStroke(5 * zoom));
+            g2d.drawOval(drawX-1, drawY-1, drawSize+2, drawSize+2);
 
+        } else
         if (station.getType() == StationType.PLANNED) {
             g2d.setColor(station.getColor());
             g2d.setStroke(new BasicStroke(2 * zoom));

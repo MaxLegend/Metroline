@@ -7,6 +7,7 @@ import metroline.objects.enums.Direction;
 import metroline.objects.enums.StationColors;
 import metroline.objects.enums.StationType;
 import metroline.screens.worldscreens.normal.GameWorldScreen;
+import metroline.util.MetroLogger;
 
 import java.awt.*;
 import java.util.EnumMap;
@@ -54,7 +55,8 @@ public class Station extends GameObject {
                  this.getType() == StationType.BUILDING ||
                  this.getType() == StationType.CLOSED ||
                  this.getType() == StationType.DESTROYED ||
-                 this.getType() == StationType.PLANNED;
+                 this.getType() == StationType.PLANNED ||
+                 this.getType() == StationType.DEPO; // Добавляем DEPO
     }
 
     public float calculateRepairCost(Station station) {
@@ -142,7 +144,17 @@ public class Station extends GameObject {
      * @param newType New station type
      */
     public void setType(StationType newType) {
-
+        if (this.type == StationType.DEPO && newType != StationType.DEPO) {
+            MetroLogger.logWarning("Cannot change DEPO station type");
+            return;
+        }
+        if (newType == StationType.DEPO &&
+                (this.type == StationType.PLANNED ||
+                        this.type == StationType.BUILDING ||
+                        this.type == StationType.DESTROYED)) {
+            MetroLogger.logWarning("Cannot convert PLANNED/BUILDING/DESTROYED station to DEPO");
+            return;
+        }
         // Запрещаем недопустимые переходы между типами
         if (this.type == StationType.PLANNED && newType != StationType.BUILDING) {
     //        MetroLogger.logWarning("Attempt to change PLANNED station to " + newType +" - only BUILDING is allowed");
@@ -301,7 +313,7 @@ public class Station extends GameObject {
      * @param other Target station
      * @return Direction to the other station
      */
-    private Direction getDirectionTo(Station other) {
+    Direction getDirectionTo(Station other) {
         int dx = other.getX() - x;
         int dy = other.getY() - y;
 

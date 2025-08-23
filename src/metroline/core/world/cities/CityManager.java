@@ -16,7 +16,7 @@ public class CityManager {
 
     private static final int MIN_DISTRICTS = 2;
     private static final int MAX_DISTRICTS = 6;
-    private static final int DISTRICT_UPDATE_INTERVAL = 30000;
+    private static final int DISTRICT_UPDATE_INTERVAL = 6000000;
 
     public CityManager(GameWorld world) {
         this.world = world;

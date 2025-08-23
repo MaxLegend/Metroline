@@ -26,9 +26,15 @@ public class GameplayUnits extends GameObject {
             icons.put(GameplayUnitsType.CITYHALL, loadIcon("cityhall.png"));
             icons.put(GameplayUnitsType.SHOP, loadIcon("shop.png"));
             icons.put(GameplayUnitsType.FACTORY, loadIcon("factory.png"));
+            icons.put(GameplayUnitsType.FACTORY2, loadIcon("factory2.png"));
+            icons.put(GameplayUnitsType.FACTORY3, loadIcon("factory3.png"));
+            icons.put(GameplayUnitsType.FACTORY4, loadIcon("factory4.png"));
+            icons.put(GameplayUnitsType.FACTORY5, loadIcon("factory5.png"));
             icons.put(GameplayUnitsType.BIG_HOUSE, loadIcon("big_house.png"));
             icons.put(GameplayUnitsType.HOUSE, loadIcon("house.png"));
             icons.put(GameplayUnitsType.SMALL_HOUSE, loadIcon("small_house.png"));
+            icons.put(GameplayUnitsType.PERSONAL_HOUSE, loadIcon("personal_house.png"));
+            icons.put(GameplayUnitsType.BIG_PERSONAL_HOUSE, loadIcon("big_personal_house.png"));
         } catch (IOException e) {
             e.printStackTrace();
             // Запасной вариант - создаем простые иконки

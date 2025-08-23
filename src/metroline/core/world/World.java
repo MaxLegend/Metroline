@@ -172,6 +172,7 @@ public class World implements Serializable {
     public void addLabel(Label label) {
         labels.add(label);
         getGameTile(label.getX(), label.getY()).setContent(label);
+
     }
     public void removeLabel(Label label) {
         labels.remove(label);
