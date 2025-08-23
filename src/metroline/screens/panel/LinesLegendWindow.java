@@ -1,9 +1,8 @@
 package metroline.screens.panel;
 
-import metroline.core.world.GameWorld;
 import metroline.core.world.World;
 import metroline.objects.enums.StationColors;
-import metroline.util.LngUtil;
+import metroline.util.localizate.LngUtil;
 import metroline.util.ui.StyleUtil;
 
 import javax.swing.*;

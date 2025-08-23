@@ -1,7 +1,7 @@
 package metroline.objects.gameobjects;
 
 import metroline.objects.enums.StationColors;
-import metroline.util.LngUtil;
+import metroline.util.localizate.LngUtil;
 
 import java.awt.*;
 import java.util.concurrent.TimeUnit;

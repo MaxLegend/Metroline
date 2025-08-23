@@ -1,6 +1,8 @@
 package metroline.util.ui;
 
 import metroline.MainFrame;
+import metroline.util.localizate.ITranslatable;
+import metroline.util.localizate.LngUtil;
 import metroline.util.ui.tooltip.CursorTooltip;
 
 import javax.swing.*;
@@ -10,60 +12,62 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 
-public class MetrolineToggleButton extends JToggleButton {
+public class MetrolineToggleButton extends JToggleButton implements ITranslatable {
     public static final Color DEFAULT_BACKGROUND = new Color(60, 60, 60);
     public static final Color HOVER_BACKGROUND = new Color(80, 80, 80);
     public static final Color PRESSED_BACKGROUND = new Color(79, 155, 155);
     public static final Color SELECTED_BACKGROUND = new Color(50, 120, 120);
     public static final Color DEFAULT_FOREGROUND = Color.WHITE;
-
+    private String translationKey;
     public static final Font DEFAULT_FONT = new Font("Sans Serif", Font.BOLD, 13);
-    private String tooltipText = "";
+    private String tooltipText;
+
     public MetrolineToggleButton(String text) {
         super(text);
+        this.translationKey = text;
         initDefaultStyle();
     }
-
+    public MetrolineToggleButton(String text, String tooltipText) {
+        super(text);
+        this.translationKey = text;
+        this.tooltipText = tooltipText;
+        initDefaultStyle();
+    }
     public MetrolineToggleButton(String text, ActionListener action) {
         super(text);
+        this.translationKey = text;
         initDefaultStyle();
         addActionListener(action);
     }
 
-    public MetrolineToggleButton(String text, Color customColor, ActionListener action) {
-        super(text);
-        initCustomColorStyle(customColor);
-        addActionListener(action);
-    }
 
-    public MetrolineToggleButton(String iconText, String tooltip, ActionListener action) {
-        super(iconText);
-        initIconStyle();
-        setToolTipText(tooltip);
-        addActionListener(action);
-    }
-
+//    public MetrolineToggleButton(String text, Color customColor, ActionListener action) {
+//        super(text);
+//        this.translationKey = text;
+//        initCustomColorStyle(customColor);
+//        addActionListener(action);
+//    }
+//
+//    public MetrolineToggleButton(String iconText, String tooltip, ActionListener action) {
+//        super(iconText);
+//        this.translationKey = iconText;
+//        initIconStyle();
+//        addActionListener(action);
+//    }
     @Override
-    public String getToolTipText() {
-        return "";
-    }
-    public void setTooltipText(String text) {
+    public void setToolTipText(String text) {
         this.tooltipText = text;
-        // Отключаем стандартные тултипы
-        super.setToolTipText(null);
     }
-    public String getTooltipText() {
-        return tooltipText;
-    }
+
     private void initDefaultStyle() {
         setForeground(DEFAULT_FOREGROUND);
-        setFont(new Font("Segoe UI Symbol", Font.PLAIN, 14)); // Шрифт с поддержкой Unicode
+        setFont(DEFAULT_FONT);
         setBackground(DEFAULT_BACKGROUND);
         setBorder(BorderFactory.createEmptyBorder(5, 8, 5, 8));
         setFocusPainted(false);
         setContentAreaFilled(false);
         setOpaque(true);
-        setPreferredSize(new Dimension(35, 25));
+        setPreferredSize(new Dimension(35, 30));
 
         mouseReactions();
     }
@@ -117,7 +121,11 @@ public class MetrolineToggleButton extends JToggleButton {
             }
         });
     }
-
+    @Override
+    public void updateTranslation() {
+        setText(LngUtil.translatable(translationKey));
+        setToolTipText(LngUtil.translatable(tooltipText));
+    }
     private void initCustomColorStyle(Color baseColor) {
         setForeground(DEFAULT_FOREGROUND);
         setFont(DEFAULT_FONT);

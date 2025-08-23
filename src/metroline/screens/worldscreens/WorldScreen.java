@@ -212,7 +212,7 @@ public class WorldScreen extends GameScreen {
                         gcTime,
                         (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024,
                         (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024
-                ));
+                             ));
 
             } catch (Exception e) {
                 System.err.println("GC thread error: " + e.getMessage());

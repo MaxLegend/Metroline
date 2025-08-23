@@ -6,15 +6,15 @@ import metroline.objects.gameobjects.GameConstants;
 import metroline.screens.GameScreen;
 import metroline.screens.worldscreens.normal.GameWorldScreen;
 import metroline.util.ColorUtil;
-import metroline.util.ui.MetrolineButton;
-import metroline.util.ui.MetrolineSlider;
-import metroline.util.LngUtil;
-import metroline.util.ui.MetrolineCheckbox;
-import metroline.util.ui.StyleUtil;
+import metroline.util.localizate.LngUtil;
+import metroline.util.ui.*;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 public class WorldSettingsScreen extends GameScreen {
     public static final Color[] WORLD_COLORS = {
@@ -25,7 +25,8 @@ public class WorldSettingsScreen extends GameScreen {
             new Color(80, 100, 150)   // Голубоватый
     };
     private MetrolineSlider moneySlider;
-    private JLabel moneyValueLabel;
+    private MetrolineLabel moneyValueLabel = new MetrolineLabel("M");;
+    private MetrolineLabel moneyTextLabel = new MetrolineLabel("world.start_money", SwingConstants.RIGHT);
 
     private MetrolineSlider widthSlider;
     private MetrolineSlider heightSlider;
@@ -34,7 +35,7 @@ public class WorldSettingsScreen extends GameScreen {
     private MetrolineCheckbox roundStationsCheck;
 
     private MainFrame parent;
-    private JButton colorButton; // Кнопка для выбора цвета
+    private MetrolineButton colorButton; // Кнопка для выбора цвета
     private int worldColor = 0x6E6E6E; // Цвет по умолчанию
 
     // Новые слайдеры для экономических констант
@@ -46,12 +47,15 @@ public class WorldSettingsScreen extends GameScreen {
     private MetrolineSlider gameplayUnitsCountSlider;
 
     // Метки для новых слайдеров
-    private JLabel stationBaseCostValueLabel = new JLabel("M");
-    private JLabel tunnelCostPerSegmentValueLabel= new JLabel("M");
-    private JLabel stationBaseRevenueValueLabel= new JLabel("M");
-    private JLabel baseStationUpkeepValueLabel= new JLabel("M");
-    private JLabel baseTunnelUpkeepValueLabel= new JLabel("M");
-    private JLabel gameplayUnitsCountValueLabel= new JLabel("M");
+    private MetrolineLabel centerTitle = new MetrolineLabel("create_world_title", SwingConstants.CENTER);
+    private MetrolineLabel widthLabel = new MetrolineLabel("M");
+    private MetrolineLabel heightLabel = new MetrolineLabel("M");
+    private MetrolineLabel stationBaseCostValueLabel = new MetrolineLabel("M");
+    private MetrolineLabel tunnelCostPerSegmentValueLabel= new MetrolineLabel("M");
+    private MetrolineLabel stationBaseRevenueValueLabel= new MetrolineLabel("M");
+    private MetrolineLabel baseStationUpkeepValueLabel= new MetrolineLabel("M");
+    private MetrolineLabel baseTunnelUpkeepValueLabel= new MetrolineLabel("M");
+    private MetrolineLabel gameplayUnitsCountValueLabel= new MetrolineLabel("M");
 
     public WorldSettingsScreen(MainFrame parent) {
         super(parent);
@@ -59,6 +63,8 @@ public class WorldSettingsScreen extends GameScreen {
         setBackground(StyleUtil.BACKGROUND_COLOR);
         setLayout(new BorderLayout(0, 0)); // Changed to BorderLayout with horizontal gap
         initUI();
+
+        parent.updateLanguage();
     }
 
 
@@ -97,6 +103,9 @@ public class WorldSettingsScreen extends GameScreen {
         placeholder.setFont(new Font("Arial", Font.ITALIC, 16));
         leftPanel.add(placeholder, BorderLayout.CENTER);
 
+
+      //  parent.translatables.add(title);
+
         return leftPanel;
     }
 
@@ -107,16 +116,16 @@ public class WorldSettingsScreen extends GameScreen {
         centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
 
         // Title
-        JLabel title = new JLabel(LngUtil.translatable("create_world_title"), SwingConstants.CENTER);
-        title.setFont(new Font("Arial", Font.BOLD, 24));
-        title.setForeground(StyleUtil.FOREGROUND_COLOR);
-        title.setAlignmentX(Component.CENTER_ALIGNMENT);
-        centerPanel.add(title);
+
+        centerTitle.setFont(new Font("Arial", Font.BOLD, 24));
+        centerTitle.setForeground(StyleUtil.FOREGROUND_COLOR);
+        centerTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
+        centerPanel.add(centerTitle);
         centerPanel.add(Box.createRigidArea(new Dimension(0, 20)));
 
 
-        widthSlider = new MetrolineSlider(LngUtil.translatable("width_world_slider_desc"), 20, 200, 40,10);
-        heightSlider = new MetrolineSlider(LngUtil.translatable("height_world_slider_desc"),20, 200, 40, 10);
+        widthSlider = new MetrolineSlider("width_world_slider_desc", 20, 200, 40,10);
+        heightSlider = new MetrolineSlider("height_world_slider_desc",20, 200, 40, 10);
         widthSlider.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         heightSlider.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
@@ -124,32 +133,17 @@ public class WorldSettingsScreen extends GameScreen {
         JPanel sizePanel = new JPanel(new GridLayout(2, 3, 10, 15));
         sizePanel.setBackground(StyleUtil.BACKGROUND_COLOR);
         sizePanel.setMaximumSize(new Dimension(600, 80));
-//
-//        JLabel widthValueLabel = new JLabel("wwl");
-//        widthValueLabel.setForeground(StyleUtil.FOREGROUND_COLOR);
-//        widthValueLabel.setFont(new Font("Sans Serif", Font.BOLD, 13));
-//
-//        JLabel heightValueLabel = new JLabel("hwl");
-//        heightValueLabel.setForeground(StyleUtil.FOREGROUND_COLOR);
-//        heightValueLabel.setFont(new Font("Sans Serif", Font.BOLD, 13));
 
-
-        JLabel widthLabel = StyleUtil.createMetrolineLabel(LngUtil.translatable("world.width"), SwingConstants.CENTER);
         widthLabel.setForeground(StyleUtil.FOREGROUND_COLOR);
         widthLabel.setFont(new Font("Sans Serif", Font.BOLD, 13));
 
-        JLabel heightLabel = StyleUtil.createMetrolineLabel(LngUtil.translatable("world.height"), SwingConstants.CENTER);
-        widthLabel.setForeground(StyleUtil.FOREGROUND_COLOR);
+      //  MetrolineLabel heightLabel = StyleUtil.createMetrolineLabel("" + heightSlider.getValueSuffix(), SwingConstants.CENTER);
+        heightLabel.setForeground(StyleUtil.FOREGROUND_COLOR);
         heightLabel.setFont(new Font("Sans Serif", Font.BOLD, 13));
 
-        addRow(centerPanel, LngUtil.translatable("world.width"), widthSlider, widthLabel);
-        addRow(centerPanel, LngUtil.translatable("world.height"), heightSlider, heightLabel);
-//        sizePanel.add(widthLabel);
-//        sizePanel.add(widthSlider);
-//        sizePanel.add(widthValueLabel);
-//        sizePanel.add(heightLabel);
-//        sizePanel.add(heightSlider);
-//        sizePanel.add(heightValueLabel);
+        addRow(centerPanel, "world.width", widthSlider, widthLabel);
+        addRow(centerPanel, "world.height", heightSlider, heightLabel);
+
 
         centerPanel.add(sizePanel);
         centerPanel.add(Box.createRigidArea(new Dimension(0, 20)));
@@ -160,28 +154,15 @@ public class WorldSettingsScreen extends GameScreen {
         moneyPanel.setLayout(new BoxLayout(moneyPanel, BoxLayout.X_AXIS));
         moneyPanel.setMaximumSize(new Dimension(600, 50));
 
-        moneyValueLabel = new JLabel("10000");
+
         moneyValueLabel.setForeground(StyleUtil.FOREGROUND_COLOR);
         moneyValueLabel.setFont(new Font("Sans Serif", Font.BOLD, 13));
 
-        moneySlider = new MetrolineSlider(LngUtil.translatable("world.start_money_desc"),50, 10000, 2000, 100);
-        JLabel moneyTextLabel = StyleUtil.createMetrolineLabel(LngUtil.translatable("world.start_money"), SwingConstants.RIGHT);
+        moneySlider = new MetrolineSlider("world.start_money_desc",50, 10000, 2000, 100);
+
         moneyTextLabel.setFont(new Font("Sans Serif", Font.BOLD, 13));
-        addRow(centerPanel, LngUtil.translatable("world.start_money"), moneySlider, moneyTextLabel);
+        addRow(centerPanel, "world.start_money", moneySlider, moneyTextLabel);
         centerPanel.add(moneyPanel);
-//        moneyPanel.add(moneyTextLabel);
-//        moneyPanel.add(Box.createRigidArea(new Dimension(10, 0)));
-//        moneyPanel.add(moneySlider);
-//        moneyPanel.add(Box.createRigidArea(new Dimension(10, 0)));
-//        moneyPanel.add(moneyValueLabel);
-
-//        moneySlider.addChangeListener(e -> {
-//            float value = moneySlider.getValue();
-//            String formatted = String.format("%,.0f M", value * 100);
-//            moneyValueLabel.setText(formatted);
-//        });
-
-    //    centerPanel.add(moneyPanel);
         centerPanel.add(Box.createRigidArea(new Dimension(0, 20)));
 
         // Features checkboxes
@@ -191,12 +172,12 @@ public class WorldSettingsScreen extends GameScreen {
         featuresPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
         featuresPanel.setMaximumSize(new Dimension(400, Integer.MAX_VALUE));
 
-        colorButton = StyleUtil.createMetrolineColorableButton(LngUtil.translatable("world.color"), e -> showWindowColorSelection(), new Color(worldColor));
-        abilityPayCheck = StyleUtil.createMetrolineCheckBox(LngUtil.translatable("world.gen_abilityPay_zone"), LngUtil.translatable("world.gen_abilityPay_zone_desc"));
-        passengerCountCheck = StyleUtil.createMetrolineCheckBox(LngUtil.translatable("world.gen_passengerCount_zone"),LngUtil.translatable("world.gen_passengerCount_zone_desc"));
-        landscapeCheck = StyleUtil.createMetrolineCheckBox(LngUtil.translatable("world.gen_landscape"),LngUtil.translatable("world.gen_landscape_desc"));
-        riversCheck = StyleUtil.createMetrolineCheckBox(LngUtil.translatable("world.gen_river"),LngUtil.translatable("world.gen_river_desc"));
-        roundStationsCheck = StyleUtil.createMetrolineCheckBox(LngUtil.translatable("world.round_stations"),LngUtil.translatable("world.round_stations_desc"));
+        colorButton = MetrolineButton.createMetrolineColorableButton("world.color", e -> showWindowColorSelection(), new Color(worldColor));
+        abilityPayCheck = StyleUtil.createMetrolineCheckBox("world.gen_abilityPay_zone", "world.gen_abilityPay_zone_desc");
+        passengerCountCheck = StyleUtil.createMetrolineCheckBox("world.gen_passengerCount_zone","world.gen_passengerCount_zone_desc");
+        landscapeCheck = StyleUtil.createMetrolineCheckBox("world.gen_landscape","world.gen_landscape_desc");
+        riversCheck = StyleUtil.createMetrolineCheckBox("world.gen_river","world.gen_river_desc");
+        roundStationsCheck = StyleUtil.createMetrolineCheckBox("world.round_stations","world.round_stations_desc");
 
         featuresPanel.add(passengerCountCheck);
         featuresPanel.add(abilityPayCheck);
@@ -215,9 +196,9 @@ public class WorldSettingsScreen extends GameScreen {
         buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.X_AXIS));
         buttonPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        MetrolineButton backButton = new MetrolineButton(LngUtil.translatable("world.back"), e -> parent.switchScreen("menu"));
+        MetrolineButton backButton = new MetrolineButton("world.back", e -> parent.switchScreen("menu"));
 
-        MetrolineButton createGameButton = new MetrolineButton(LngUtil.translatable("world.create_standart"), e -> createWorld());
+        MetrolineButton createGameButton = new MetrolineButton("world.create_standart", e -> createWorld());
 
         buttonPanel.add(backButton);
         buttonPanel.add(Box.createRigidArea(new Dimension(20, 0)));
@@ -225,6 +206,21 @@ public class WorldSettingsScreen extends GameScreen {
 
         centerPanel.add(buttonPanel);
 
+        parent.translatables.add(centerTitle);
+        parent.translatables.add(widthSlider);
+        parent.translatables.add(heightSlider);
+        parent.translatables.add(heightLabel);
+        parent.translatables.add(widthLabel);
+        parent.translatables.add(moneySlider);
+        parent.translatables.add(moneyTextLabel);
+        parent.translatables.add(abilityPayCheck);
+        parent.translatables.add(colorButton);
+        parent.translatables.add(landscapeCheck);
+        parent.translatables.add(riversCheck);
+        parent.translatables.add(roundStationsCheck);
+        parent.translatables.add(passengerCountCheck);
+        parent.translatables.add(backButton);
+        parent.translatables.add(createGameButton);
         return centerPanel;
     }
 
@@ -235,7 +231,7 @@ public class WorldSettingsScreen extends GameScreen {
         economyPanel.setLayout(new BoxLayout(economyPanel, BoxLayout.Y_AXIS));
 
         // Title
-        JLabel title = new JLabel(LngUtil.translatable("world.economy_settings"), SwingConstants.CENTER);
+        MetrolineLabel title = new MetrolineLabel("world.economy_settings", SwingConstants.CENTER);
         title.setFont(new Font("Arial", Font.BOLD, 20));
         title.setForeground(StyleUtil.FOREGROUND_COLOR);
         title.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -243,30 +239,39 @@ public class WorldSettingsScreen extends GameScreen {
         economyPanel.add(Box.createRigidArea(new Dimension(0, 20)));
 
         // Create economic sliders
-        stationBaseCostSlider = new MetrolineSlider(LngUtil.translatable("world.station_cost_desc"), 0.1f, 20, 2, 0.1f);
-        tunnelCostPerSegmentSlider = new MetrolineSlider(LngUtil.translatable("world.tunnel_segment_cost_desc"),0.1f, 10, 2, 0.1f);
-        stationBaseRevenueSlider = new MetrolineSlider(LngUtil.translatable("world.station_revenue_desc"),0.1f, 5, 2, 0.1f);
-        baseStationUpkeepSlider = new MetrolineSlider(LngUtil.translatable("world.station_upkeep_desc"),0.1f, 8, 0.5f, 0.1f);
-        baseTunnelUpkeepSlider = new MetrolineSlider(LngUtil.translatable("world.tunnel_upkeep_desc"),0.1f, 2, 0.2f, 0.1f);
-        gameplayUnitsCountSlider = new MetrolineSlider(LngUtil.translatable("world.gameplay_units_desc"),5f, 100, 20, 1f);
+        stationBaseCostSlider = new MetrolineSlider("world.station_cost_desc", 0.1f, 20, 2, 0.1f);
+        tunnelCostPerSegmentSlider = new MetrolineSlider("world.tunnel_segment_cost_desc",0.1f, 10, 2, 0.1f);
+        stationBaseRevenueSlider = new MetrolineSlider("world.station_revenue_desc",0.1f, 5, 2, 0.1f);
+        baseStationUpkeepSlider = new MetrolineSlider("world.station_upkeep_desc",0.1f, 8, 0.5f, 0.1f);
+        baseTunnelUpkeepSlider = new MetrolineSlider("world.tunnel_upkeep_desc",0.1f, 2, 0.2f, 0.1f);
+        gameplayUnitsCountSlider = new MetrolineSlider("world.gameplay_units_desc",5f, 100, 20, 1f);
 
         // Add economic sliders to panel
-        addRow(economyPanel, LngUtil.translatable("world.station_cost"), stationBaseCostSlider, stationBaseCostValueLabel);
-        addRow(economyPanel, LngUtil.translatable("world.tunnel_segment_cost"), tunnelCostPerSegmentSlider, tunnelCostPerSegmentValueLabel);
-        addRow(economyPanel, LngUtil.translatable("world.station_revenue"), stationBaseRevenueSlider, stationBaseRevenueValueLabel);
-        addRow(economyPanel, LngUtil.translatable("world.station_upkeep"), baseStationUpkeepSlider, baseStationUpkeepValueLabel);
-        addRow(economyPanel, LngUtil.translatable("world.tunnel_upkeep"), baseTunnelUpkeepSlider, baseTunnelUpkeepValueLabel);
-        addRow(economyPanel, LngUtil.translatable("world.gameplay_units"), gameplayUnitsCountSlider, gameplayUnitsCountValueLabel);
+        addRow(economyPanel, "world.station_cost", stationBaseCostSlider, stationBaseCostValueLabel);
+        addRow(economyPanel, "world.tunnel_segment_cost", tunnelCostPerSegmentSlider, tunnelCostPerSegmentValueLabel);
+        addRow(economyPanel, "world.station_revenue", stationBaseRevenueSlider, stationBaseRevenueValueLabel);
+        addRow(economyPanel, "world.station_upkeep", baseStationUpkeepSlider, baseStationUpkeepValueLabel);
+        addRow(economyPanel, "world.tunnel_upkeep", baseTunnelUpkeepSlider, baseTunnelUpkeepValueLabel);
+        addRow(economyPanel, "world.gameplay_units", gameplayUnitsCountSlider, gameplayUnitsCountValueLabel);
+
+
+        parent.translatables.add(title);
+        parent.translatables.add(stationBaseCostSlider);
+        parent.translatables.add(tunnelCostPerSegmentSlider);
+        parent.translatables.add(stationBaseRevenueSlider);
+        parent.translatables.add(baseStationUpkeepSlider);
+        parent.translatables.add(baseTunnelUpkeepSlider);
+        parent.translatables.add(gameplayUnitsCountSlider);
 
         return economyPanel;
     }
 
-    private void addRow(JPanel panel, String labelText, MetrolineSlider slider, JLabel valueLabel) {
+    private void addRow(JPanel panel, String labelText, MetrolineSlider slider, MetrolineLabel valueLabel) {
         JPanel rowPanel = new JPanel(new BorderLayout(10, 0));
         rowPanel.setBackground(StyleUtil.BACKGROUND_COLOR);
         rowPanel.setMaximumSize(new Dimension(400, 50));
 
-        JLabel label = StyleUtil.createMetrolineLabel(labelText, SwingConstants.LEFT);
+        MetrolineLabel label = StyleUtil.createMetrolineLabel(labelText, SwingConstants.LEFT);
         label.setFont(new Font("Sans Serif", Font.BOLD, 13));
 
         valueLabel.setForeground(StyleUtil.FOREGROUND_COLOR);
@@ -415,6 +420,8 @@ public class WorldSettingsScreen extends GameScreen {
         moneySlider.setValue(10000);
         String formatted = String.format("%,d ₽", moneySlider.getValue());
         moneyValueLabel.setText(formatted);
+
+
     }
 
     @Override

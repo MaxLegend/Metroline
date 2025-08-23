@@ -3,8 +3,7 @@ package metroline.screens;
 import metroline.MainFrame;
 import metroline.screens.worldscreens.normal.GameWorldScreen;
 import metroline.screens.worldscreens.sandbox.SandboxWorldScreen;
-import metroline.util.LngUtil;
-import metroline.util.ui.StyleUtil;
+import metroline.util.ui.MetrolineButton;
 
 import javax.swing.*;
 import java.awt.*;
@@ -37,19 +36,28 @@ public class MenuScreen extends GameScreen {
         gbc.insets = new Insets(10, 50, 10, 0);
 
         // Minimalist buttons aligned to left
-        JButton startButton = StyleUtil.createMetrolineButton(LngUtil.translatable("main_menu.start"),e -> parent.switchScreen(MainFrame.WORLD_SETTINGS_SCREEN_NAME));
-        JButton startButtonSandbox = StyleUtil.createMetrolineButton(LngUtil.translatable("main_menu.start_sandbox"),e -> parent.switchScreen(MainFrame.SANDBOX_SETTINGS_SCREEN_NAME));
-        JButton loadSBButton = StyleUtil.createMetrolineButton(LngUtil.translatable("main_menu.load_sandbox"),e -> loadGame(parent, true));
-        JButton loadButton = StyleUtil.createMetrolineButton(LngUtil.translatable("main_menu.load_standart"),e -> loadGame(parent, false)); //
-
-        JButton exitButton = StyleUtil.createMetrolineButton(LngUtil.translatable("main_menu.exit"), e -> System.exit(0));
+        MetrolineButton startButton = MetrolineButton.createMetrolineButton("main_menu.start",e -> parent.switchScreen(MainFrame.WORLD_SETTINGS_SCREEN_NAME));
+        MetrolineButton startButtonSandbox = MetrolineButton.createMetrolineButton("main_menu.start_sandbox",e -> parent.switchScreen(MainFrame.SANDBOX_SETTINGS_SCREEN_NAME));
+        MetrolineButton loadSBButton = MetrolineButton.createMetrolineButton("main_menu.load_sandbox",e -> loadGame(parent, true));
+        MetrolineButton loadButton = MetrolineButton.createMetrolineButton("main_menu.load_standart",e -> loadGame(parent, false)); //
+        MetrolineButton changeLngButton = MetrolineButton.createMetrolineButton("main_menu.change_lng", e -> parent.changeLanguage());
+        MetrolineButton exitButton = MetrolineButton.createMetrolineButton("main_menu.exit", e -> System.exit(0));
 
         add(startButton, gbc);
         add(loadButton, gbc);
         add(startButtonSandbox, gbc);
         add(loadSBButton, gbc);
+        add(changeLngButton, gbc);
         add(exitButton, gbc);
 
+        parent.translatables.add(startButton);
+        parent.translatables.add(startButtonSandbox);
+        parent.translatables.add(loadSBButton);
+        parent.translatables.add(loadButton);
+        parent.translatables.add(changeLngButton);
+        parent.translatables.add(exitButton);
+
+        parent.updateLanguage();
     }
 
 

@@ -1,7 +1,6 @@
 package metroline.core.world.tiles;
 
 
-import metroline.MainFrame;
 import metroline.core.world.GameWorld;
 
 import java.awt.*;
@@ -12,8 +11,6 @@ import java.awt.*;
  */
 public class WorldTile extends Tile {
     private float perm; // 0 = can build, 1 = cannot build
-//    private Color baseTileColor = new Color(110, 110, 110);
-
     private int baseTileColorRGB = 0x6E6E6E; // (110,110,110)
     private transient Color cachedBaseTileColor; // создаётся лениво, 1 раз
 
@@ -22,13 +19,7 @@ public class WorldTile extends Tile {
     private int passengerCount; // Количество пассажиров
 
     private float waterDepth; // 0 (край реки) - 1 (центр)
-//    private static final Color[] WATER_PALETTE = {
-//            new Color(77, 158, 204), // Очень светлый голубой (мелководье)
-//            new Color(70, 170, 230),  // Светлый голубой
-//            new Color(50, 140, 210),  // Средний голубой
-//            new Color(48, 143, 222),  // Темный голубой
-//            new Color(58, 124, 199)    // Очень темный синий (глубоководье)
-//    };
+
     private static final int WATER_STEPS = 64;
     private static final Color[] WATER_PALETTE = new Color[WATER_STEPS];
     static {
@@ -62,35 +53,27 @@ public class WorldTile extends Tile {
         this.waterDepth = Math.min(1, Math.max(0, depth));
     }
     public Color getAnimatedWaterColor() {
-        // Базовый индекс цвета в палитре на основе глубины
-        float baseIndex = waterDepth * (WATER_PALETTE.length - 1);
+        if (!isWater()) {
+            return getBaseTileColor(); // или что у тебя по умолчанию
+        }
 
-        // Анимация - плавное колебание между соседними цветами
+        long time = System.nanoTime() / 1_000_000; // миллисекунды
+        double noise = (
+                Math.sin((x * 13.17 + time * 0.003)) +
+                        Math.sin((y * 7.31  + time * 0.004)) +
+                        Math.sin((x * 5.13  + y * 9.24 + time * 0.002))
+        ) / 3.0;
 
-        float animatedIndex = baseIndex;
+        float brightness = (float) (0.85 + 0.1 * noise); // лёгкая рябь
 
-        // Нормализуем индекс
-        animatedIndex = animatedIndex % (WATER_PALETTE.length - 1);
-        if (animatedIndex < 0) animatedIndex += WATER_PALETTE.length - 1;
+        Color base = new Color(30, 144, 255); // dodgerblue
+        int r = (int) Math.min(255, base.getRed()   * brightness);
+        int g = (int) Math.min(255, base.getGreen() * brightness);
+        int b = (int) Math.min(255, base.getBlue()  * brightness);
 
-        // Интерполяция между двумя ближайшими цветами
-        int index1 = (int)Math.floor(animatedIndex);
-        int index2 = (int)Math.ceil(animatedIndex);
-        float ratio = animatedIndex - index1;
-
-        Color c1 = WATER_PALETTE[index1];
-        Color c2 = WATER_PALETTE[index2];
-
-        return interpolateColors(c1, c2, ratio);
-    }
-
-    // Вспомогательный метод для интерполяции цветов
-    private Color interpolateColors(Color c1, Color c2, float ratio) {
-        int r = (int)(c1.getRed() * (1 - ratio) + c2.getRed() * ratio);
-        int g = (int)(c1.getGreen() * (1 - ratio) + c2.getGreen() * ratio);
-        int b = (int)(c1.getBlue() * (1 - ratio) + c2.getBlue() * ratio);
         return new Color(r, g, b);
     }
+
     public WorldTile getWorldTile() {
         return new WorldTile(getX(), getY());
     }
@@ -154,35 +137,32 @@ public class WorldTile extends Tile {
 
 
     private void drawRealisticWater(Graphics2D g, int x, int y, int size) {
-        // Реалистичная отрисовка воды (ваш существующий код)
         g.setColor(getAnimatedWaterColor());
         g.fillRect(x, y, size, size);
     }
 
     private void drawLand(Graphics2D g, int x, int y, int size) {
-        // Обычная отрисовка земли
         Color baseColor = getBaseTileColor();
         int range = 50;
-        int red = Math.max(0, Math.min(255, cachedBaseTileColor.getRed() - (int)(perm * range)));
-        int green = Math.max(0, Math.min(255, cachedBaseTileColor.getGreen() - (int)(perm * range)));
-        int blue = Math.max(0, Math.min(255, cachedBaseTileColor.getBlue() - (int)(perm * range)));
+        int red = Math.max(0, Math.min(255, baseColor.getRed() - (int)(perm * range)));
+        int green = Math.max(0, Math.min(255, baseColor.getGreen() - (int)(perm * range)));
+        int blue = Math.max(0, Math.min(255, baseColor.getBlue() - (int)(perm * range)));
 
         g.setColor(new Color(red, green, blue));
         g.fillRect(x, y, size, size);
-                //        g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.4f));
-                int layerColor = 180 + (int)(55 * abilityPay);
-                // Отрисовка платежеспособности (красный)
-                if (GameWorld.showPaymentZones && abilityPay > 0) {
 
-                    g.setColor(new Color(layerColor, 0, 0, 180));
-                    g.fillRect(x, y, size, size);
-                }
+        int layerColor = 180 + (int)(55 * abilityPay);
+        // Отрисовка платежеспособности (красный)
+        if (GameWorld.showPaymentZones && abilityPay > 0) {
+            g.setColor(new Color(layerColor, 0, 0, 180));
+            g.fillRect(x, y, size, size);
+        }
 
-                // Отрисовка пассажиропотока (зеленый)
-                if (GameWorld.showPassengerZones && passengerCount > 0) {
-                    g.setColor(new Color(0, layerColor, 0, 180));
-                    g.fillRect(x, y, size, size);
-                }
+        // Отрисовка пассажиропотока (зеленый)
+        if (GameWorld.showPassengerZones && passengerCount > 0) {
+            g.setColor(new Color(0, layerColor, 0, 180));
+            g.fillRect(x, y, size, size);
+        }
     }
 
 }

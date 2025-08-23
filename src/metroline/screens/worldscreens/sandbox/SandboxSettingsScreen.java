@@ -3,10 +3,8 @@ package metroline.screens.worldscreens.sandbox;
 import metroline.MainFrame;
 import metroline.screens.GameScreen;
 import metroline.util.ColorUtil;
-import metroline.util.LngUtil;
-import metroline.util.ui.MetrolineCheckbox;
-import metroline.util.ui.MetrolineSlider;
-import metroline.util.ui.StyleUtil;
+import metroline.util.localizate.LngUtil;
+import metroline.util.ui.*;
 
 import javax.swing.*;
 import java.awt.*;
@@ -80,9 +78,8 @@ public class SandboxSettingsScreen extends GameScreen {
         mainPanel.add(createSliderPanel(heightSlider), gbc);
 
         // Настройки внешнего вида
-        roundStationsCheck = StyleUtil.createMetrolineCheckBox(
-                LngUtil.translatable("world.round_stations"),
-                LngUtil.translatable("world.round_stations_desc")
+        roundStationsCheck = StyleUtil.createMetrolineCheckBox("world.round_stations",
+                "world.round_stations_desc"
         );
         mainPanel.add(roundStationsCheck, gbc);
 
@@ -93,11 +90,11 @@ public class SandboxSettingsScreen extends GameScreen {
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
         buttonPanel.setBackground(StyleUtil.BACKGROUND_COLOR);
 
-        buttonPanel.add(StyleUtil.createMetrolineButton(
+        buttonPanel.add(MetrolineButton.createMetrolineButton(
                 LngUtil.translatable("world.back"),
                 e -> parent.switchScreen("menu")
         ));
-        buttonPanel.add(StyleUtil.createMetrolineButton(
+        buttonPanel.add(MetrolineButton.createMetrolineButton(
                 LngUtil.translatable("world.create_sandbox"),
                 e -> createSandboxWorld()
         ));
@@ -123,13 +120,13 @@ public class SandboxSettingsScreen extends GameScreen {
         panel.setBackground(StyleUtil.BACKGROUND_COLOR);
         panel.setMaximumSize(new Dimension(400, 50));
 
-        JLabel label = StyleUtil.createMetrolineLabel(
+        MetrolineLabel label = StyleUtil.createMetrolineLabel(
                 LngUtil.translatable(slider == widthSlider ? "world.width" : "world.height"),
                 SwingConstants.LEFT
         );
         label.setFont(new Font("Sans Serif", Font.BOLD, 13));
 
-        JLabel valueLabel = StyleUtil.createMetrolineLabel("", SwingConstants.RIGHT);
+        MetrolineLabel valueLabel = StyleUtil.createMetrolineLabel("", SwingConstants.RIGHT);
         valueLabel.setFont(new Font("Sans Serif", Font.BOLD, 13));
         slider.setValueLabel(valueLabel, " M ");
 
@@ -141,7 +138,7 @@ public class SandboxSettingsScreen extends GameScreen {
     }
 
     private JButton createColorButton() {
-        JButton button = StyleUtil.createMetrolineColorableButton(
+        JButton button = MetrolineButton.createMetrolineColorableButton(
                 LngUtil.translatable("world.color"),
                 e -> showColorSelectionDialog(),
                 new Color(worldColor)

@@ -11,6 +11,7 @@ public abstract class GameScreen extends JPanel {
     public GameScreen(MainFrame parent) {
         this.parent = parent;
         setFocusable(true);
+
     }
 
     /**

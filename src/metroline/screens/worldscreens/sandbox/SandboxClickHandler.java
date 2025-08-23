@@ -8,7 +8,6 @@ import metroline.objects.enums.StationType;
 import metroline.objects.enums.TunnelType;
 import metroline.objects.gameobjects.Label;
 import metroline.screens.worldscreens.normal.GameWorldScreen;
-import metroline.util.LngUtil;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;

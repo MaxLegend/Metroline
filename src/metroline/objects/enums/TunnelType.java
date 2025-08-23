@@ -1,6 +1,6 @@
 package metroline.objects.enums;
 
-import metroline.util.LngUtil;
+import metroline.util.localizate.LngUtil;
 
 public enum TunnelType {
     DESTROYED("ttype.destroyed"),

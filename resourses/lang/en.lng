@@ -21,6 +21,16 @@ toolbar.load_game=Load Game
 toolbar.back_menu=Back in menu
 toolbar.game=Game
 toolbar.exit=Exit in metroline
+toolbar.build_station=●
+toolbar.build_station_desc=Set station
+toolbar.build_tunnel=＝
+toolbar.build_tunnel_desc=Tunnel (Connect stations)
+toolbar.choose_color=🎨
+toolbar.choose_color_desc=Choose station color
+toolbar.cancel_selection=↩
+toolbar.cancel_selection_desc=Cancel selection
+toolbar.destroy=✕
+toolbar.destroy_desc=Destroy
 timebar.pause=Pause
 timebar.timespeed=Time Speed:
 

@@ -9,7 +9,7 @@ import metroline.objects.gameobjects.Station;
 import metroline.objects.gameobjects.Tunnel;
 import metroline.screens.worldscreens.normal.GameWorldScreen;
 import metroline.screens.worldscreens.WorldScreen;
-import metroline.util.LngUtil;
+import metroline.util.localizate.LngUtil;
 import metroline.util.MathUtil;
 import metroline.util.ui.UserInterfaceUtil;
 import metroline.util.ui.StyleUtil;

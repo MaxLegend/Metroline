@@ -76,7 +76,6 @@ public class MetroSerializer {
                             tile.isWater(),
                             tile.getAbilityPay(),
                             tile.getPassengerCount()
-                            // colorToHex(tile.getCurrentColor()) // Удалено, как в оригинале
                     ));
                 }
             }
@@ -226,22 +225,41 @@ public class MetroSerializer {
             }
             writer.write("]\n");
 
-            // Игровая сетка (gameGrid)
+            // Игровая сетка (gameGrid) - теперь одномерный массив
             writer.write("gameGrid:[\n");
-            for (int y = 0; y < world.getHeight(); y++) {
-                for (int x = 0; x < world.getWidth(); x++) {
-                    GameTile tile = world.getGameTile(x,y);
+            GameTile[] gameGrid = world.getGameGrid();
+            for (int i = 0; i < gameGrid.length; i++) {
+                GameTile tile = gameGrid[i];
+                if (tile != null) {
+                    int x = i % world.getWidth();
+                    int y = i / world.getWidth();
                     GameObject content = tile.getContent();
                     writer.write(String.format(
-                            "{x:%d,y:%d,content:%s}\n",
-                            x, y,
+                            "{index:%d,x:%d,y:%d,content:%s}\n",
+                            i, x, y,
                             content != null ? ParsingUtils.serializeGameObject(content) : "null"
                     ));
                 }
             }
             writer.write("]\n");
 
-
+// Gameplay сетка (gameplayGrid) - тоже сохраняем
+            writer.write("gameplayGrid:[\n");
+            GameTile[] gameplayGrid = world.getGameplayGrid();
+            for (int i = 0; i < gameplayGrid.length; i++) {
+                GameTile tile = gameplayGrid[i];
+                if (tile != null) {
+                    int x = i % world.getWidth();
+                    int y = i / world.getWidth();
+                    GameObject content = tile.getContent();
+                    writer.write(String.format(
+                            "{index:%d,x:%d,y:%d,content:%s}\n",
+                            i, x, y,
+                            content != null ? ParsingUtils.serializeGameObject(content) : "null"
+                    ));
+                }
+            }
+            writer.write("]\n");
         }
     }
 
@@ -287,6 +305,7 @@ public class MetroSerializer {
                 if (gameWorld.getWidth() > 0 && gameWorld.getHeight() > 0) {
                     gameWorld.initWorldGrid(); // Инициализируем worldGrid
                     gameWorld.initGameGrid();  // Инициализируем gameGrid
+                    gameWorld.initGameplayGrid();
                 }
                 continue;
             }
@@ -444,26 +463,25 @@ public class MetroSerializer {
             }
 
             if (line.equals("gameGrid:[")) {
-                // Чтение gameGrid (содержимое клеток)
+                // Чтение gameGrid (одномерный массив)
                 while (!(line = reader.readLine()).equals("]")) {
                     line = line.trim();
                     if (!line.startsWith("{") || !line.endsWith("}")) continue;
                     String content = line.substring(1, line.length() - 1);
                     String[] parts = content.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
-                    if (parts.length < 3) {
+                    if (parts.length < 4) {
                         System.err.println("Недостаточно частей при парсинге gameGrid: " + line);
                         continue;
                     }
 
                     try {
-                        int x = Integer.parseInt(ParsingUtils.extractValue(parts[0], "x"));
-                        int y = Integer.parseInt(ParsingUtils.extractValue(parts[1], "y"));
-                        String contentStr = ParsingUtils.extractValue(parts[2], "content");
+                        int index = Integer.parseInt(ParsingUtils.extractValue(parts[0], "index"));
+                        String contentStr = ParsingUtils.extractValue(parts[3], "content");
 
                         if (!contentStr.equals("null")) {
-                            GameObject obj = ParsingUtils.parseGameObject(contentStr, gameWorld, stationIdMap); // Используем вспомогательный метод
-                            if (obj != null && gameWorld.gameGrid != null && x < gameWorld.getWidth() && y < gameWorld.getHeight()) {
-                                gameWorld.getGameplayTile(x,y).setContent(obj);
+                            GameObject obj = ParsingUtils.parseGameObject(contentStr, gameWorld, stationIdMap);
+                            if (obj != null && gameWorld.gameGrid != null && index < gameWorld.gameGrid.length) {
+                                gameWorld.gameGrid[index].setContent(obj);
                             }
                         }
                     } catch (Exception e) {
@@ -471,6 +489,37 @@ public class MetroSerializer {
                         e.printStackTrace();
                     }
                 }
+                continue;
+            }
+
+            if (line.equals("gameplayGrid:[")) {
+                // Чтение gameplayGrid (одномерный массив)
+                while (!(line = reader.readLine()).equals("]")) {
+                    line = line.trim();
+                    if (!line.startsWith("{") || !line.endsWith("}")) continue;
+                    String content = line.substring(1, line.length() - 1);
+                    String[] parts = content.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
+                    if (parts.length < 4) {
+                        System.err.println("Недостаточно частей при парсинге gameplayGrid: " + line);
+                        continue;
+                    }
+
+                    try {
+                        int index = Integer.parseInt(ParsingUtils.extractValue(parts[0], "index"));
+                        String contentStr = ParsingUtils.extractValue(parts[3], "content");
+
+                        if (!contentStr.equals("null")) {
+                            GameObject obj = ParsingUtils.parseGameObject(contentStr, gameWorld, stationIdMap);
+                            if (obj != null && gameWorld.gameplayGrid != null && index < gameWorld.gameplayGrid.length) {
+                                gameWorld.gameplayGrid[index].setContent(obj);
+                            }
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Ошибка при парсинге gameplayGrid: " + line);
+                        e.printStackTrace();
+                    }
+                }
+                continue;
             }
         }
     }

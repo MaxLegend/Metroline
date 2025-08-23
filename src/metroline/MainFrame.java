@@ -10,12 +10,15 @@ import metroline.screens.panel.LinesLegendWindow;
 import metroline.screens.worldscreens.CachedWorldScreen;
 import metroline.screens.worldscreens.normal.GameWorldScreen;
 import metroline.util.MetroLogger;
+import metroline.util.localizate.ITranslatable;
+import metroline.util.localizate.LngUtil;
 import metroline.util.ui.tooltip.CursorTooltip;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.ArrayList;
 
 /**
  * Main application frame that contains all game screens and toolbar
@@ -39,7 +42,7 @@ public class MainFrame extends JFrame {
 
     public LinesLegendWindow legendWindow;
 
-
+    public final ArrayList<ITranslatable> translatables = new ArrayList<>();
     public MainFrameUI mainFrameUI;
     // Настройки стиля
     static {
@@ -68,9 +71,9 @@ public class MainFrame extends JFrame {
             }
         });
         initializeWindow(false);
-    //    setupKeyBindings();
 
 
+        updateTranslations();
 
 
     }
@@ -78,6 +81,9 @@ public class MainFrame extends JFrame {
         return INSTANCE;
     }
 
+    public ArrayList getTranslatables() {
+        return translatables;
+    }
     private void initializeWindow(boolean preserveState) {
         try {
         String previousScreenName = currentScreenName;
@@ -142,8 +148,25 @@ public class MainFrame extends JFrame {
     }
 }
 
+    public void updateTranslations() {
+        for (ITranslatable tc : translatables) {
+            tc.updateTranslation();
+        }
+    }
+    public void updateLanguage() {
+        LngUtil.setLanguage(LngUtil.getCurrentLanguage());
+        updateTranslations();
+    }
+    public void changeLanguage() {
+        if (LngUtil.getCurrentLanguage().equals("ru")) {
+            LngUtil.setLanguage("en");
 
+        } else {
+            LngUtil.setLanguage("ru");
 
+        }
+        updateTranslations();
+    }
     public void switchScreen(String screenName) {
         mainFrameUI.switchScreen(screenName);
     }

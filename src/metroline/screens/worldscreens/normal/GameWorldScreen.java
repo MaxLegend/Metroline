@@ -49,6 +49,7 @@ public class GameWorldScreen extends CachedWorldScreen {
 
         lastFpsTime = System.currentTimeMillis();
         lastWorldUpdateTime = lastFpsTime;
+        parent.updateLanguage();
     }
 
 
@@ -151,51 +152,6 @@ public class GameWorldScreen extends CachedWorldScreen {
         updateRenderStats(renderStartTime);
     }
 
-//    @Override
-//    protected void drawDynamicWorld(Graphics2D g) {
-//        AffineTransform originalTransform = g.getTransform();
-//
-//        // Туннели
-//        for (Tunnel tunnel : getWorld().getTunnels()) {
-//            tunnel.draw(g, 0, 0, 1);
-//        }
-//
-//        // Станции
-//        if(getWorld().isRoundStationsEnabled()) {
-//            // Сначала рисуем цветные кольца и переходы
-//            for (Station station : getWorld().getStations()) {
-//                StationRender.drawWorldColorRing(station, g, 0, 0, 1);
-//                StationRender.drawRoundTransfer(station, g, 0, 0, 1);
-//            }
-//            // Затем сами станции в правильном порядке
-//            for (Station station : getAllStationsSorted()) {
-//                StationRender.drawRoundStation(station, g, 0, 0, 1);
-//            }
-//        } else {
-//            // Квадратные станции
-//            for (Station station : getWorld().getStations()) {
-//                StationRender.drawWorldColorSquare(station, g, 0, 0, 1);
-//                StationRender.drawRoundTransfer(station, g, 0, 0, 1);
-//            }
-//            for (Station station : getAllStationsSorted()) {
-//                StationRender.drawSquareStation(station, g, 0, 0, 1);
-//            }
-//        }
-//
-//        // Игровые объекты
-//        if (getWorld() instanceof GameWorld) {
-//            for (GameplayUnits unit : ((GameWorld)getWorld()).getGameplayUnits()) {
-//                unit.draw(g, 0, 0, 1);
-//            }
-//        }
-//
-//        // Метки
-//        for (Label label : getWorld().getLabels()) {
-//            label.draw(g, 0, 0, 1);
-//        }
-//
-//        g.setTransform(originalTransform);
-//    }
 
     private void drawSelections(Graphics2D g) {
         if(getWorld().isRoundStationsEnabled()) {

@@ -60,6 +60,16 @@ toolbar.load_game=Загрузить игру
 toolbar.back_menu=Выход в меню
 toolbar.game=Игра
 toolbar.exit=Выход из игры
+toolbar.build_station=●
+toolbar.build_station_desc=Установить станцию
+toolbar.build_tunnel=＝
+toolbar.build_tunnel_desc=Соединить станции туннелем
+toolbar.choose_color=🎨
+toolbar.choose_color_desc=Выбрать цвет станции
+toolbar.cancel_selection=↩
+toolbar.cancel_selection_desc=Отменить все
+toolbar.destroy=✕
+toolbar.destroy_desc=Разрушить станцию
 timebar.pause=Пауза
 timebar.timespeed=Скорость времени:
 

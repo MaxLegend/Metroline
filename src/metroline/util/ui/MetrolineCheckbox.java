@@ -1,5 +1,8 @@
 package metroline.util.ui;
 
+import metroline.util.localizate.ITranslatable;
+import metroline.util.localizate.LngUtil;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
@@ -8,8 +11,9 @@ import java.io.Serializable;
 import java.util.TimerTask;
 import java.util.Timer;
 
-public class MetrolineCheckbox extends JCheckBox {
+public class MetrolineCheckbox extends JCheckBox implements ITranslatable {
     private String tooltipText;
+    private String titleText;
     private Timer hoverTimer;
     private JWindow tooltipWindow;
     private static final int HOVER_DELAY = 10; // Задержка перед показом (мс)
@@ -18,6 +22,7 @@ public class MetrolineCheckbox extends JCheckBox {
 
     public MetrolineCheckbox(String text, String tooltipText) {
         super(text);
+        this.titleText = text;
         this.tooltipText = tooltipText;
         setIcon(new MetrolineCheckboxUI(false));
         setSelectedIcon(new MetrolineCheckboxUI(true));
@@ -48,7 +53,16 @@ public class MetrolineCheckbox extends JCheckBox {
             }
         });
     }
+    @Override
+    public void setToolTipText(String text) {
+        tooltipText = text;
+    }
 
+    @Override
+    public void updateTranslation() {
+        setToolTipText(LngUtil.translatable(tooltipText));
+        setText(LngUtil.translatable(titleText));
+    }
     private void startHoverTimer(MouseEvent e) {
         cancelHoverTimer();
         hoverTimer = new Timer();
@@ -131,6 +145,8 @@ public class MetrolineCheckbox extends JCheckBox {
             tooltipWindow = null;
         }
     }
+
+
 
     // Ваш существующий класс MetrolineCheckbox
     public static class MetrolineCheckboxUI implements Icon, Serializable {

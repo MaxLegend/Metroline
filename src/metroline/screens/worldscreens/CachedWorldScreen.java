@@ -10,11 +10,9 @@ import metroline.objects.gameobjects.Station;
 import metroline.objects.gameobjects.Tunnel;
 import metroline.screens.panel.LinesLegendWindow;
 import metroline.screens.render.StationRender;
-import metroline.util.debug.DebugInfoRenderer;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
-import java.awt.image.BufferedImage;
 import java.awt.image.VolatileImage;
 import java.util.ArrayList;
 import java.util.List;
@@ -77,22 +75,13 @@ public abstract class CachedWorldScreen extends WorldScreen {
     protected VolatileImage createCompatibleVolatileImage(int width, int height) {
         GraphicsConfiguration gc = GraphicsEnvironment.getLocalGraphicsEnvironment()
                                                       .getDefaultScreenDevice().getDefaultConfiguration();
-        System.out.println("CREATED VOLATILE IMAGE " + width + " " + height);
         return gc.createCompatibleVolatileImage(width, height, Transparency.TRANSLUCENT);
     }
 
-    protected BufferedImage createCompatibleImage(int width, int height) {
-        GraphicsConfiguration gc = GraphicsEnvironment.getLocalGraphicsEnvironment()
-                                                      .getDefaultScreenDevice().getDefaultConfiguration();
-        return gc.createCompatibleImage(width, height, Transparency.TRANSLUCENT);
-    }
 
     public void invalidateCache() {
-
             staticCacheValid = false;
             worldChanged = true;
-
-
     }
 
     protected void updateStaticWorldCache(int width, int height) {
@@ -106,8 +95,7 @@ public abstract class CachedWorldScreen extends WorldScreen {
             if (staticWorldCache != null) {
                 staticWorldCache.flush();
             }
-            if(width >0 && height >0)
-                staticWorldCache = createCompatibleVolatileImage(width * TILE_SIZE, height * TILE_SIZE);
+            staticWorldCache = createCompatibleVolatileImage(width * TILE_SIZE, height * TILE_SIZE);
         }
 
         // Валидация без рекурсивных вызовов
@@ -211,6 +199,7 @@ public abstract class CachedWorldScreen extends WorldScreen {
     protected void drawDynamicWorld(Graphics2D g) {
         AffineTransform originalTransform = g.getTransform();
 
+        drawAnimatedWater(g);
         drawTunnels(g);
         drawStations(g);
         drawGameplayUnits(g);
@@ -262,7 +251,22 @@ public abstract class CachedWorldScreen extends WorldScreen {
             label.draw(g, 0, 0, 1);
         }
     }
+    protected void drawAnimatedWater(Graphics2D g) {
+        int tileSize = 32; // или твоя константа размера
 
+        for (int y = 0; y < getWorld().getHeight(); y++) {
+            for (int x = 0; x < getWorld().getWidth(); x++) {
+                WorldTile tile = getWorld().getWorldTile(x, y);
+                if (tile != null && tile.isWater()) {
+                    int drawX = x * tileSize;
+                    int drawY = y * tileSize;
+
+                    g.setColor(tile.getAnimatedWaterColor());
+                    g.fillRect(drawX, drawY, tileSize, tileSize);
+                }
+            }
+        }
+    }
 
     protected List<Station> getAllStationsSorted() {
         List<Station> stations = new ArrayList<>(getWorld().getStations());
@@ -288,27 +292,5 @@ public abstract class CachedWorldScreen extends WorldScreen {
 
 
 
-    protected void drawDebugInfo(Graphics2D g, Object selectedObject) {
-        g.setFont(debugFont);
-        g.setColor(Color.YELLOW);
 
-        int yPos = 60;
-        String[] debugInfo = {
-                "=== GLOBAL DEBUG INFO ===",
-                "Stations: " + getWorld().getStations().size(),
-                "Tunnels: " + getWorld().getTunnels().size(),
-                "Labels: " + getWorld().getLabels().size(),
-                String.format("Zoom: %.2f", zoom),
-                "Offset: (" + offsetX + "," + offsetY + ")"
-        };
-
-        for (String line : debugInfo) {
-            g.drawString(line, 10, yPos);
-            yPos += 15;
-        }
-
-        if (selectedObject != null) {
-            DebugInfoRenderer.renderDebugInfo(g, selectedObject, getWorld(), yPos);
-        }
-    }
 }

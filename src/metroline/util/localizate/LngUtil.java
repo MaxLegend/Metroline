@@ -1,4 +1,6 @@
-package metroline.util;
+package metroline.util.localizate;
+
+import metroline.util.MetroLogger;
 
 import java.io.IOException;
 import java.io.InputStream;

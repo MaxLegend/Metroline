@@ -1,8 +1,6 @@
 package metroline.objects.enums;
 
-import metroline.util.LngUtil;
-
-import java.awt.*;
+import metroline.util.localizate.LngUtil;
 
 public enum GameplayUnitsType {
     BIG_HOUSE(1.1f, "units.big_house"),

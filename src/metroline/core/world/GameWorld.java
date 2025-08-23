@@ -14,7 +14,7 @@ import metroline.objects.gameobjects.*;
 import metroline.screens.panel.LinesLegendWindow;
 import metroline.screens.worldscreens.normal.GameWorldScreen;
 import metroline.screens.worldscreens.sandbox.SandboxWorldScreen;
-import metroline.util.LngUtil;
+import metroline.util.localizate.LngUtil;
 import metroline.util.MetroLogger;
 import metroline.util.PerlinNoise;
 import metroline.util.VoronoiNoise;
@@ -787,7 +787,8 @@ public class GameWorld extends World {
             this.height = loadedWorld.height;
             this.money = loadedWorld.money;
             this.worldGrid = loadedWorld.worldGrid; // Ссылка
-            this.gameGrid = loadedWorld.gameGrid;   // Ссылка
+            this.gameGrid = loadedWorld.gameGrid;
+            this.gameplayGrid = loadedWorld.gameplayGrid;  // Ссылка
             this.stations = loadedWorld.stations;   // Ссылка
             this.gameplayUnits = loadedWorld.gameplayUnits; // Ссылка
             this.tunnels = loadedWorld.tunnels;     // Ссылка

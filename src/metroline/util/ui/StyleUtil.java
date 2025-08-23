@@ -4,8 +4,6 @@ import javax.swing.*;
 import javax.swing.plaf.basic.BasicScrollBarUI;
 import java.awt.*;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 
 public class StyleUtil {
 
@@ -13,8 +11,8 @@ public class StyleUtil {
     public static final Color BACKGROUND_COLOR2 = new Color(60, 60, 60);
     public static final Color FOREGROUND_COLOR = new Color(220, 220, 220);
 
-    public static JLabel createMetrolineLabel(String text, int swing) {
-        JLabel label = new JLabel(text, swing);
+    public static MetrolineLabel createMetrolineLabel(String text, int swing) {
+        MetrolineLabel label = new MetrolineLabel(text, swing);
         label.setForeground(StyleUtil.FOREGROUND_COLOR);
         label.setFont(new Font("Arial", Font.PLAIN, 14));
         return label;
@@ -52,46 +50,8 @@ public class StyleUtil {
         return button;
     }
 
-    public static JButton createMetrolineButton(String text, ActionListener action) {
-        JButton button = new JButton(text);
-        button.setPreferredSize(new Dimension(200, 40));
-        button.setBackground(new Color(50, 50, 50));
-        button.setForeground(Color.WHITE);
-        button.setFont(new Font("Sans Serif", Font.BOLD, 13));
-        button.setBorder(BorderFactory.createEmptyBorder(5, 15, 5, 15));
-        button.setFocusPainted(false);
-        button.setHorizontalAlignment(SwingConstants.CENTER);
-        button.setContentAreaFilled(false);
-        button.setOpaque(true);
-        button.addActionListener(action);
-        button.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {button.setBackground(new Color(80, 80, 80));}
-            @Override
-            public void mouseExited(MouseEvent e) {
-                button.setBackground(new Color(60, 60, 60));
-            }
-        });
-        return button;
-    }
-    public static JButton createMetrolineColorableButton(String text, ActionListener action, Color color) {
-        JButton button = new JButton(text);
-        button.setPreferredSize(new Dimension(200, 40));
-        button.setBackground(color);
-        button.setForeground(Color.WHITE);
-        button.setFont(new Font("Sans Serif", Font.BOLD, 13));
-        button.setBorder(BorderFactory.createEmptyBorder(5, 15, 5, 15));
-        button.setFocusPainted(false);
-        button.setHorizontalAlignment(SwingConstants.CENTER);
-        button.setContentAreaFilled(false);
-        button.setOpaque(true);
-        button.addActionListener(action);
-        button.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) {button.setBackground(StyleUtil.changeColorShade(color, 20));}
-            public void mouseExited(MouseEvent e) {button.setBackground(color);}
-        });
-        return button;
-    }
+
+
 
 
 

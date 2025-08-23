@@ -1,5 +1,8 @@
 package metroline.util.ui;
 
+import metroline.util.localizate.ITranslatable;
+import metroline.util.localizate.LngUtil;
+
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -10,7 +13,7 @@ import java.text.DecimalFormat;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class MetrolineSlider extends JComponent implements SwingConstants {
+public class MetrolineSlider extends JComponent implements SwingConstants, ITranslatable {
 
 
     private String tooltipText;
@@ -114,7 +117,7 @@ public class MetrolineSlider extends JComponent implements SwingConstants {
             }
         });
     }
-    public void setValueLabel(JLabel label, String suffix) {
+    public void setValueLabel(MetrolineLabel label, String suffix) {
         this.valueLabel = label;
         this.valueSuffix = suffix != null ? suffix : "";
         updateValueLabel();
@@ -126,6 +129,12 @@ public class MetrolineSlider extends JComponent implements SwingConstants {
         }
     }
 
+    public String getValueSuffix() {
+        return valueSuffix;
+    }
+    public void setMetrosliderTooltip(String tooltipText) {
+        this.tooltipText = tooltipText;
+    }
     private void startHoverTimer(MouseEvent e) {
         cancelHoverTimer();
         hoverTimer = new Timer();
@@ -316,4 +325,8 @@ public class MetrolineSlider extends JComponent implements SwingConstants {
     }
 
 
+    @Override
+    public void updateTranslation() {
+        setMetrosliderTooltip(LngUtil.translatable(tooltipText));
+    }
 }

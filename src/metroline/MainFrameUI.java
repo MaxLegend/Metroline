@@ -13,8 +13,9 @@ import metroline.screens.worldscreens.normal.GameWorldScreen;
 import metroline.screens.worldscreens.sandbox.SandboxSettingsScreen;
 import metroline.screens.worldscreens.sandbox.SandboxWorldScreen;
 import metroline.util.IntegerDocumentFilter;
-import metroline.util.LngUtil;
+import metroline.util.localizate.LngUtil;
 import metroline.util.ui.MetrolineButton;
+import metroline.util.ui.MetrolineLabel;
 import metroline.util.ui.MetrolinePopupMenu;
 import metroline.util.ui.MetrolineToggleButton;
 import metroline.util.ui.tooltip.CursorTooltip;
@@ -30,10 +31,10 @@ public class MainFrameUI {
     public static MainFrame PARENT;
     private GameScreen currentScreen;
     private String currentScreenName;
-    private JLabel timeLabel = new JLabel("00:00 01.01.0000");
+    private MetrolineLabel timeLabel = new MetrolineLabel("00:00 01.01.0000");
     private JToolBar toolBar;
     public LinesLegendWindow legendWindow;
-    private JButton legendButton;
+    private MetrolineButton legendButton;
     private MetrolineButton economicLayerButton;
     public JLabel moneyLabel = new JLabel("100");
     private JPanel timePanel = new JPanel();
@@ -59,13 +60,14 @@ public class MainFrameUI {
         PARENT = parent;
         initUI();
         initTimeUpdater();
+        PARENT.updateLanguage();
     }
     public void initUI() {
         initTimePanel();
         initLegendWindow();
         initToolBar();
         initToolPanel();
-        CursorTooltip.init( PARENT);
+        CursorTooltip.init(PARENT);
     }
 
 
@@ -77,7 +79,7 @@ public class MainFrameUI {
         toolPanel.setPreferredSize(new Dimension(60, 0));
         toolPanel.setVisible(false);
         // Заглушка для боковой панели
-        JLabel placeholder = new JLabel("Tools");
+        MetrolineLabel placeholder = new MetrolineLabel("Tools");
         placeholder.setForeground(Color.WHITE);
         placeholder.setAlignmentX(Component.CENTER_ALIGNMENT);
         toolPanel.add(placeholder);
@@ -96,14 +98,14 @@ public class MainFrameUI {
     private JPanel createToolsPanel() {
         JPanel toolsPanel = new JPanel();
         toolsPanel.setBackground(new Color(60, 60, 60));
-        toolsPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 0));
+        toolsPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 0, 0));
 
         // Создаем кнопки инструментов
-        stationBtn = createFullWidthButton("●", "toolbar.build_station");
-        tunnelBtn = createFullWidthButton("＝", "toolbar.build_tunnel");
-        destroyBtn = createFullWidthButton("✕", "toolbar.destroy");
-        colorBtn = createFullWidthButton("🎨", "toolbar.choose_color");
-        cancelBtn = createFullWidthButton("↩", "toolbar.cancel_selection");
+        stationBtn = new MetrolineToggleButton("toolbar.build_station", "toolbar.build_station_desc");
+        tunnelBtn = new MetrolineToggleButton("toolbar.build_tunnel", "toolbar.build_tunnel_desc");
+        destroyBtn = new MetrolineToggleButton("toolbar.destroy", "toolbar.destroy_desc");
+        colorBtn = new MetrolineToggleButton("toolbar.choose_color", "toolbar.choose_color_desc");
+        cancelBtn = new MetrolineToggleButton("toolbar.cancel_selection", "toolbar.cancel_selection_desc");
 
         // Добавляем слушатели
         setupToolButtonsListeners();
@@ -115,8 +117,15 @@ public class MainFrameUI {
         toolsPanel.add(colorBtn);
         toolsPanel.add(cancelBtn);
 
+        PARENT.translatables.add(stationBtn);
+        PARENT.translatables.add(tunnelBtn);
+        PARENT.translatables.add(destroyBtn);
+        PARENT.translatables.add(colorBtn);
+        PARENT.translatables.add(cancelBtn);
+
         return toolsPanel;
     }
+
 
     private void setupToolButtonsListeners() {
         stationBtn.addActionListener(e -> {
@@ -211,13 +220,6 @@ public class MainFrameUI {
         if (colorBtn != selectedBtn) colorBtn.setSelected(false);
         if (cancelBtn != selectedBtn) cancelBtn.setSelected(false);
     }
-    // Вспомогательный метод для создания кнопок во всю ширину
-    private MetrolineToggleButton createFullWidthButton(String text, String tooltipKey) {
-        MetrolineToggleButton button = new MetrolineToggleButton(text);
-        button.setTooltipText(LngUtil.translatable(tooltipKey));
-        button.setPreferredSize(new Dimension(35, 25));
-        return button;
-    }
 
     public void toggleToolbar() {
         toolPanelVisible = !toolPanelVisible;
@@ -229,16 +231,19 @@ public class MainFrameUI {
         JPanel panel = new JPanel();
         panel.setBackground(new Color(60, 60, 60));
 
-        timeLabel = new JLabel(lastDisplayedTime);
+        timeLabel = new MetrolineLabel(lastDisplayedTime);
         timeLabel.setForeground(Color.WHITE);
         timeLabel.setFont(new Font("Sans Serif", Font.BOLD, 13));
         panel.add(timeLabel);
 
-        panel.add(MetrolineButton.createMetrolineInGameButton(
-                LngUtil.translatable("timebar.pause"),
+        MetrolineButton pauseButton = MetrolineButton.createMetrolineInGameButton(
+                "timebar.pause",
                 e -> timeControl()
-        ));
+        );
+        panel.add(pauseButton);
+
         panel.add(createTimeScalePanel(), BorderLayout.EAST);
+        PARENT.translatables.add(pauseButton);
         return panel;
     }
 
@@ -246,7 +251,7 @@ public class MainFrameUI {
         JPanel panel = new JPanel();
         panel.setBackground(new Color(60, 60, 60));
 
-        JLabel label = new JLabel(LngUtil.translatable("timebar.timespeed"));
+        MetrolineLabel label = new MetrolineLabel("timebar.timespeed");
         label.setFont(new Font("Sans Serif", Font.BOLD, 13));
         label.setForeground(Color.WHITE);
         panel.add(label);
@@ -254,6 +259,7 @@ public class MainFrameUI {
         JTextField timeScaleField = createTimeScaleField();
         panel.add(timeScaleField);
 
+        PARENT.translatables.add(label);
         return panel;
     }
 
@@ -303,13 +309,13 @@ public class MainFrameUI {
         panel.setBackground(new Color(60, 60, 60));
 
         legendButton = MetrolineButton.createMetrolineInGameButton(
-                LngUtil.translatable("legend.button"),
+                "legend.button",
                 e -> toggleLegendWindow()
         );
         panel.add(legendButton, BorderLayout.EAST);
 
         economicLayerButton =  new MetrolineButton(
-                LngUtil.translatable("timebar.economic_layers"),
+                "timebar.economic_layers",
                 e -> showEconomicLayerPopupMenu((MetrolineButton) e.getSource())
         );
         panel.add(economicLayerButton, BorderLayout.WEST);
@@ -318,6 +324,8 @@ public class MainFrameUI {
         moneyLabel.setFont(new Font("Sans Serif", Font.BOLD, 14));
         panel.add(moneyLabel);
 
+        PARENT.translatables.add(legendButton);
+        PARENT.translatables.add(economicLayerButton);
         return panel;
     }
 
@@ -339,21 +347,15 @@ public class MainFrameUI {
         toolBar.setBackground(new Color(60, 60, 60));
 
 
-        JButton optionsButton = createToolBarButton(
+        MetrolineButton optionsButton = MetrolineButton.createMetrolineInGameButton(
                 "toolbar.game",
                 e -> showOptionsPopupMenu((JButton) e.getSource())
         );
         toolBar.add(optionsButton);
-
+        PARENT.translatables.add(optionsButton);
         PARENT.add(toolBar, BorderLayout.NORTH);
     }
 
-    private JButton createToolBarButton(String translationKey, ActionListener listener) {
-        return MetrolineButton.createMetrolineInGameButton(
-                LngUtil.translatable(translationKey),
-                listener
-        );
-    }
 
     private void applyTimeScale(JTextField timeScaleField) {
         try {
