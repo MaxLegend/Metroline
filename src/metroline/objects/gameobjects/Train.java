@@ -187,7 +187,13 @@ public class Train extends GameObject {
         }
         return false;
     }
+    public float getCurrentX() {
+        return currentX;
+    }
 
+    public float getCurrentY() {
+        return currentY;
+    }
     private Station getNextStation() {
         if (currentStation == null) return null;
 
@@ -352,6 +358,9 @@ public class Train extends GameObject {
         AffineTransform oldTransform = g2d.getTransform();
         g2d.translate(screenX, screenY);
         g2d.rotate(getRotationAngle());
+        if (isSelected()) {
+            drawSelection(g2d, zoom);
+        }
 
         // Получаем или создаем кэшированное изображение
         BufferedImage trainImage = getCachedTrainImage(zoom);
@@ -375,7 +384,30 @@ public class Train extends GameObject {
         }
         return cachedTrainImage;
     }
+    /**
+     * Отрисовка выделения поезда
+     */
+    private void drawSelection(Graphics2D g2d, float zoom) {
+        int selectionSize = (int)(30 * zoom);
+        int trainWidth = (int)(24 * zoom);
+        int trainHeight = (int)(18 * zoom);
 
+        g2d.setColor(new Color(255, 255, 0, 100)); // Полупрозрачный желтый
+        g2d.setStroke(new BasicStroke(2 * zoom));
+        g2d.drawRect(-trainWidth/2 - 3, -trainHeight/2 - 3,
+                trainWidth + 6, trainHeight + 6);
+
+        // Анимированное выделение
+        long time = System.currentTimeMillis();
+        float pulse = (float)(Math.sin(time * 0.005) * 0.3 + 0.7);
+
+        g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, pulse * 0.3f));
+        g2d.setColor(Color.YELLOW);
+        g2d.fillRect(-trainWidth/2 - 5, -trainHeight/2 - 5,
+                trainWidth + 10, trainHeight + 10);
+
+        g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+    }
     private void createTrainImageCache(float zoom) {
         int trainWidth = (int)(24 * zoom);
         int trainHeight = (int)(18 * zoom);

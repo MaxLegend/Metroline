@@ -15,7 +15,7 @@ public abstract class GameObject implements Serializable {
     private static final long serialVersionUID = 1L;
     public int x;
     public int y;
-    public boolean selected = false;
+    private boolean selected;
     private World world;
     public String name;
     // Генератор уникальных ID для всех объектов

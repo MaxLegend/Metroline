@@ -13,7 +13,7 @@ import java.awt.event.MouseEvent;
  * Стилизованный пункт меню в стиле Metroline
  */
 public class MetrolineMenuItem extends JMenuItem {
-
+    private String tooltipText;
     public static final Color DEFAULT_BACKGROUND = new Color(60, 60, 60);
     public static final Color HOVER_BACKGROUND = new Color(80, 80, 80);
     public static final Color PRESSED_BACKGROUND = new Color(79, 155, 155);
@@ -24,7 +24,13 @@ public class MetrolineMenuItem extends JMenuItem {
         initStyle();
         initEffects();
     }
+    public void setTooltipText(String tooltipText) {
+        this.tooltipText = tooltipText;
+    }
 
+    public String getTooltipText() {
+        return tooltipText;
+    }
     public MetrolineMenuItem(String text, Runnable action) {
         this(text);
         addActionListener(e -> action.run());

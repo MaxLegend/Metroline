@@ -47,7 +47,7 @@ public class GameWorldScreen extends CachedWorldScreen {
         INSTANCE = this;
 
         this.worldClickController = new WorldClickController(this);
-        setupRepaintTimer();
+        //    setupRepaintTimer();
 
         lastFpsTime = System.currentTimeMillis();
         lastWorldUpdateTime = lastFpsTime;
@@ -85,15 +85,20 @@ public class GameWorldScreen extends CachedWorldScreen {
 
     private void setupRepaintTimer() {
         if (repaintTimer != null && repaintTimer.isRunning()) {
+
             repaintTimer.stop();
         }
 
         repaintTimer = new Timer(RENDER_TIMER_DELAY, e -> {
+            synchronized (this) {
             worldClickController.checkConstructionProgress();
             infoWindows.forEach(InfoWindow::updateInfo);
             ((GameWorld)getWorld()).updateTrains();;
+        //   if(repaintTimer.getDelay() % 4 == 0) System.out.println(repaintTimer.getDelay() + " before World repaint "+ worldClickController.selectedObject);
             repaint();
-        });
+      //      if(repaintTimer.getDelay() % 4 == 0) System.out.println(repaintTimer.getDelay() + " afte World repaint "+ worldClickController.selectedObject );
+        }});
+
         repaintTimer.start();
     }
 
@@ -153,6 +158,7 @@ public class GameWorldScreen extends CachedWorldScreen {
         }
 
         updateRenderStats(renderStartTime);
+
     }
     public void addCustomKeyListeners() {
         addKeyListener(new KeyAdapter() {
@@ -175,6 +181,7 @@ public class GameWorldScreen extends CachedWorldScreen {
         }
     }
     private void drawSelections(Graphics2D g) {
+
         if(getWorld().isRoundStationsEnabled()) {
             for (Station station : getWorld().getStations()) {
                 if (station.isSelected()) {
@@ -188,6 +195,7 @@ public class GameWorldScreen extends CachedWorldScreen {
                 }
             }
         }
+
     }
 
     public List<Station> getAllStationsSorted() {
@@ -321,6 +329,19 @@ public class GameWorldScreen extends CachedWorldScreen {
             }
         }
     }
+    public void showTrainInfo(Train train, int worldX, int worldY) {
+        if (train == null ) {
+            System.out.println("nukktrain");
+            return;
+        }
+        InfoWindow newWindow = new InfoWindow(parent);
+        if(parent.getCurrentScreen() instanceof GameWorldScreen screen) {
+            System.out.println("showTrainInfo");
+            Point screenPoint = screen.worldToScreen(worldX, worldY);
+            Point windowPoint = new Point(screenPoint);
+            newWindow.displayTrainInfo(train, windowPoint);
+        }
+    }
     public void showInfoPanel(Object selectedObject, int worldX, int worldY) {
         if (selectedObject == null ) {
             return;
@@ -335,12 +356,16 @@ public class GameWorldScreen extends CachedWorldScreen {
 
             InfoWindow newWindow = new InfoWindow(parent);
 
+            if (selectedObject instanceof Train) {
+                newWindow.displayTrainInfo((Train) selectedObject, windowPoint);
+            } else
             if (selectedObject instanceof Station) {
                 newWindow.displayStationInfo((Station) selectedObject, windowPoint);
-            } else if (selectedObject instanceof Tunnel) {
+            }
+            else if (selectedObject instanceof Tunnel) {
                 newWindow.displayTunnelInfo((Tunnel) selectedObject, windowPoint);
-            }else if (selectedObject instanceof java.awt.Label) {
-                newWindow.displayLabelInfo((java.awt.Label) selectedObject, windowPoint);
+            }else if (selectedObject instanceof Label) {
+                newWindow.displayLabelInfo((Label) selectedObject, windowPoint);
             }else if (selectedObject instanceof GameplayUnits) {
                 newWindow.displayGameplayUnitsInfo((GameplayUnits) selectedObject, windowPoint);
             }
@@ -444,6 +469,7 @@ public class GameWorldScreen extends CachedWorldScreen {
     public void onActivate() {
         KeyboardController.getInstance().setCurrentWorldScreen(this);
         requestFocusInWindow();
+
         super.onActivate();
 
     }

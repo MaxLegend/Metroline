@@ -97,7 +97,7 @@ public class Label extends GameObject {
             int drawY = (int) ((parentStation.getY() * 32 + offsetY + baseOffsetY) * zoom);
 
             // Настройки внешнего вида
-            Color textColor = selected ? Color.RED : new Color(30, 30, 30);
+            Color textColor = isSelected() ? Color.RED : new Color(30, 30, 30);
             Color bgColor = new Color(255, 255, 255, 180);
 
             // Настройка шрифта
@@ -126,7 +126,7 @@ public class Label extends GameObject {
             g2d.setColor(textColor);
             g2d.drawString(text, drawX, drawY);
 
-            if (selected) {
+            if (isSelected()) {
                 g2d.setColor(Color.YELLOW);
                 g2d.setStroke(new BasicStroke(2 * zoom));
                 g2d.drawRoundRect(drawX - 5, drawY - fm.getAscent() - 4,

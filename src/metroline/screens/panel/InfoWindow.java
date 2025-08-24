@@ -3,10 +3,8 @@ package metroline.screens.panel;
 import metroline.MainFrame;
 
 import metroline.core.time.GameTime;
-import metroline.objects.gameobjects.GameConstants;
-import metroline.objects.gameobjects.GameplayUnits;
-import metroline.objects.gameobjects.Station;
-import metroline.objects.gameobjects.Tunnel;
+import metroline.objects.gameobjects.*;
+import metroline.objects.gameobjects.Label;
 import metroline.screens.worldscreens.normal.GameWorldScreen;
 import metroline.screens.worldscreens.WorldScreen;
 import metroline.util.localizate.LngUtil;
@@ -16,11 +14,12 @@ import metroline.util.ui.StyleUtil;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import java.awt.*;
-import java.awt.event.*;
+
 
 import metroline.core.world.GameWorld;
 
+import java.awt.*;
+import java.awt.event.*;
 
 
 public class InfoWindow extends JWindow {
@@ -380,6 +379,22 @@ public class InfoWindow extends JWindow {
             }
         }
     }
+    public void displayTrainInfo(Train train, Point location) {
+        this.currentObject = train;
+        System.out.println("Train info");
+        updateTrainInfo();
+        setLocation(location);
+        setVisible(true);
+        pack();
+    }
+    public void updateTrainInfo() {
+        if (currentObject instanceof Train) {
+            System.out.println("updateTrainInfo info");
+            Train train = (Train) currentObject;
+            titleLabel.setText(LngUtil.translatable("train.cost." + train.getTrainType().name().toLowerCase()));
+
+        }
+    }
     public void displayStationInfo(Station station, Point location) {
         this.currentObject = station;
         if (editNamePanel.isVisible()) {
@@ -416,8 +431,13 @@ public class InfoWindow extends JWindow {
         setVisible(true);
         pack(); // Обновляем размер окна под содержимое
     }
+
+
     public void updateInfo() {
+
         GameWorld world = (GameWorld) GameWorldScreen.getInstance().getWorld();
+
+
         if (currentObject instanceof Station) {
             Station station = (Station) currentObject;
 
@@ -489,6 +509,7 @@ public class InfoWindow extends JWindow {
 
 
         pack(); // Подгоняем размер окна под содержимое
+
     }
 
     private void updateProgress() {

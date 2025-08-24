@@ -1,13 +1,16 @@
 package metroline.util.ui;
 
+import metroline.MainFrame;
 import metroline.util.localizate.ITranslatable;
 import metroline.util.localizate.LngUtil;
+import metroline.util.ui.tooltip.CursorTooltip;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
 
 public class MetrolineButton extends JButton implements ITranslatable {
     public static final Color DEFAULT_BACKGROUND = new Color(60, 60, 60);
@@ -17,22 +20,25 @@ public class MetrolineButton extends JButton implements ITranslatable {
     public static final Font DEFAULT_FONT = new Font("Sans Serif", Font.BOLD, 13);
 
     private String translationKey;
+    private String tooltipText;
 
     public MetrolineButton(String text) {
         super(text);
         this.translationKey = text;
+        this.tooltipText = "";
         initDefaultStyle();
     }
     public MetrolineButton(String text, String tooltip) {
         super(text);
         this.translationKey = text;
-        setLocalizedTooltip(tooltip);
+        this.tooltipText = tooltip;
         initDefaultStyle();
 
     }
     public MetrolineButton(String text, ActionListener action) {
         super(text);
         this.translationKey = text;
+        this.tooltipText = "";
         initDefaultStyle();
         addActionListener(action);
     }
@@ -40,6 +46,7 @@ public class MetrolineButton extends JButton implements ITranslatable {
     public MetrolineButton(String text, Color customColor, ActionListener action) {
         super(text);
         this.translationKey = text;
+        this.tooltipText = "";
         initCustomColorStyle(customColor);
         addActionListener(action);
     }
@@ -47,7 +54,8 @@ public class MetrolineButton extends JButton implements ITranslatable {
     public MetrolineButton(String iconText, String tooltip, ActionListener action) {
         super(iconText);
         initIconStyle();
-        setLocalizedTooltip(tooltip);
+        this.translationKey = iconText;
+        this.tooltipText = tooltip;
         addActionListener(action);
     }
     public static MetrolineButton createMetrolineButton(String text, ActionListener action) {
@@ -110,18 +118,41 @@ public class MetrolineButton extends JButton implements ITranslatable {
 
         return button;
     }
-    public void setLocalizedTooltip(String tooltipKey) {
-        if (tooltipKey != null && !tooltipKey.isEmpty()) {
-            this.setToolTipText(tooltipKey);
-
-            // Добавляем слушатель для динамического обновления подсказки при изменении языка
-            this.addPropertyChangeListener("ancestor", evt -> {
-                if (this.getToolTipText() != null) {
-                    this.setToolTipText(tooltipKey);
-                }
-            });
-        }
+    @Override
+    public void setToolTipText(String text) {
+        this.tooltipText = text;
     }
+    public void mouseReactions() {
+        addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                if (!isSelected()) {
+                    setBackground(HOVER_BACKGROUND);
+                }
+                // Показываем тултип у курсора
+                Point mousePos = e.getPoint();
+                SwingUtilities.convertPointToScreen(mousePos, MetrolineButton.this);
+                Point framePos = MainFrame.INSTANCE.getLocationOnScreen();
+                CursorTooltip.showTooltip(tooltipText,
+                        mousePos.x - framePos.x,
+                        mousePos.y - framePos.y);
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                if (!isSelected()) {
+                    setBackground(DEFAULT_BACKGROUND);
+                }
+                // Скрываем тултип
+                CursorTooltip.hideTooltip();
+            }
+
+        });
+
+// Добавляем MotionListener для обновления при движении внутри кнопки
+
+    }
+
     private void initDefaultStyle() {
         setForeground(DEFAULT_FOREGROUND);
         setFont(DEFAULT_FONT);
@@ -134,11 +165,20 @@ public class MetrolineButton extends JButton implements ITranslatable {
         addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
+                Point mousePos = e.getPoint();
+                SwingUtilities.convertPointToScreen(mousePos, MetrolineButton.this);
+                Point framePos = MainFrame.INSTANCE.getLocationOnScreen();
+                CursorTooltip.showTooltip(tooltipText,
+                        mousePos.x - framePos.x,
+                        mousePos.y - framePos.y);
                 setBackground(HOVER_BACKGROUND);
+
             }
             @Override
             public void mouseExited(MouseEvent e) {
+                CursorTooltip.hideTooltip();
                 setBackground(DEFAULT_BACKGROUND);
+
             }
             @Override
             public void mousePressed(MouseEvent e) {
@@ -148,6 +188,25 @@ public class MetrolineButton extends JButton implements ITranslatable {
             public void mouseReleased(MouseEvent e) {
                 setBackground(HOVER_BACKGROUND);
             }
+        });
+
+        addMouseMotionListener(new MouseMotionAdapter() {
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                if (CursorTooltip.isVisible() &&
+                        CursorTooltip.getCurrentText().equals(tooltipText)) {
+                    Point mousePos = e.getPoint();
+                    SwingUtilities.convertPointToScreen(mousePos, MetrolineButton.this);
+                    Point framePos = MainFrame.INSTANCE.getLocationOnScreen();
+                    CursorTooltip.showTooltip(tooltipText,
+                            mousePos.x - framePos.x,
+                            mousePos.y - framePos.y);
+                }
+            }
+        });
+        addItemListener(e -> {
+            setBackground(DEFAULT_BACKGROUND);
+
         });
     }
 
@@ -204,7 +263,9 @@ public class MetrolineButton extends JButton implements ITranslatable {
 
     @Override
     protected void paintComponent(Graphics g) {
+
         Graphics2D g2 = (Graphics2D) g.create();
+
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
         // Рисуем фон с закругленными углами
@@ -222,6 +283,8 @@ public class MetrolineButton extends JButton implements ITranslatable {
 
     @Override
     public void updateTranslation() {
+        if(translationKey == null) return;
         setText(LngUtil.translatable(translationKey));
+        setToolTipText(LngUtil.translatable(tooltipText));
     }
 }

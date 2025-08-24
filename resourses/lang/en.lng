@@ -5,6 +5,8 @@ main_menu.load_sandbox=Load Sandbox
 main_menu.load_standart=Load Game
 main_menu.settings=Settings
 main_menu.exit=Exit Game
+main_menu.change_lng=Language: English
+
 world.not_loaded=Failed world load!
 world.not_saved=Failed world save!
 world.loaded=World successfully loaded!
@@ -116,6 +118,7 @@ stype.regular=Regular Station
 stype.transfer=Transfer Station
 stype.terminal=Terminal Station
 stype.transit=Default Station
+stype.depo=Depot
 ttype.destroyed=Destroyed
 ttype.planned=Planned
 ttype.building=Under Construction
@@ -164,4 +167,17 @@ world.gen_abilityPay_zone=Ability Pay Zones
 world.gen_passengerCount_zone=Passengers Zones
 elayer.passenger=Passenger Traffic
 elayer.abilityPay=Affordability
+elayer.gameplayUnits=Gameplay Units
 timebar.economic_layers=Layers
+
+-------------------------------
+# Trains
+-------------------------------
+train.cost.first=Subway Train "Wild West"
+train.cost.old=Subway Train "Republic"
+train.cost.classic=Subway Train "Clinton"
+train.cost.modern=Subway Train "United States"
+train.cost.new=Maglew Train "Trump"
+train.cost.newest=Magletrew "Rubyôm"
+train.cost.futuristic=MGTW "ST-fi"
+train.cost.far_futuristic=mġt-V "Di-X"

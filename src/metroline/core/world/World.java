@@ -8,6 +8,7 @@ import metroline.objects.enums.Direction;
 import metroline.objects.gameobjects.Label;
 import metroline.screens.worldscreens.normal.GameWorldScreen;
 import metroline.screens.worldscreens.WorldScreen;
+import metroline.screens.worldscreens.normal.WorldClickController;
 import metroline.util.*;
 import metroline.util.localizate.LngUtil;
 import metroline.util.serialize.MetroSerializer;
@@ -229,7 +230,23 @@ public class World implements Serializable {
      * @param station Station to remove
      */
     public void removeStation(Station station) {
+        if (GameWorldScreen.INSTANCE != null &&
+                GameWorldScreen.INSTANCE.worldClickController != null) {
+            WorldClickController controller = GameWorldScreen.INSTANCE.worldClickController;
 
+            // Если удаляемая станция является выделенным объектом
+            if (controller.selectedObject == station) {
+                controller.deselectAll();
+            }
+
+            // Если удаляемая станция является selectedStation
+            if (WorldClickController.selectedStation == station) {
+                if (WorldClickController.selectedStation != null) {
+                    WorldClickController.selectedStation.setSelected(false);
+                }
+                WorldClickController.selectedStation = null;
+            }
+        }
         Label label = getLabelForStation(station);
         if (label != null) {
             removeLabel(label);
@@ -348,6 +365,14 @@ public class World implements Serializable {
      * @param tunnel Tunnel to remove
      */
     public void removeTunnel(Tunnel tunnel) {
+        if (GameWorldScreen.INSTANCE != null &&
+                GameWorldScreen.INSTANCE.worldClickController != null) {
+            WorldClickController controller = GameWorldScreen.INSTANCE.worldClickController;
+
+            if (controller.selectedObject == tunnel) {
+                controller.deselectAll();
+            }
+        }
         tunnels.remove(tunnel);
         tunnel.getStart().disconnect(tunnel.getEnd());
         tunnel.getEnd().disconnect(tunnel.getStart());

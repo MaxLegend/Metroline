@@ -92,14 +92,7 @@ public class MainFrame extends JFrame {
     public ArrayList getTranslatables() {
         return translatables;
     }
-    public void safeRepaint() {
-        if (!repaintBlocked) {
-            super.repaint();
-        }
-    }
-    public void setRepaintBlocked(boolean blocked) {
-        this.repaintBlocked = blocked;
-    }
+
     private void initializeWindow(boolean preserveState) {
         try {
         String previousScreenName = currentScreenName;
@@ -198,6 +191,7 @@ public void toggleFullscreen() {
      * @return Current screen (SUDDENLY!)
      */
     public GameScreen getCurrentScreen() {
+
         return mainFrameUI.getCurrentScreen();
     }
 }

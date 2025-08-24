@@ -9,6 +9,7 @@ import metroline.objects.enums.TunnelType;
 import metroline.objects.gameobjects.Label;
 import metroline.objects.gameobjects.*;
 import metroline.util.MetroLogger;
+import metroline.util.localizate.LngUtil;
 import metroline.util.ui.MetrolineButton;
 import metroline.util.ui.MetrolinePopupMenu;
 
@@ -210,13 +211,22 @@ public class WorldClickController {
      * Обычный клик - выбор объектов
      */
     public void handleDefaultLeftClick(int x, int y) {
-        deselectAll();
+        if (selectedObject instanceof Train) {
+            Train selectedTrain = (Train) selectedObject;
+            if (!isClickOnTrain(selectedTrain, x, y)) {
+                deselectAll();
+            }
+        } else {
+            deselectAll();
+        }
 
         // Проверяем объекты в порядке приоритета
-
+        if (trySelectTrain(x, y)) return;
         if (trySelectLabel(x, y)) return;
         if (trySelectStation(x, y)) return;
+
         if (trySelectTunnel(x, y)) return;
+
         if(tryGameplayObject(x, y)) return;
 
 
@@ -444,61 +454,34 @@ public class WorldClickController {
         GameWorldScreen.getInstance().repaint();
     }
 
+
+
+
     /**
-     * Проверка визуальной области метки
+     * Попытка выбрать поезд
      */
-    private boolean isClickOnLabelVisualArea(Label label, int clickX, int clickY) {
-        if (label.getParentGameObject() == null) return false;
+    private boolean trySelectTrain(int cellX, int cellY) {
+        GameWorld world = (GameWorld) GameWorldScreen.getInstance().getWorld();
 
-        GameObject parent = label.getParentGameObject();
-        int relX = label.getX() - parent.getX();
-        int relY = label.getY() - parent.getY();
+        // Сначала проверяем, не выбран ли уже поезд
+        if (selectedObject instanceof Train) {
+            Train selectedTrain = (Train) selectedObject;
+            if (isClickOnTrain(selectedTrain, cellX, cellY)) {
 
-        // Рассчитываем визуальную позицию (упрощенная версия)
-        int baseOffsetX = 32 + 8;
-        int baseOffsetY = 20;
-
-        if (relX < 0) {
-            baseOffsetX = -40; // Приблизительная ширина текста
-        } else if (relX == 0) {
-            baseOffsetX = 0;
-            if (relY < 0) {
-                baseOffsetY = -30;
-            } else if (relY > 0) {
-                baseOffsetY = 50;
+                return true;
             }
         }
 
-        // Проверяем попадание в область текста (с запасом)
-        int visualX = parent.getX() * 32 + baseOffsetX;
-        int visualY = parent.getY() * 32 + baseOffsetY;
-        int margin = 20;
-
-        return Math.abs(clickX * 32 - visualX) <= margin &&
-                Math.abs(clickY * 32 - visualY) <= margin;
-    }
-
-    /**
-     * Проверка границ мира
-     */
-    private boolean isWithinWorldBounds(int x, int y) {
-        return x >= 0 && x < GameWorldScreen.getInstance().getWorld().getWidth() &&
-                y >= 0 && y < GameWorldScreen.getInstance().getWorld().getHeight();
-    }
-
-    /**
-     * Проверка валидности позиции для станции
-     */
-    private boolean isPositionValidForStation(int x, int y) {
-        GameWorld world = (GameWorld) GameWorldScreen.getInstance().getWorld();
-
-        // Проверяем границы мира
-        if (x < 0 || x >= world.getWidth() || y < 0 || y >= world.getHeight()) {
-            return false;
+        // Проверяем все поезда в мире
+        for (Train train : world.getTrains()) {
+            if (isClickOnTrain(train, cellX, cellY)) {
+                System.out.println("Train selected: " + train.getName());
+                selectObject(train, cellX, cellY);
+                return true;
+            }
         }
 
-        // Проверяем, что клетка свободна (нет станции и нет GameplayUnits)
-        return world.getStationAt(x, y) == null;
+        return false;
     }
 
     public void handleRightClick(int x, int y) {
@@ -540,30 +523,157 @@ public class WorldClickController {
      * СЛУЖЕБНЫЕ МЕТОДЫ
      *********************************/
 
+    /**
+     * Проверка визуальной области метки
+     */
+    private boolean isClickOnLabelVisualArea(Label label, int clickX, int clickY) {
+        if (label.getParentGameObject() == null) return false;
 
+        GameObject parent = label.getParentGameObject();
+        int relX = label.getX() - parent.getX();
+        int relY = label.getY() - parent.getY();
 
+        // Рассчитываем визуальную позицию (упрощенная версия)
+        int baseOffsetX = 32 + 8;
+        int baseOffsetY = 20;
+
+        if (relX < 0) {
+            baseOffsetX = -40; // Приблизительная ширина текста
+        } else if (relX == 0) {
+            baseOffsetX = 0;
+            if (relY < 0) {
+                baseOffsetY = -30;
+            } else if (relY > 0) {
+                baseOffsetY = 50;
+            }
+        }
+
+        // Проверяем попадание в область текста (с запасом)
+        int visualX = parent.getX() * 32 + baseOffsetX;
+        int visualY = parent.getY() * 32 + baseOffsetY;
+        int margin = 20;
+
+        return Math.abs(clickX * 32 - visualX) <= margin &&
+                Math.abs(clickY * 32 - visualY) <= margin;
+    }
+    /**
+     * Проверка валидности позиции для станции
+     */
+    private boolean isPositionValidForStation(int x, int y) {
+        GameWorld world = (GameWorld) GameWorldScreen.getInstance().getWorld();
+
+        // Проверяем границы мира
+        if (x < 0 || x >= world.getWidth() || y < 0 || y >= world.getHeight()) {
+            return false;
+        }
+
+        // Проверяем, что клетка свободна (нет станции и нет GameplayUnits)
+        return world.getStationAt(x, y) == null;
+    }
+
+    /**
+     * Проверка границ мира
+     */
+    private boolean isWithinWorldBounds(int x, int y) {
+        return x >= 0 && x < GameWorldScreen.getInstance().getWorld().getWidth() &&
+                y >= 0 && y < GameWorldScreen.getInstance().getWorld().getHeight();
+    }
+
+    private long lastSelectionTime = 0;
+    private String lastSelectionReason = "";
+    public void debugDeselectAll(String reason) {
+        if (selectedObject != null || selectedStation != null) {
+            System.out.println("[DEBUG] Deselecting objects. Reason: " + reason);
+            System.out.println("[DEBUG] Thread: " + Thread.currentThread().getName());
+            System.out.println("[DEBUG] Time since last selection: " + (System.currentTimeMillis() - lastSelectionTime) + "ms");
+
+            // Выводим stack trace чтобы понять откуда вызвано
+            StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+            System.out.println("[DEBUG] Call stack:");
+            for (int i = 2; i < Math.min(6, stackTrace.length); i++) {
+                System.out.println("  " + stackTrace[i]);
+            }
+            System.out.println();
+        }
+
+        lastSelectionReason = reason;
+        deselectAll();
+    }
+    private void deselectAllInternal(String reason) {
+        GameWorld world = (GameWorld) GameWorldScreen.getInstance().getWorld();
+
+        boolean hadSelection = false;
+
+        for (Station station : world.getStations()) {
+            if (station.isSelected()) {
+                hadSelection = true;
+                station.setSelected(false);
+            }
+        }
+
+        for (Label label : world.getLabels()) {
+            if (label.isSelected()) {
+                hadSelection = true;
+                label.setSelected(false);
+            }
+        }
+
+        for (Tunnel tunnel : world.getTunnels()) {
+            if (tunnel.isSelected()) {
+                hadSelection = true;
+                tunnel.setSelected(false);
+            }
+        }
+
+        for (GameplayUnits unit : world.getGameplayUnits()) {
+            if (unit.isSelected()) {
+                hadSelection = true;
+                unit.setSelected(false);
+            }
+        }
+
+        for (Train train : world.getTrains()) {
+            if (train.isSelected()) {
+                hadSelection = true;
+                train.setSelected(false);
+            }
+        }
+
+        if (hadSelection) {
+            System.out.println("[DEBUG] Actually deselected objects. Reason: " + reason);
+        }
+
+        selectedObject = null;
+        selectedStation = null;
+    }
     /**
      * Снятие выделения со всех объектов
      */
     public void deselectAll() {
-        GameWorld world = (GameWorld) GameWorldScreen.getInstance().getWorld();
-
-        for (Station station : world.getStations()) {
-            station.setSelected(false);
-        }
-
-        for (Label label : world.getLabels()) {
-            label.setSelected(false);
-        }
-
-        for (Tunnel tunnel : world.getTunnels()) {
-            tunnel.setSelected(false);
-        }
-        for (GameplayUnits unit : world.getGameplayUnits()) {
-            unit.setSelected(false);
-        }
-        selectedObject = null;
-        selectedStation = null;
+        deselectAllInternal("unknown");
+//        GameWorld world = (GameWorld) GameWorldScreen.getInstance().getWorld();
+//
+//        for (Station station : world.getStations()) {
+//            station.setSelected(false);
+//        }
+//
+//        for (Label label : world.getLabels()) {
+//            label.setSelected(false);
+//        }
+//
+//        for (Tunnel tunnel : world.getTunnels()) {
+//            tunnel.setSelected(false);
+//        }
+//        for (GameplayUnits unit : world.getGameplayUnits()) {
+//            unit.setSelected(false);
+//        }
+//
+//        for (Train train : world.getTrains()) {
+//            train.setSelected(false);
+//        }
+//
+//        selectedObject = null;
+//        selectedStation = null;
     }
 
     /**
@@ -598,6 +708,9 @@ public class WorldClickController {
      * Проверка прогресса строительства
      */
     public void checkConstructionProgress() {
+
+        validateSelection();
+
         GameWorld world = (GameWorld) GameWorldScreen.getInstance().getWorld();
 
         // Создаем копии списков для безопасной итерации
@@ -612,8 +725,10 @@ public class WorldClickController {
                     if (station.getType() == StationType.BUILDING && progress >= 1.0f) {
                         completeConstruction(station);
                     } else if (station.getType() == StationType.DESTROYED && progress <= 0f) {
-                        world.removeStation(station);
-                        GameWorldScreen.getInstance().repaint();
+                        if (selectedObject != station) {
+                            world.removeStation(station);
+                            GameWorldScreen.getInstance().repaint();
+                        }
                     }
                 }
             } catch (Exception e) {
@@ -629,14 +744,17 @@ public class WorldClickController {
                     if (tunnel.getType() == TunnelType.BUILDING && progress >= 1.0f) {
                         completeConstruction(tunnel);
                     } else if (tunnel.getType() == TunnelType.DESTROYED && progress <= 0f) {
-                        world.removeTunnel(tunnel);
-                        GameWorldScreen.getInstance().repaint();
+                        if (selectedObject != tunnel) {
+                            world.removeTunnel(tunnel);
+                            GameWorldScreen.getInstance().repaint();
+                        }
                     }
                 }
             } catch (Exception e) {
                 MetroLogger.logError("Error processing tunnel", e);
             }
         }
+
     }
 
     /**
@@ -648,10 +766,45 @@ public class WorldClickController {
             if (GameWorldScreen.getInstance().getWorld() instanceof GameWorld world) {
                 world.updateConnectedTunnels(station);
             }
-            GameWorldScreen.getInstance().repaint();
+
         }
     }
+    /**
+     * Проверяет валидность выделенных объектов и сбрасывает выделение если объект удален
+     */
+    public void validateSelection() {
+        GameWorld world = (GameWorld) screen.getWorld();
 
+        // Проверяем selectedObject
+        if (selectedObject != null) {
+            boolean objectExists = false;
+
+            if (selectedObject instanceof Station) {
+                objectExists = world.getStations().contains(selectedObject);
+            } else if (selectedObject instanceof Tunnel) {
+                objectExists = world.getTunnels().contains(selectedObject);
+            } else if (selectedObject instanceof Label) {
+                objectExists = world.getLabels().contains(selectedObject);
+            } else if (selectedObject instanceof GameplayUnits) {
+                objectExists = world.getGameplayUnits().contains(selectedObject);
+            } else if (selectedObject instanceof Train) {
+                objectExists = world.getTrains().contains(selectedObject);
+            }
+
+            if (!objectExists) {
+                selectedObject = null;
+                dragOffset = null;
+            }
+        }
+
+        // Проверяем selectedStation
+        if (selectedStation != null) {
+            if (!world.getStations().contains(selectedStation)) {
+                selectedStation.setSelected(false);
+                selectedStation = null;
+            }
+        }
+    }
     /**
      * Завершение строительства туннеля
      */
@@ -662,7 +815,7 @@ public class WorldClickController {
                     tunnel.getEnd().getType() != StationType.PLANNED &&
                     tunnel.getEnd().getType() != StationType.BUILDING) {
                 tunnel.setType(TunnelType.ACTIVE);
-                GameWorldScreen.getInstance().repaint();
+
             }
         }
     }
@@ -780,56 +933,30 @@ public class WorldClickController {
 
         return colorBtn;
     }
+
+
+
     /**
-     * Показ меню депо с выбором поездов
+     * Проверка попадания клика на поезд
      */
-//    private void showDepotMenu(Station station, int x, int y) {
-//        Window parentWindow = SwingUtilities.getWindowAncestor(GameWorldScreen.getInstance());
-//        JDialog depotDialog = new JDialog(parentWindow);
-//        depotDialog.setUndecorated(true);
-//        depotDialog.setModal(false);
-//        depotDialog.setBackground(new Color (0,0,0,0));
-//        // Создаем полностью черную панель
-//        JPanel mainPanel = new JPanel() {
-//            @Override
-//            protected void paintComponent(Graphics g) {
-//                Graphics2D g2d = (Graphics2D) g.create();
-//                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-//                g2d.setColor(new Color(30, 30, 30, 240));
-//                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
-//                g2d.dispose();
-//            }
-//        };
-//
-//        mainPanel.setLayout(new GridLayout(4, 2, 2, 2)); // 4 строки, 2 колонки
-//        mainPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-//        mainPanel.setOpaque(true);
-//
-//        // Добавляем кнопки для каждого типа поезда
-//        for (TrainType trainType : TrainType.values()) {
-//            JButton trainButton = createTrainButton(trainType, station, depotDialog);
-//            mainPanel.add(trainButton);
-//        }
-//
-//        depotDialog.add(mainPanel);
-//
-//        // Рассчитываем позицию
-//        Point screenPoint = GameWorldScreen.getInstance().worldToScreen(x, y);
-//        Point windowPoint = new Point(screenPoint);
-//        SwingUtilities.convertPointToScreen(windowPoint, GameWorldScreen.getInstance());
-//        depotDialog.setLocation(windowPoint.x + 20, windowPoint.y + 20);
-//
-//        // Обработчики закрытия
-//        depotDialog.addWindowFocusListener(new WindowAdapter() {
-//            @Override
-//            public void windowLostFocus(WindowEvent e) {
-//                depotDialog.dispose();
-//            }
-//        });
-//
-//        depotDialog.pack();
-//        depotDialog.setVisible(true);
-//    }
+    /**
+     * Проверка попадания клика на поезд (в мировых координатах)
+     */
+    private boolean isClickOnTrain(Train train, int worldX, int worldY) {
+        // Поезд имеет точные координаты с плавающей точкой
+        float trainX = train.getCurrentX();
+        float trainY = train.getCurrentY();
+
+        // Размеры поезда в мировых координатах (примерно 1x1 клетка)
+        float trainWidth = 1.0f;
+        float trainHeight = 1.0f;
+
+        // Проверяем попадание в прямоугольную область поезда
+        return worldX >= trainX - trainWidth/2 &&
+                worldX <= trainX + trainWidth/2 &&
+                worldY >= trainY - trainHeight/2 &&
+                worldY <= trainY + trainHeight/2;
+    }
     /**
      * Показ меню депо с выбором поездов используя MetrolinePopupMenu
      */
@@ -857,7 +984,7 @@ public class WorldClickController {
      * Создание кнопки для типа поезда для MetrolinePopupMenu
      */
     private MetrolineButton createTrainButton(TrainType trainType, Station station, MetrolinePopupMenu menu) {
-        MetrolineButton trainButton = new MetrolineButton("", "train.cost." + trainType.name().toLowerCase()) {
+        MetrolineButton trainButton = new MetrolineButton("") {
             @Override
             protected void paintComponent(Graphics g) {
                 // Прозрачный фон
@@ -881,7 +1008,7 @@ public class WorldClickController {
         if (trainIcon != null) {
             trainButton.setIcon(trainIcon);
         }
-
+        trainButton.setToolTipText(LngUtil.translatable("train.cost." + trainType.name().toLowerCase()));
         trainButton.addActionListener(e -> {
             GameWorld world = (GameWorld) GameWorldScreen.getInstance().getWorld();
             float cost = getTrainCost(trainType);

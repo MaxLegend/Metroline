@@ -2,6 +2,7 @@ package metroline.input;
 
 import metroline.objects.gameobjects.GameObject;
 import metroline.objects.gameobjects.PathPoint;
+import metroline.objects.gameobjects.Train;
 import metroline.screens.worldscreens.WorldScreen;
 import metroline.screens.worldscreens.normal.GameWorldScreen;
 import metroline.screens.worldscreens.normal.WorldClickController;
@@ -112,8 +113,17 @@ public class MouseController extends MouseAdapter {
                 sbScreen.sandboxClickHandler.handleRemoveTunnel(worldPos.x, worldPos.y);
             }
         } else if (screen instanceof GameWorldScreen gScreen) {
-            GameObject selectedObject = gScreen.getWorld().getGameObjectAt(worldPos.x, worldPos.y);
-            gScreen.showInfoPanel(selectedObject, worldPos.x, worldPos.y);
+            // Проверяем выделенный объект, а не объект под курсором
+            GameObject selected = gScreen.worldClickController.getSelectedObject();
+
+            if (selected instanceof Train train) {
+                System.out.println("Double click on train: " + train.getName());
+                gScreen.showTrainInfo(train, worldPos.x, worldPos.y);
+            } else {
+                // Для других объектов используем старую логику
+                GameObject objectUnderCursor = gScreen.getWorld().getGameObjectAt(worldPos.x, worldPos.y);
+                gScreen.showInfoPanel(objectUnderCursor, worldPos.x, worldPos.y);
+            }
         }
     }
 

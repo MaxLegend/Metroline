@@ -27,7 +27,7 @@ public class CursorTooltip {
 
         // Размещаем в слоистой панели поверх всего
         JLayeredPane layeredPane = parentFrame.getLayeredPane();
-        layeredPane.add(tooltipLabel, JLayeredPane.POPUP_LAYER);
+        layeredPane.add(tooltipLabel, JLayeredPane.DRAG_LAYER);
 
         // Создаем таймер для постоянного отслеживания курсора
         followTimer = new Timer(50, e -> {

@@ -165,6 +165,7 @@ public class GameWorld extends World {
         applyGradient();
         MetroLogger.logInfo("World successfully created!");
     }
+
     public void addTrainToStation(Station station, TrainType trainType) {
         if (station == null) return;
 

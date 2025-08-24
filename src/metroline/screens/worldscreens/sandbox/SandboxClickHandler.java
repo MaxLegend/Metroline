@@ -440,7 +440,7 @@ public class SandboxClickHandler {
     public void handleStationClick(int x, int y) {
         Station existing = SandboxWorldScreen.getInstance().getWorld().getStationAt(x, y);
         if (existing != null) {
-            if (!existing.selected && !getInstance().isShiftPressed) {
+            if (!existing.isSelected() && !getInstance().isShiftPressed) {
                 existing.setSelected(true);
             } else if(getInstance().isShiftPressed) {
                 SandboxWorldScreen.getInstance().getWorld().removeStation(existing);
