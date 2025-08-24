@@ -276,7 +276,13 @@ public class Station extends GameObject {
                 }
             }
         }
-        StationType newType = StationType.REGULAR;
+        StationType newType;
+        if(this.type == StationType.DEPO) {
+            newType = StationType.DEPO;
+        } else {
+            newType = StationType.REGULAR;
+        }
+
  
 
         if (hasDifferentColorNeighbor) {

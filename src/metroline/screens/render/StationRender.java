@@ -338,6 +338,13 @@ public class StationRender {
         int arcSize = (int)(drawSize * 0.35);
 
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        if (station.getType() == StationType.DEPO) {
+
+            g2d.setColor(station.getColor());
+            g2d.setStroke(new BasicStroke(5 * zoom));
+            g2d.drawRoundRect(drawX-1, drawY-1, drawSize+2, drawSize+2, arcSize, arcSize);
+
+        }
         if (station.getType() == StationType.PLANNED) {
 
             g2d.setColor(station.getColor());

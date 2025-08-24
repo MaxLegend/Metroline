@@ -53,24 +53,14 @@ public class Label extends GameObject {
             if (dx <= 2 && dy <= 2 && (dx + dy) > 0) { // Исключаем позицию станции
                 // Проверяем, что клетка свободна (нет других станций или меток)
                 if (world.getStationAt(newX, newY) == null && (world.getLabelAt(newX, newY) == null || world.getLabelAt(newX, newY) == this)) {
-                    if(world instanceof GameWorld w2) {
-                        if (w2.getGameplayUnitsAt(newX, newY) == null) {
 
-                            world.getGameTile(getX(), getY()).setContent(null);
-                            this.x = newX;
-                            this.y = newY;
-                            world.getGameTile(getX(), getY()).setContent(this);
-                            return true;
-                        }
-                    }
-                    else {
                         world.getGameTile(getX(), getY()).setContent(null);
                         this.x = newX;
                         this.y = newY;
                         world.getGameTile(getX(), getY()).setContent(this);
                         return true;
                     }
-                }
+                
             }
         }
         return false;

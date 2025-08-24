@@ -23,7 +23,13 @@ public class MetrolineButton extends JButton implements ITranslatable {
         this.translationKey = text;
         initDefaultStyle();
     }
+    public MetrolineButton(String text, String tooltip) {
+        super(text);
+        this.translationKey = text;
+        setLocalizedTooltip(tooltip);
+        initDefaultStyle();
 
+    }
     public MetrolineButton(String text, ActionListener action) {
         super(text);
         this.translationKey = text;

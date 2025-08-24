@@ -4,10 +4,12 @@ import metroline.core.world.GameWorld;
 import metroline.core.world.World;
 import metroline.objects.enums.Direction;
 import metroline.objects.enums.StationType;
+import metroline.objects.enums.TrainType;
 import metroline.objects.enums.TunnelType;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,11 +24,17 @@ public class Train extends GameObject {
     private float currentY;
     private boolean movingForward = true;
     private Color color;
-    private float speed = 0.0005f;
+
     private Direction direction;
     private float waitTimer;
     private boolean hasPaidAtCurrentStation = false; // Флаг для отслеживания оплаты
     private static final float STATION_WAIT_TIME = 600.0f; // 5 секунд стоянки
+
+
+    private transient BufferedImage cachedTrainImage;
+    private transient Color cachedColor;
+    private transient TrainType cachedTrainType;
+    private transient float cachedZoom = -1f;
 
     public Train(World world, Station spawnStation, TrainType trainType) {
         super(world, spawnStation.getX(), spawnStation.getY());
@@ -70,11 +78,9 @@ public class Train extends GameObject {
         float totalPathLength = calculateTotalPathLength();
         if (totalPathLength == 0) return;
         float distanceToMove;
-        if(trainType == TrainType.STANDART) {
-            distanceToMove = speed * deltaSeconds * 90f;
-        } else {
-            distanceToMove = speed * deltaSeconds * 120f;
-        }
+
+        distanceToMove = trainType.getSpeed() * deltaSeconds ;
+
 
         if (movingForward) {
             pathProgress += distanceToMove / totalPathLength;
@@ -336,7 +342,6 @@ public class Train extends GameObject {
         currentStation = null;
         updatePositionFromPathProgress();
     }
-
     @Override
     public void draw(Graphics2D g2d, int offsetX, int offsetY, float zoom) {
         if (getWorld() == null) return;
@@ -344,9 +349,92 @@ public class Train extends GameObject {
         float screenX = (currentX * 32 + offsetX + 16) * zoom;
         float screenY = (currentY * 32 + offsetY + 16) * zoom;
 
+        AffineTransform oldTransform = g2d.getTransform();
+        g2d.translate(screenX, screenY);
+        g2d.rotate(getRotationAngle());
+
+        // Получаем или создаем кэшированное изображение
+        BufferedImage trainImage = getCachedTrainImage(zoom);
+        if (trainImage != null) {
+            // Центрируем изображение
+            g2d.drawImage(trainImage, -trainImage.getWidth()/2, -trainImage.getHeight()/2, null);
+        } else {
+            // Fallback: рисуем динамически если кэш недоступен
+            drawDynamic(g2d,offsetX,offsetY, zoom);
+        }
+
+        g2d.setTransform(oldTransform);
+    }   private BufferedImage getCachedTrainImage(float zoom) {
+        // Проверяем, нужно ли обновить кэш
+        if (cachedTrainImage == null ||
+                !color.equals(cachedColor) ||
+                trainType != cachedTrainType ||
+                Math.abs(zoom - cachedZoom) > 0.01f) {
+
+            createTrainImageCache(zoom);
+        }
+        return cachedTrainImage;
+    }
+
+    private void createTrainImageCache(float zoom) {
         int trainWidth = (int)(24 * zoom);
         int trainHeight = (int)(18 * zoom);
-        int arcSize = (int)(6 * zoom); // Размер скругления углов
+        int shadowSizeIncrease = (int)(2 * zoom);
+
+        // Создаем изображение с достаточным местом для тени
+        int imageWidth = trainWidth + shadowSizeIncrease * 4;
+        int imageHeight = trainHeight + shadowSizeIncrease * 4;
+
+        cachedTrainImage = new BufferedImage(imageWidth, imageHeight, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = cachedTrainImage.createGraphics();
+
+        // Настраиваем качество
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+
+        // Смещаем начало координат в центр изображения
+        g2d.translate(imageWidth/2, imageHeight/2);
+
+        // 1. Рисуем тень
+        g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.25f));
+        g2d.setColor(new Color(0, 0, 0, 60));
+
+        for (int i = 0; i < 3; i++) {
+            int currentIncrease = shadowSizeIncrease + i * 2;
+            float alpha = 0.15f - i * 0.04f;
+
+            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+            g2d.fillRect(
+                    -trainWidth/2 - currentIncrease/2,
+                    -trainHeight/2 - currentIncrease/2,
+                    trainWidth + currentIncrease,
+                    trainHeight + currentIncrease
+            );
+        }
+
+        // 2. Основной корпус
+        g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+        g2d.setColor(color);
+        g2d.fillRect(-trainWidth/2, -trainHeight/2, trainWidth, trainHeight);
+
+
+
+        g2d.dispose();
+
+        // Сохраняем параметры кэша
+        cachedColor = color;
+        cachedTrainType = trainType;
+        cachedZoom = zoom;
+    }
+    private void drawDynamic(Graphics2D g2d, int offsetX, int offsetY, float zoom) {
+        if (getWorld() == null) return;
+
+        float screenX = (currentX * 32 + offsetX + 16) * zoom;
+        float screenY = (currentY * 32 + offsetY + 16) * zoom;
+
+        int trainWidth = (int)(24 * zoom);
+        int trainHeight = (int)(18 * zoom);
+        int shadowSizeIncrease = (int)(2 * zoom); // Увеличение размера для тени
 
         AffineTransform oldTransform = g2d.getTransform();
 
@@ -354,31 +442,42 @@ public class Train extends GameObject {
         g2d.rotate(getRotationAngle());
         g2d.translate(-trainWidth/2, -trainHeight/2);
 
-        // Включаем сглаживание для лучшего качества
+        // Включаем сглаживание
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        if(getTrainType() == TrainType.STANDART) {
-            // Рисуем основной корпус поезда с темной заливкой
-            g2d.setColor(color.darker().darker());
-            g2d.fillRoundRect(0, 0, trainWidth, trainHeight, arcSize, arcSize);
+        // 1. Размытая тень - рисуем несколько полупрозрачных прямоугольников
+        g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.25f));
+        g2d.setColor(new Color(0, 0, 0, 60));
 
-            // Рисуем контур цвета линии
-            g2d.setColor(color.darker());
-            g2d.setStroke(new BasicStroke(2.0f * zoom)); // Толщина контура
-            g2d.drawRoundRect(0, 0, trainWidth, trainHeight, arcSize, arcSize);
-        } else {
-            g2d.setColor(color.darker().darker());
-            g2d.fillRoundRect(0, 0, trainWidth, trainHeight, arcSize, arcSize);
+        // Рисуем несколько слоев для эффекта размытия
+        for (int i = 0; i < 3; i++) {
+            int currentIncrease = shadowSizeIncrease + i * 2;
+            float alpha = 0.15f - i * 0.04f;
 
-            // Рисуем контур цвета линии
-            g2d.setColor(color.darker());
-            g2d.setStroke(new BasicStroke(4.0f * zoom)); // Толщина контура
-            g2d.drawRoundRect(0, 0, trainWidth, trainHeight, arcSize, arcSize);
+            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+            g2d.fillRect(
+                    -currentIncrease/2,
+                    -currentIncrease/2,
+                    trainWidth + currentIncrease,
+                    trainHeight + currentIncrease
+            );
         }
+        g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+
+        // 2. Основной корпус
+        g2d.setColor(color);
+        g2d.fillRect(0, 0, trainWidth, trainHeight);
+
+        // 3. Основная обводка
+        g2d.setColor(color.darker());
+        g2d.setStroke(new BasicStroke( zoom));
+        g2d.drawRect(0, 0, trainWidth, trainHeight);
+
         // Восстанавливаем оригинальные настройки
         g2d.setTransform(oldTransform);
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
     }
+
     public TrainType getTrainType() {
         return trainType;
     }
@@ -410,14 +509,5 @@ public class Train extends GameObject {
         return currentStation != null;
     }
 
-    public enum TrainType {
-        STANDART(0.02f),
-        EXPRESS(0.04f);
 
-        public float speed;
-        TrainType(float speed) {
-            this.speed = speed;
-        }
-
-    }
 }

@@ -6,10 +6,7 @@ import metroline.core.time.GameTime;
 import metroline.core.world.cities.CityManager;
 import metroline.core.world.tiles.GameTile;
 import metroline.core.world.tiles.WorldTile;
-import metroline.objects.enums.Direction;
-import metroline.objects.enums.GameplayUnitsType;
-import metroline.objects.enums.StationType;
-import metroline.objects.enums.TunnelType;
+import metroline.objects.enums.*;
 import metroline.objects.gameobjects.*;
 import metroline.screens.panel.LinesLegendWindow;
 import metroline.screens.worldscreens.normal.GameWorldScreen;
@@ -168,7 +165,7 @@ public class GameWorld extends World {
         applyGradient();
         MetroLogger.logInfo("World successfully created!");
     }
-    public void addTrainToStation(Station station, Train.TrainType trainType) {
+    public void addTrainToStation(Station station, TrainType trainType) {
         if (station == null) return;
 
         Train train = new Train(this,station, trainType);

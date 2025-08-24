@@ -4,17 +4,23 @@ import metroline.core.world.GameWorld;
 import metroline.input.KeyboardController;
 import metroline.objects.enums.StationColors;
 import metroline.objects.enums.StationType;
+import metroline.objects.enums.TrainType;
 import metroline.objects.enums.TunnelType;
 import metroline.objects.gameobjects.Label;
 import metroline.objects.gameobjects.*;
 import metroline.util.MetroLogger;
+import metroline.util.ui.MetrolineButton;
+import metroline.util.ui.MetrolinePopupMenu;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -121,6 +127,22 @@ public class WorldClickController {
                 selectedStation = null;
                 return;
             }
+            int selectedStationConnections = countActiveTunnels(selectedStation, world);
+            int targetStationConnections = countActiveTunnels(station, world);
+
+            if (selectedStationConnections >= 2) {
+                // У выбранной станции уже максимальное количество соединений
+                selectedStation.setSelected(false);
+                selectedStation = null;
+                return;
+            }
+
+            if (targetStationConnections >= 2) {
+                // У целевой станции уже максимальное количество соединений
+                selectedStation.setSelected(false);
+                selectedStation = null;
+                return;
+            }
             // Проверяем, что обе станции построены
             boolean bothBuilt =
                     selectedStation.getType() == StationType.TRANSIT ||
@@ -156,7 +178,20 @@ public class WorldClickController {
 
         GameWorldScreen.getInstance().repaint();
     }
-
+    // Вспомогательный метод для подсчета активных туннелей станции
+    private int countActiveTunnels(Station station, GameWorld world) {
+        int count = 0;
+        for (Tunnel tunnel : world.getTunnels()) {
+            if (tunnel.getType() == TunnelType.ACTIVE ||
+                    tunnel.getType() == TunnelType.BUILDING ||
+                    tunnel.getType() == TunnelType.PLANNED) {
+                if (tunnel.getStart() == station || tunnel.getEnd() == station) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
 
     /**
      * Shift+Click - строительство/удаление станций
@@ -181,8 +216,9 @@ public class WorldClickController {
 
         if (trySelectLabel(x, y)) return;
         if (trySelectStation(x, y)) return;
-        if(tryGameplayObject(x, y)) return;
         if (trySelectTunnel(x, y)) return;
+        if(tryGameplayObject(x, y)) return;
+
 
 
     }
@@ -478,7 +514,7 @@ public class WorldClickController {
             // Shift+ПКМ - превращение в депо
             if (isShiftPressed || screen.isShiftPressed) {
                 // Проверяем, что станция может быть превращена в депо
-                world.addTrainToStation(station, Train.TrainType.EXPRESS);
+           //     world.addTrainToStation(station, TrainType.EXPRESS);
 
                 if (station.getType() != StationType.DEPO &&
                         station.getType() != StationType.PLANNED &&
@@ -491,8 +527,9 @@ public class WorldClickController {
             } else {
                 // Обычный ПКМ - добавление поезда (только не для депо)
                 if(station.getType() == StationType.DEPO) {
-                    world.addTrainToStation(station, Train.TrainType.STANDART);
-                    world.removeMoney(COST_STANDART_TRAIN); //TODO Добавить типы поездов и цены на них
+                    showDepotMenu(station, x, y);
+          //          world.addTrainToStation(station, TrainType.STANDART);
+         //           world.removeMoney(COST_STANDART_TRAIN); //TODO Добавить типы поездов и цены на них
                 }
             }
         }
@@ -742,6 +779,245 @@ public class WorldClickController {
         });
 
         return colorBtn;
+    }
+    /**
+     * Показ меню депо с выбором поездов
+     */
+//    private void showDepotMenu(Station station, int x, int y) {
+//        Window parentWindow = SwingUtilities.getWindowAncestor(GameWorldScreen.getInstance());
+//        JDialog depotDialog = new JDialog(parentWindow);
+//        depotDialog.setUndecorated(true);
+//        depotDialog.setModal(false);
+//        depotDialog.setBackground(new Color (0,0,0,0));
+//        // Создаем полностью черную панель
+//        JPanel mainPanel = new JPanel() {
+//            @Override
+//            protected void paintComponent(Graphics g) {
+//                Graphics2D g2d = (Graphics2D) g.create();
+//                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+//                g2d.setColor(new Color(30, 30, 30, 240));
+//                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
+//                g2d.dispose();
+//            }
+//        };
+//
+//        mainPanel.setLayout(new GridLayout(4, 2, 2, 2)); // 4 строки, 2 колонки
+//        mainPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+//        mainPanel.setOpaque(true);
+//
+//        // Добавляем кнопки для каждого типа поезда
+//        for (TrainType trainType : TrainType.values()) {
+//            JButton trainButton = createTrainButton(trainType, station, depotDialog);
+//            mainPanel.add(trainButton);
+//        }
+//
+//        depotDialog.add(mainPanel);
+//
+//        // Рассчитываем позицию
+//        Point screenPoint = GameWorldScreen.getInstance().worldToScreen(x, y);
+//        Point windowPoint = new Point(screenPoint);
+//        SwingUtilities.convertPointToScreen(windowPoint, GameWorldScreen.getInstance());
+//        depotDialog.setLocation(windowPoint.x + 20, windowPoint.y + 20);
+//
+//        // Обработчики закрытия
+//        depotDialog.addWindowFocusListener(new WindowAdapter() {
+//            @Override
+//            public void windowLostFocus(WindowEvent e) {
+//                depotDialog.dispose();
+//            }
+//        });
+//
+//        depotDialog.pack();
+//        depotDialog.setVisible(true);
+//    }
+    /**
+     * Показ меню депо с выбором поездов используя MetrolinePopupMenu
+     */
+    private void showDepotMenu(Station station, int x, int y) {
+        MetrolinePopupMenu depotMenu = new MetrolinePopupMenu();
+
+        // Устанавливаем специальный layout для сетки 4x2
+        depotMenu.setLayout(new GridLayout(4, 2, 2, 2));
+
+        // Добавляем кнопки для каждого типа поезда
+        for (TrainType trainType : TrainType.values()) {
+            MetrolineButton trainButton = createTrainButton(trainType, station, depotMenu);
+            depotMenu.add(trainButton);
+        }
+
+        // Получаем компонент для отображения
+        Component parentComponent = GameWorldScreen.getInstance();
+        Point screenPoint = GameWorldScreen.getInstance().worldToScreen(x, y);
+
+        // Показываем меню в нужной позиции
+        depotMenu.show(parentComponent, screenPoint.x + 20, screenPoint.y + 20);
+    }
+
+    /**
+     * Создание кнопки для типа поезда для MetrolinePopupMenu
+     */
+    private MetrolineButton createTrainButton(TrainType trainType, Station station, MetrolinePopupMenu menu) {
+        MetrolineButton trainButton = new MetrolineButton("", "train.cost." + trainType.name().toLowerCase()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                // Прозрачный фон
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setColor(new Color(0, 0, 0, 0));
+                g2d.fillRect(0, 0, getWidth(), getHeight());
+                g2d.dispose();
+
+                super.paintComponent(g);
+            }
+        };
+
+        trainButton.setPreferredSize(new Dimension(60, 60));
+        trainButton.setContentAreaFilled(false);
+        trainButton.setOpaque(false);
+        trainButton.setFocusPainted(false);
+        trainButton.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
+
+        // Загружаем иконку поезда
+        ImageIcon trainIcon = loadTrainIcon(trainType);
+        if (trainIcon != null) {
+            trainButton.setIcon(trainIcon);
+        }
+
+        trainButton.addActionListener(e -> {
+            GameWorld world = (GameWorld) GameWorldScreen.getInstance().getWorld();
+            float cost = getTrainCost(trainType);
+
+            // Проверяем, хватает ли денег
+            if (world.canAfford(cost)) {
+                world.addMoney(-cost);
+                world.addTrainToStation(station, trainType);
+                GameWorldScreen.getInstance().repaint();
+                menu.setVisible(false); // Закрываем меню
+            } else {
+                // Показываем сообщение о недостатке денег
+                JOptionPane.showMessageDialog(menu,
+                        "Недостаточно денег для покупки этого поезда!",
+                        "Ошибка",
+                        JOptionPane.WARNING_MESSAGE);
+            }
+        });
+
+        return trainButton;
+    }
+
+    /**
+     * Загрузка иконки поезда из ресурсов
+     */
+    private ImageIcon loadTrainIcon(TrainType trainType) {
+        String imagePath = "";
+        switch (trainType) {
+            case FIRST:
+                imagePath = "/trains/first_train.png";
+                break;
+            case OLD:
+                imagePath = "/trains/old_train.png";
+                break;
+            case CLASSIC:
+                imagePath = "/trains/classic_train.png";
+                break;
+            case MODERN:
+                imagePath = "/trains/modern_train.png";
+                break;
+            case NEW:
+                imagePath = "/trains/new_train.png";
+                break;
+            case NEWEST:
+                imagePath = "/trains/newest_train.png";
+                break;
+            case FUTURISTIC:
+                imagePath = "/trains/futuristic_train.png";
+                break;
+            case FAR_FUTURISTIC:
+                imagePath = "/trains/far_futuristic_train.png";
+                break;
+        }
+
+        try {
+            Image image = loadImage(imagePath);
+            if (image != null) {
+                // Масштабируем изображение
+                Image scaledImage = image.getScaledInstance(55, 55, Image.SCALE_SMOOTH);
+                return new ImageIcon(scaledImage);
+            }
+        } catch (Exception e) {
+            MetroLogger.logError("Error loading train icon: " + imagePath, e);
+        }
+
+        // Fallback - простая цветная иконка
+        return createFallbackIcon(trainType);
+    }
+
+    /**
+     * Создание fallback иконки (упрощенная)
+     */
+    private ImageIcon createFallbackIcon(TrainType trainType) {
+        BufferedImage image = new BufferedImage(35, 35, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = image.createGraphics();
+
+        // Простой цветной квадрат с номером типа
+        Color[] colors = {Color.RED, Color.BLUE, Color.GREEN, Color.YELLOW,
+                Color.ORANGE, Color.MAGENTA, Color.CYAN, Color.PINK};
+        int index = trainType.ordinal() % colors.length;
+
+        g2d.setColor(colors[index]);
+        g2d.fillRect(5, 5, 25, 25);
+
+        g2d.setColor(Color.WHITE);
+        g2d.setFont(new Font("Arial", Font.BOLD, 12));
+        g2d.drawString(String.valueOf(trainType.ordinal() + 1), 15, 20);
+
+        g2d.dispose();
+        return new ImageIcon(image);
+    }
+
+    public static Image loadImage(String path) {
+        try {
+            return ImageIO.read(WorldClickController.class.getResource(path));
+        } catch (IOException | IllegalArgumentException e) {
+            MetroLogger.logError("Failed to load image: " + path, e);
+            return null;
+        }
+    }
+    /**
+     * Создание fallback иконки
+     */
+
+    /**
+     * Получение отображаемого имени типа поезда
+     */
+    private String getTrainTypeName(TrainType trainType) {
+        switch (trainType) {
+            case FIRST: return "train.name.first";
+            case OLD: return "train.name.old";
+            case CLASSIC: return "train.name.classic";
+            case MODERN: return "train.name.modern";
+            case NEW: return "train.name.new";
+            case NEWEST: return "train.name.newest";
+            case FUTURISTIC: return "train.name.futuristic";
+            case FAR_FUTURISTIC: return "train.name.far_futuristic";
+            default: return trainType.name();
+        }
+    }
+
+    /**
+     * Получение стоимости поезда
+     */
+    private float getTrainCost(TrainType trainType) {
+        switch (trainType) {
+            case FIRST: return COST_STANDART_TRAIN;
+            case OLD: return COST_STANDART_TRAIN*1.1f;
+            case CLASSIC: return COST_STANDART_TRAIN*1.2f;
+            case MODERN: return COST_STANDART_TRAIN*1.4f;
+            case NEW: return COST_STANDART_TRAIN*1.6f;
+            case NEWEST: return COST_STANDART_TRAIN*1.9f;
+            case FUTURISTIC: return COST_STANDART_TRAIN*2f;
+            case FAR_FUTURISTIC: return COST_STANDART_TRAIN*4f;
+            default: return COST_STANDART_TRAIN;
+        }
     }
 
 
