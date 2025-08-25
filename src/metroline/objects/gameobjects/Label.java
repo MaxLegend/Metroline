@@ -3,6 +3,7 @@ package metroline.objects.gameobjects;
 import metroline.core.world.GameWorld;
 import metroline.core.world.SandboxWorld;
 import metroline.core.world.World;
+import metroline.input.selection.SelectionManager;
 
 import java.awt.*;
 
@@ -134,5 +135,7 @@ public class Label extends GameObject {
             }
         }
     }
-
+    public boolean isSelected() {
+        return SelectionManager.getInstance().isSelected(this);
+    }
 }

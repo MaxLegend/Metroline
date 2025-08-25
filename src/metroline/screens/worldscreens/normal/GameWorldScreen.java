@@ -4,6 +4,8 @@ import metroline.MainFrame;
 import metroline.core.world.GameWorld;
 import metroline.core.world.tiles.GameTile;
 import metroline.input.KeyboardController;
+import metroline.input.selection.Selectable;
+import metroline.input.selection.SelectionManager;
 import metroline.objects.gameobjects.Label;
 import metroline.objects.gameobjects.*;
 import metroline.screens.GameScreen;
@@ -22,7 +24,7 @@ import java.util.List;
 
 public class GameWorldScreen extends CachedWorldScreen {
     private static final int FPS_UPDATE_INTERVAL = 1000;
-    private static final int RENDER_TIMER_DELAY = 16; // ~60 FPS
+    private static final int RENDER_TIMER_DELAY = 8; // ~60 FPS
 
     public static GameWorldScreen INSTANCE;
     public WorldClickController worldClickController;
@@ -47,7 +49,7 @@ public class GameWorldScreen extends CachedWorldScreen {
         INSTANCE = this;
 
         this.worldClickController = new WorldClickController(this);
-        //    setupRepaintTimer();
+        setupRepaintTimer();
 
         lastFpsTime = System.currentTimeMillis();
         lastWorldUpdateTime = lastFpsTime;
@@ -93,7 +95,8 @@ public class GameWorldScreen extends CachedWorldScreen {
             synchronized (this) {
             worldClickController.checkConstructionProgress();
             infoWindows.forEach(InfoWindow::updateInfo);
-            ((GameWorld)getWorld()).updateTrains();;
+
+            ((GameWorld)getWorld()).updateTrains();
         //   if(repaintTimer.getDelay() % 4 == 0) System.out.println(repaintTimer.getDelay() + " before World repaint "+ worldClickController.selectedObject);
             repaint();
       //      if(repaintTimer.getDelay() % 4 == 0) System.out.println(repaintTimer.getDelay() + " afte World repaint "+ worldClickController.selectedObject );
@@ -304,8 +307,11 @@ public class GameWorldScreen extends CachedWorldScreen {
     }
 
     private void drawDebugInfo(Graphics2D g) {
-        drawDebugInfo(g, worldClickController.getSelectedObject());
-
+        SelectionManager selectionManager = SelectionManager.getInstance();
+        Selectable selected = selectionManager.getSelected();
+        if(selected instanceof GameObject) {
+            drawDebugInfo(g, (GameObject) selected);
+        }
 
         drawPerformanceStats(g);
 
@@ -331,12 +337,11 @@ public class GameWorldScreen extends CachedWorldScreen {
     }
     public void showTrainInfo(Train train, int worldX, int worldY) {
         if (train == null ) {
-            System.out.println("nukktrain");
             return;
         }
         InfoWindow newWindow = new InfoWindow(parent);
         if(parent.getCurrentScreen() instanceof GameWorldScreen screen) {
-            System.out.println("showTrainInfo");
+
             Point screenPoint = screen.worldToScreen(worldX, worldY);
             Point windowPoint = new Point(screenPoint);
             newWindow.displayTrainInfo(train, windowPoint);
@@ -346,6 +351,7 @@ public class GameWorldScreen extends CachedWorldScreen {
         if (selectedObject == null ) {
             return;
         }
+
         if(parent.getCurrentScreen() instanceof GameWorldScreen screen) {
             // Получаем экранные координаты
             Point screenPoint = screen.worldToScreen(worldX, worldY);

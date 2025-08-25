@@ -38,7 +38,7 @@ public class GameWorld extends World {
     public static boolean showPassengerZones = false;
     private List<GameplayUnits> gameplayUnits = new ArrayList<>();
     private List<Train> trains = new ArrayList<>();
-    private long lastTrainsUpdateTime;
+    public long lastTrainsUpdateTime;
 
     private CityManager cityManager;
 

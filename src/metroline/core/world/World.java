@@ -1,5 +1,7 @@
 package metroline.core.world;
 
+import metroline.input.selection.Selectable;
+import metroline.input.selection.SelectionManager;
 import metroline.objects.gameobjects.*;
 import metroline.core.time.GameTime;
 import metroline.core.world.tiles.GameTile;
@@ -230,21 +232,21 @@ public class World implements Serializable {
      * @param station Station to remove
      */
     public void removeStation(Station station) {
-        if (GameWorldScreen.INSTANCE != null &&
-                GameWorldScreen.INSTANCE.worldClickController != null) {
-            WorldClickController controller = GameWorldScreen.INSTANCE.worldClickController;
+        if (GameWorldScreen.INSTANCE != null) {
 
+            SelectionManager selectionManager = SelectionManager.getInstance();
+            Selectable selected = selectionManager.getSelected();
             // Если удаляемая станция является выделенным объектом
-            if (controller.selectedObject == station) {
-                controller.deselectAll();
+            if (selected == station) {
+                selectionManager.deselect();
             }
 
             // Если удаляемая станция является selectedStation
-            if (WorldClickController.selectedStation == station) {
-                if (WorldClickController.selectedStation != null) {
-                    WorldClickController.selectedStation.setSelected(false);
+            if (selected == station) {
+                if (selected != null) {
+                    selectionManager.isSelected(selected);
                 }
-                WorldClickController.selectedStation = null;
+                selectionManager.deselect();
             }
         }
         Label label = getLabelForStation(station);
@@ -365,12 +367,12 @@ public class World implements Serializable {
      * @param tunnel Tunnel to remove
      */
     public void removeTunnel(Tunnel tunnel) {
-        if (GameWorldScreen.INSTANCE != null &&
-                GameWorldScreen.INSTANCE.worldClickController != null) {
-            WorldClickController controller = GameWorldScreen.INSTANCE.worldClickController;
+        if (GameWorldScreen.INSTANCE != null) {
+            SelectionManager selectionManager = SelectionManager.getInstance();
+            Selectable selected = selectionManager.getSelected();
 
-            if (controller.selectedObject == tunnel) {
-                controller.deselectAll();
+            if (selected == tunnel) {
+                selectionManager.deselect();
             }
         }
         tunnels.remove(tunnel);

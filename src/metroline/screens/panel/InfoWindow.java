@@ -381,20 +381,12 @@ public class InfoWindow extends JWindow {
     }
     public void displayTrainInfo(Train train, Point location) {
         this.currentObject = train;
-        System.out.println("Train info");
-        updateTrainInfo();
+        updateInfo();
         setLocation(location);
         setVisible(true);
         pack();
     }
-    public void updateTrainInfo() {
-        if (currentObject instanceof Train) {
-            System.out.println("updateTrainInfo info");
-            Train train = (Train) currentObject;
-            titleLabel.setText(LngUtil.translatable("train.cost." + train.getTrainType().name().toLowerCase()));
 
-        }
-    }
     public void displayStationInfo(Station station, Point location) {
         this.currentObject = station;
         if (editNamePanel.isVisible()) {
@@ -476,7 +468,21 @@ public class InfoWindow extends JWindow {
                     String.format("%.0f%%", station.getWearLevel() * 100)));
             infoLabel.setText(info.toString());
             updateProgress();
-        } else if (currentObject instanceof Tunnel) {
+        } else if (currentObject instanceof Train) {
+
+            Train train = (Train) currentObject;
+
+
+
+
+            titleLabel.setText(LngUtil.translatable("train.cost." + train.getTrainType().name().toLowerCase()));
+            StringBuilder info = new StringBuilder("<html>");
+            info.append(LngUtil.translatable("infoWnd.position") + " ").append(MathUtil.round(train.getCurrentX(),2)).append(", ").append(MathUtil.round(train.getCurrentY(),2)).append("<br>");
+            info.append(LngUtil.translatable("infoWnd.speed") + " ").append(train.getNormalizedSpeed()).append("<br>");
+            infoLabel.setText(info.toString());
+        }
+
+        else if (currentObject instanceof Tunnel) {
             Tunnel tunnel = (Tunnel) currentObject;
             titleLabel.setText(LngUtil.translatable("infoWnd.tunnel_title"));
 

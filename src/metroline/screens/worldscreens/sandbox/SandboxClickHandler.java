@@ -1,5 +1,8 @@
 package metroline.screens.worldscreens.sandbox;
 
+import metroline.input.selection.GameSelectionListener;
+import metroline.input.selection.Selectable;
+import metroline.input.selection.SelectionManager;
 import metroline.objects.enums.StationColors;
 import metroline.objects.gameobjects.GameObject;
 import metroline.core.time.GameTime;
@@ -22,109 +25,118 @@ import static metroline.screens.worldscreens.sandbox.SandboxWorldScreen.*;
  * @author Tesmio
  */
 public class SandboxClickHandler {
-    public static Station selectedStation = null;
-    public GameObject selectedObject = null;
+    public static PathPoint dragOffset = null;
     private static int dragStartX;
     private static int dragStartY;
     private static boolean dragging = false;
-    public static PathPoint dragOffset = null;
-
     private static StationColors currentStationColor = StationColors.RED;
-     boolean colorSelectionEnabled = false;
-
+    private boolean colorSelectionEnabled = false;
+    public SandboxWorldScreen screen;
+    public SandboxClickHandler(SandboxWorldScreen screen) {
+        this.screen = screen;
+        SelectionManager.getInstance().addListener(new GameSelectionListener(screen.parent));
+    }
     /**
      * Handles mouse drag in edit mode
      * @param x X coordinate
      * @param y Y coordinate
      */
-    public  void handleEditDrag(int x, int y) {
-        if ( selectedObject != null && dragOffset != null) {
-            // Проверяем границы
-            if (x < 0 || x >= SandboxWorldScreen.getInstance().getWorld().getWidth() || y < 0 || y >= SandboxWorldScreen.getInstance().getWorld().getHeight()) {
-                return;
+    public void handleEditDrag(int x, int y) {
+        SelectionManager selectionManager = SelectionManager.getInstance();
+        Selectable selected = selectionManager.getSelected();
+
+        if (selected == null || dragOffset == null) return;
+
+        // Проверяем границы
+        if (x < 0 || x >= SandboxWorldScreen.getInstance().getWorld().getWidth() ||
+                y < 0 || y >= SandboxWorldScreen.getInstance().getWorld().getHeight()) {
+            return;
+        }
+
+        if (selected instanceof Label) {
+            Label label = (Label) selected;
+            int newX = x - dragOffset.x;
+            int newY = y - dragOffset.y;
+
+            if (label.tryMoveTo(newX, newY)) {
+                SandboxWorldScreen.getInstance().repaint();
             }
+            return;
+        }
 
-                if (selectedObject instanceof Label) {
+        if (selected instanceof Station) {
+            Station station = (Station) selected;
+            int newX = x - dragOffset.x;
+            int newY = y - dragOffset.y;
 
-                    Label label = (Label) selectedObject;
-                    int newX = x - dragOffset.x;
-                    int newY = y - dragOffset.y;
+            // Check if new position is valid
+            if (newX >= 0 && newX < SandboxWorldScreen.getInstance().getWorld().getWidth() &&
+                    newY >= 0 && newY < SandboxWorldScreen.getInstance().getWorld().getHeight() &&
+                    SandboxWorldScreen.getInstance().getWorld().getStationAt(newX, newY) == null) {
 
-                    if (label.tryMoveTo(newX, newY)) {
-                        SandboxWorldScreen.getInstance().repaint();
+                Label label = SandboxWorldScreen.getInstance().getWorld().getLabelForStation(station);
+                // Remove from old position
+                SandboxWorldScreen.getInstance().getWorld().getGameTile(station.getX(), station.getY()).setContent(null);
+
+                // Update position
+                station.x = newX;
+                station.y = newY;
+
+                // Add to new position
+                SandboxWorldScreen.getInstance().getWorld().getGameTile(newX, newY).setContent(station);
+
+                // Recalculate all connected tunnels
+                for (Tunnel t : SandboxWorldScreen.getInstance().getWorld().getTunnels()) {
+                    if (t.getStart() == station || t.getEnd() == station) {
+                        t.calculatePath();
                     }
-                    return;
                 }
 
-            if ( selectedObject instanceof Station) {
-                Station station = (Station)selectedObject;
-
-                int newX = x - dragOffset.x;
-                int newY = y - dragOffset.y;
-
-                // Check if new position is valid
-                if (newX >= 0 && newX < SandboxWorldScreen.getInstance().getWorld().getWidth() &&
-                        newY >= 0 && newY < SandboxWorldScreen.getInstance().getWorld().getHeight() &&
-                        SandboxWorldScreen.getInstance().getWorld().getStationAt(newX, newY) == null) {
-                    Label label = SandboxWorldScreen.getInstance().getWorld().getLabelForStation(station);
-                    // Remove from old position
-                    SandboxWorldScreen.getInstance().getWorld().getGameTile(station.getX(), station.getY()).setContent(null);
-
-                    // Update position
-                    station.x = newX;
-                    station.y = newY;
-
-                    // Add to new position
-                    SandboxWorldScreen.getInstance().getWorld().getGameTile(newX, newY).setContent(station);
-
-                    // Recalculate all connected tunnels
-                    for (Tunnel t : SandboxWorldScreen.getInstance().getWorld().getTunnels()) {
-                        if (t.getStart() == station || t.getEnd() == station) {
-                            t.calculatePath();
-                        }
+                if (label != null) {
+                    // Находим новую позицию для метки
+                    PathPoint newLabelPos = SandboxWorldScreen.getInstance().getWorld().findFreePositionNear(station.getX(), station.getY(), station.getName());
+                    if (newLabelPos != null) {
+                        label.tryMoveTo(newLabelPos.x, newLabelPos.y);
                     }
-                    if (label != null) {
-                        // Находим новую позицию для метки (рядом со станцией)
-                        PathPoint newLabelPos = SandboxWorldScreen.getInstance().getWorld().findFreePositionNear(station.getX(), station.getY(), station.getName());
-                        if (newLabelPos != null) {
-                            label.tryMoveTo(newLabelPos.x, newLabelPos.y);
-                        }
-                    }
-                    SandboxWorldScreen.getInstance().repaint();
                 }
+                SandboxWorldScreen.getInstance().repaint();
             }
-            else if (selectedObject instanceof Tunnel) {
+        }
+        else if (selected instanceof Tunnel) {
+            Tunnel tunnel = (Tunnel) selected;
 
-                Tunnel tunnel = (Tunnel)selectedObject;
-
-                // Проверяем, что новая позиция не совпадает со станцией
-                Station stationAtPos = SandboxWorldScreen.getInstance().getWorld().getStationAt(x, y);
-                if (stationAtPos == null) {
-                    tunnel.moveControlPoint(x, y);
-                    SandboxWorldScreen.getInstance().repaint();
-                }
+            // Проверяем, что новая позиция не совпадает со станцией
+            Station stationAtPos = SandboxWorldScreen.getInstance().getWorld().getStationAt(x, y);
+            if (stationAtPos == null) {
+                tunnel.moveControlPoint(x, y);
+                SandboxWorldScreen.getInstance().repaint();
             }
         }
     }
+
     /**
      * Handles delete game objects
      */
-    public  void deleteSelectedObject() {
-        if (selectedObject == null) return;
+    public void deleteSelectedObject() {
+        SelectionManager selectionManager = SelectionManager.getInstance();
+        Selectable selected = selectionManager.getSelected();
 
-        if (selectedObject instanceof Station) {
-            SandboxWorldScreen.getInstance().getWorld().removeStation((Station)selectedObject);
+        if (selected == null) return;
+
+        if (selected instanceof Station) {
+            SandboxWorldScreen.getInstance().getWorld().removeStation((Station)selected);
         }
-        else if (selectedObject instanceof Tunnel) {
-            SandboxWorldScreen.getInstance().getWorld().removeTunnel((Tunnel)selectedObject);
+        else if (selected instanceof Tunnel) {
+            SandboxWorldScreen.getInstance().getWorld().removeTunnel((Tunnel)selected);
         }
-        else if (selectedObject instanceof Label) {
-            SandboxWorldScreen.getInstance().getWorld().removeLabel((Label)selectedObject);
+        else if (selected instanceof Label) {
+            SandboxWorldScreen.getInstance().getWorld().removeLabel((Label)selected);
         }
 
-        selectedObject = null;
+        selectionManager.deselect();
         SandboxWorldScreen.getInstance().repaint();
     }
+
     public void handleRemoveTunnel(int worldX, int worldY) {
         Tunnel tunnel = SandboxWorldScreen.getInstance().getWorld().getTunnelAt(worldX, worldY);
         if (tunnel != null) {
@@ -132,45 +144,44 @@ public class SandboxClickHandler {
             SandboxWorldScreen.getInstance().repaint();
         }
     }
+
     public void handleEditStationName(int x, int y) {
         Station station = SandboxWorldScreen.getInstance().getWorld().getStationAt(x, y);
-        Tunnel t = SandboxWorldScreen.getInstance().getWorld().getTunnelAt(x, y);
         if (station != null) {
             Point mouseWorldPos = new Point(station.getX(), station.getY());
-            editStationName(station, mouseWorldPos );
+            editStationName(station, mouseWorldPos);
         }
     }
+
     /**
      * Handles tunnel creation
      * @param x X coordinate
      * @param y Y coordinate
      */
     public void handleTunnelClick(int x, int y) {
-
+        SelectionManager selectionManager = SelectionManager.getInstance();
         Station station = SandboxWorldScreen.getInstance().getWorld().getStationAt(x, y);
         if (station == null) return;
 
-        // Если есть уже выбранная станция и это не та же самая
+        Selectable selected = selectionManager.getSelected();
 
-           if (selectedStation != null && selectedStation != station) {
-               // Создаём туннель
-               Tunnel tunnel = new Tunnel(SandboxWorldScreen.getInstance().getWorld(), selectedStation, station, TunnelType.ACTIVE);
-               SandboxWorldScreen.getInstance().getWorld().addTunnel(tunnel);
+        if (selected instanceof Station && selected != station) {
+            Station selectedStation = (Station) selected;
 
-               // Снимаем выделение
-               selectedStation.setSelected(false);
-               selectedStation = null;
-           } else {
-               // Выбираем новую станцию (или снимаем выделение если кликнули ту же)
-               if (selectedStation == station) {
-                   station.setSelected(false);
-                   selectedStation = null;
-               } else {
-                   deselectAll(); // Снимаем выделение со всех других объектов
-                   station.setSelected(true);
-                   selectedStation = station;
-               }
-           }
+            // Создаём туннель
+            Tunnel tunnel = new Tunnel(SandboxWorldScreen.getInstance().getWorld(), selectedStation, station, TunnelType.ACTIVE);
+            SandboxWorldScreen.getInstance().getWorld().addTunnel(tunnel);
+
+            // Снимаем выделение
+            selectionManager.deselect();
+        } else {
+            // Выбираем новую станцию (или снимаем выделение если кликнули ту же)
+            if (selectionManager.isSelected(station)) {
+                selectionManager.deselect();
+            } else {
+                selectionManager.select(station);
+            }
+        }
 
         SandboxWorldScreen.getInstance().repaint();
     }
@@ -272,31 +283,26 @@ public class SandboxClickHandler {
 
         return colorBtn;
     }
+
     /**
      * Handles selection of stations/tunnels
      * @param x X coordinate
      * @param y Y coordinate
      */
     public void handleDefaultClick(int x, int y) {
-        // Сначала снимаем выделение со всех объектов
-        deselectAll();
+        SelectionManager selectionManager = SelectionManager.getInstance();
 
+        // Проверяем метки
         Label label = SandboxWorldScreen.getInstance().getWorld().getLabelAt(x, y);
         if (label != null) {
-            label.setSelected(true);
-            selectedObject = label;
-            dragOffset = new PathPoint(x - label.getX(), y - label.getY());
-            SandboxWorldScreen.getInstance().repaint();
+            selectObject(label, x, y);
             return;
         }
 
         // Проверяем станции
         Station station = SandboxWorldScreen.getInstance().getWorld().getStationAt(x, y);
         if (station != null) {
-            station.setSelected(true);
-            selectedObject = station;
-            dragOffset = new PathPoint(x - station.getX(), y - station.getY());
-            SandboxWorldScreen.getInstance().repaint();
+            selectObject(station, x, y);
             return;
         }
 
@@ -306,50 +312,41 @@ public class SandboxClickHandler {
             // Ищем конкретную точку туннеля
             for (PathPoint p : tunnel.getPath()) {
                 if (p.getX() == x && p.getY() == y) {
-                    tunnel.setSelected(true);
-                    selectedObject = tunnel;
-                    dragOffset = new PathPoint(0, 0);
+                    selectObject(tunnel, x, y);
                     break;
                 }
             }
-            SandboxWorldScreen.getInstance().repaint();
             return;
         }
 
         if (SandboxWorldScreen.getInstance().isShiftPressed) {
-            // Дополнительная проверка (хотя предыдущие проверки уже гарантируют пустую клетку)
             if (SandboxWorldScreen.getInstance().getWorld().getStationAt(x, y) == null) {
-                Station newStation = new Station(SandboxWorldScreen.getInstance().getWorld(), x, y, SandboxClickHandler.currentStationColor, StationType.REGULAR);
+                Station newStation = new Station(SandboxWorldScreen.getInstance().getWorld(), x, y, currentStationColor, StationType.REGULAR);
                 SandboxWorldScreen.getInstance().getWorld().addStation(newStation);
                 checkForTransferStation(newStation);
                 SandboxWorldScreen.getInstance().repaint();
             }
+        } else {
+            // Если кликнули на пустое место - снимаем выделение
+            selectionManager.deselect();
         }
     }
-    public GameObject getSelectedObject() {
-        return selectedObject;
+
+    private void selectObject(GameObject obj, int clickX, int clickY) {
+        SelectionManager.getInstance().select(obj);
+        dragOffset = new PathPoint(clickX - obj.getX(), clickY - obj.getY());
+        SandboxWorldScreen.getInstance().repaint();
+    }
+
+    public Selectable getSelectedObject() {
+        return SelectionManager.getInstance().getSelected();
     }
 
     /**
      * Deselects all game objects
      */
     private void deselectAll() {
-        // Снимаем выделение со всех станций
-        for (Station station : SandboxWorldScreen.getInstance().getWorld().getStations()) {
-            station.setSelected(false);
-        }
-
-        // Снимаем выделение со всех меток
-        for (Label label : SandboxWorldScreen.getInstance().getWorld().getLabels()) {
-            label.setSelected(false);
-        }
-
-        // Снимаем выделение со всех туннелей
-        for (Tunnel tunnel : SandboxWorldScreen.getInstance().getWorld().getTunnels()) {
-            tunnel.setSelected(false);
-        }
-
-        selectedObject = null;
+        SelectionManager.getInstance().deselect();
     }
 
     /**
@@ -406,7 +403,7 @@ public class SandboxClickHandler {
         dialog.add(panel);
         dialog.pack();
 
-        // Позиционируем окно рядом с курсором (смещение 20px вправо и вниз)
+        // Позиционируем окно рядом с курсором
         dialog.setLocation(
                 windowPos.x + 20,
                 windowPos.y + 20
@@ -432,24 +429,29 @@ public class SandboxClickHandler {
             SandboxWorldScreen.getInstance().repaint();
         }
     }
+
     /**
      * Handles station placement/removal
      * @param x X coordinate
      * @param y Y coordinate
      */
     public void handleStationClick(int x, int y) {
+        SelectionManager selectionManager = SelectionManager.getInstance();
         Station existing = SandboxWorldScreen.getInstance().getWorld().getStationAt(x, y);
+
         if (existing != null) {
-            if (!existing.isSelected() && !getInstance().isShiftPressed) {
-                existing.setSelected(true);
-            } else if(getInstance().isShiftPressed) {
+            if (!selectionManager.isSelected(existing) && !getInstance().isShiftPressed) {
+                selectionManager.select(existing);
+            } else if (getInstance().isShiftPressed) {
                 SandboxWorldScreen.getInstance().getWorld().removeStation(existing);
+                selectionManager.deselect();
             }
-            return; // Выходим, если станция уже существует
+            return;
         }
-        if (SandboxWorldScreen.getInstance().isCPressed) { // Проверяем зажат ли Ctrl+C
+
+        if (SandboxWorldScreen.getInstance().isCPressed) {
             showColorSelectionPopup(x, y);
-            return; // Выходим, чтобы не создавать станцию дважды
+            return;
         }
 
         // Создаем новую станцию с текущим цветом
@@ -465,8 +467,7 @@ public class SandboxClickHandler {
     private static void checkForTransferStation(Station station) {
         int x = station.getX();
         int y = station.getY();
-        GameTime gametime = SandboxWorldScreen.getInstance().getWorld().getGameTime();
-        // Check all 8 directions
+
         for (int ny = Math.max(0, y-1); ny < Math.min(SandboxWorldScreen.getInstance().getWorld().getHeight(), y+2); ny++) {
             for (int nx = Math.max(0, x-1); nx < Math.min(SandboxWorldScreen.getInstance().getWorld().getWidth(), x+2); nx++) {
                 if (nx == x && ny == y) continue;

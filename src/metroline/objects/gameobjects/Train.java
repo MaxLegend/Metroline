@@ -2,6 +2,7 @@ package metroline.objects.gameobjects;
 
 import metroline.core.world.GameWorld;
 import metroline.core.world.World;
+import metroline.input.selection.SelectionManager;
 import metroline.objects.enums.Direction;
 import metroline.objects.enums.StationType;
 import metroline.objects.enums.TrainType;
@@ -36,6 +37,19 @@ public class Train extends GameObject {
     private transient TrainType cachedTrainType;
     private transient float cachedZoom = -1f;
 
+    private float currentSpeed = 0.0f;
+    private float targetSpeed = 0.0f;
+    private boolean isAccelerating = false;
+    private boolean isBraking = false;
+
+    // Коэффициенты ускорения/торможения (относительно базовой скорости)
+    private static final float ACCELERATION_FACTOR = 0.8f; // ускорение (доли от макс. скорости в секунду)
+    private static final float DECELERATION_FACTOR = 1.2f; // торможение (доли от макс. скорости в секунду)
+    private static final float CRUISING_SPEED_FACTOR = 0.9f; // Крейсерская скорость относительно макс.
+    private static final float CURVE_SPEED_PENALTY_MAX = 0.4f; // Максимальное замедление на поворотах
+    private static final float STATION_APPROACH_SPEED = 0.3f; // Скорость при подходе к станции
+
+
     public Train(World world, Station spawnStation, TrainType trainType) {
         super(world, spawnStation.getX(), spawnStation.getY());
         this.currentStation = spawnStation;
@@ -62,8 +76,12 @@ public class Train extends GameObject {
         if(getWorld().getGameTime().isPaused()) {
             return;
         }
+
+
+        // Обновляем скорость перед движением
+        updateSpeed(deltaSeconds * gameTimeMultiplier);
         if (currentTunnel != null) {
-            moveAlongTunnel(deltaSeconds * gameTimeMultiplier, getTrainType());
+            moveAlongTunnel(deltaSeconds * gameTimeMultiplier);
         } else if (currentStation != null) {
             handleStationWait(deltaSeconds * gameTimeMultiplier);
         }
@@ -71,16 +89,116 @@ public class Train extends GameObject {
         this.x = Math.round(currentX);
         this.y = Math.round(currentY);
     }
+    private void updateSpeed(float deltaSeconds) {
+        float baseSpeed = trainType.getSpeed();
 
-    private void moveAlongTunnel(float deltaSeconds, TrainType trainType) {
+        if (currentTunnel != null) {
+            // В туннеле - ускоряемся до целевой скорости с учетом типа поезда
+            float maxPossibleSpeed = calculateMaxPossibleSpeed();
+            targetSpeed = maxPossibleSpeed * CRUISING_SPEED_FACTOR;
+
+            float accelerationRate = baseSpeed * ACCELERATION_FACTOR;
+            float decelerationRate = baseSpeed * DECELERATION_FACTOR;
+
+            if (currentSpeed < targetSpeed) {
+                // Разгон - более быстрые поезда разгоняются быстрее
+                currentSpeed = Math.min(currentSpeed + accelerationRate * deltaSeconds, targetSpeed);
+                isAccelerating = true;
+                isBraking = false;
+            } else if (currentSpeed > targetSpeed) {
+                // Торможение до крейсерской скорости
+                currentSpeed = Math.max(currentSpeed - decelerationRate * deltaSeconds, targetSpeed);
+                isAccelerating = false;
+                isBraking = true;
+            } else {
+                // Движение с постоянной скоростью
+                isAccelerating = false;
+                isBraking = false;
+            }
+        } else if (currentStation != null) {
+            // На станции - тормозим до полной остановки
+            targetSpeed = 0.0f;
+            float decelerationRate = baseSpeed * DECELERATION_FACTOR * 1.5f; // Усиленное торможение на станции
+
+            if (currentSpeed > 0) {
+                currentSpeed = Math.max(currentSpeed - decelerationRate * deltaSeconds, 0.0f);
+                isAccelerating = false;
+                isBraking = true;
+            } else {
+                currentSpeed = 0.0f;
+                isAccelerating = false;
+                isBraking = false;
+            }
+        }
+    }
+    private float calculateMaxPossibleSpeed() {
+        float baseSpeed = trainType.getSpeed();
+
+        // Учет изгибов туннеля (замедление на поворотах)
+        float curvaturePenalty = calculateCurvaturePenalty();
+        float curveSpeedModifier = 1.0f - curvaturePenalty;
+
+        return baseSpeed * curveSpeedModifier;
+    }
+
+    private float calculateCurvaturePenalty() {
+        if (currentPath == null || currentPath.size() < 3) return 0.0f;
+
+        // Более быстрые поезда сильнее страдают от поворотов
+        float baseSpeed = trainType.getSpeed();
+        float sensitivity = Math.min(baseSpeed / 0.05f, 2.0f); // Чувствительность к поворотам
+
+        float totalAngleChange = 0.0f;
+        int segments = Math.min(5, currentPath.size() - 2);
+
+        for (int i = 0; i < segments; i++) {
+            PathPoint p1 = currentPath.get(i);
+            PathPoint p2 = currentPath.get(i + 1);
+            PathPoint p3 = currentPath.get(i + 2);
+
+            float angle = calculateAngleBetweenVectors(p1, p2, p3);
+            totalAngleChange += Math.abs(angle);
+        }
+
+        // Нормализуем и применяем чувствительность
+        float normalizedPenalty = totalAngleChange / 180.0f;
+        float effectivePenalty = normalizedPenalty * sensitivity;
+
+        return Math.min(effectivePenalty * CURVE_SPEED_PENALTY_MAX, CURVE_SPEED_PENALTY_MAX);
+    }
+
+    private float calculateAngleBetweenVectors(PathPoint p1, PathPoint p2, PathPoint p3) {
+        float dx1 = p2.getX() - p1.getX();
+        float dy1 = p2.getY() - p1.getY();
+
+        float dx2 = p3.getX() - p2.getX();
+        float dy2 = p3.getY() - p2.getY();
+
+        float dot = dx1 * dx2 + dy1 * dy2;
+        float mag1 = (float) Math.sqrt(dx1 * dx1 + dy1 * dy1);
+        float mag2 = (float) Math.sqrt(dx2 * dx2 + dy2 * dy2);
+
+        if (mag1 == 0 || mag2 == 0) return 0.0f;
+
+        float cosAngle = dot / (mag1 * mag2);
+        cosAngle = Math.max(-1.0f, Math.min(1.0f, cosAngle));
+
+        return (float) Math.toDegrees(Math.acos(cosAngle));
+    }
+
+
+    private void moveAlongTunnel(float deltaSeconds) {
         if (currentPath == null || currentPath.size() < 2) return;
 
         float totalPathLength = calculateTotalPathLength();
         if (totalPathLength == 0) return;
-        float distanceToMove;
 
-        distanceToMove = trainType.getSpeed() * deltaSeconds ;
+        // Проверяем, нужно ли начинать торможение перед станцией
+        if (isApproachingStation(totalPathLength)) {
+            beginStationApproach();
+        }
 
+        float distanceToMove = currentSpeed * deltaSeconds;
 
         if (movingForward) {
             pathProgress += distanceToMove / totalPathLength;
@@ -97,6 +215,77 @@ public class Train extends GameObject {
         }
 
         updatePositionFromPathProgress();
+    }
+    private boolean isApproachingStation(float totalPathLength) {
+        if (currentTunnel == null) return false;
+
+        // Определяем расстояние до конечной станции
+        float distanceToEnd;
+        if (movingForward) {
+            distanceToEnd = (1.0f - pathProgress) * totalPathLength;
+        } else {
+            distanceToEnd = pathProgress * totalPathLength;
+        }
+
+        // Расстояние для начала торможения зависит от скорости поезда
+        float brakingDistance = calculateBrakingDistance();
+
+        return distanceToEnd <= brakingDistance;
+    }
+
+    private float calculateBrakingDistance() {
+        float baseSpeed = trainType.getSpeed();
+        // Более быстрые поезда требуют большего расстояния для торможения
+        return baseSpeed * baseSpeed * 2.0f; // Квадратичная зависимость
+    }
+
+    private void beginStationApproach() {
+        float baseSpeed = trainType.getSpeed();
+        float approachSpeed = baseSpeed * STATION_APPROACH_SPEED;
+
+        if (currentSpeed > approachSpeed) {
+            targetSpeed = approachSpeed;
+            isAccelerating = false;
+            isBraking = true;
+        }
+    }
+
+    public float getCurrentSpeed() {
+        return currentSpeed;
+    }
+
+    public float getNormalizedSpeed() {
+        return currentSpeed / trainType.getSpeed();
+    }
+
+    public float getTargetSpeed() {
+        return targetSpeed;
+    }
+
+    public boolean isAccelerating() {
+        return isAccelerating;
+    }
+
+    public boolean isBraking() {
+        return isBraking;
+    }
+    public float getAccelerationProgress() {
+        if (targetSpeed == 0) return 0.0f;
+        return Math.min(currentSpeed / targetSpeed, 1.0f);
+    }
+
+    public void emergencyBrake() {
+        targetSpeed = 0.0f;
+        isBraking = true;
+        isAccelerating = false;
+    }
+
+    public void startSmoothAcceleration() {
+        if (currentTunnel != null) {
+            targetSpeed = calculateMaxPossibleSpeed() * CRUISING_SPEED_FACTOR;
+            isAccelerating = true;
+            isBraking = false;
+        }
     }
 
     private float calculateTotalPathLength() {
@@ -287,7 +476,13 @@ public class Train extends GameObject {
         currentPath = null;
         waitTimer = STATION_WAIT_TIME;
         pathProgress = movingForward ? 1.0f : 0.0f;
-        hasPaidAtCurrentStation = false; // Сбрасываем флаг оплаты при прибытии на новую станцию
+        hasPaidAtCurrentStation = false;
+
+        // Полная остановка на станции
+        currentSpeed = 0.0f;
+        targetSpeed = 0.0f;
+        isAccelerating = false;
+        isBraking = false;
     }
 
     private void findNextTunnel() {
@@ -347,6 +542,18 @@ public class Train extends GameObject {
 
         currentStation = null;
         updatePositionFromPathProgress();
+    }
+
+    // Метод для получения информации о скорости для отладки
+    public String getSpeedInfo() {
+        return String.format("%.1f/%.1f u/s (%.0f%%)",
+                currentSpeed,
+                trainType.getSpeed(),
+                getNormalizedSpeed() * 100
+        );
+    }
+    public boolean isSelected() {
+        return SelectionManager.getInstance().isSelected(this);
     }
     @Override
     public void draw(Graphics2D g2d, int offsetX, int offsetY, float zoom) {

@@ -41,7 +41,7 @@ public class SandboxWorldScreen extends CachedWorldScreen {
     public SandboxWorldScreen(MainFrame parent) {
         super(parent, new SandboxWorld(widthWorld, heightWorld, 0xFFFFFF));
         INSTANCE = this;
-        this.sandboxClickHandler = new SandboxClickHandler();
+        this.sandboxClickHandler = new SandboxClickHandler(this);
 
     }
 

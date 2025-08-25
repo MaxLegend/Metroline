@@ -3,6 +3,7 @@ package metroline.objects.gameobjects;
 import metroline.core.world.GameWorld;
 import metroline.core.world.World;
 import metroline.core.world.tiles.WorldTile;
+import metroline.input.selection.SelectionManager;
 import metroline.objects.enums.Direction;
 import metroline.objects.enums.StationColors;
 import metroline.objects.enums.StationType;
@@ -90,10 +91,11 @@ public class Station extends GameObject {
             label.setText(name);
         }
     }
-
+    public boolean isSelected() {
+        return SelectionManager.getInstance().isSelected(this);
+    }
     @Override
     public void draw(Graphics2D g, int offsetX, int offsetY, float zoom) {
-
     }
 
     /**

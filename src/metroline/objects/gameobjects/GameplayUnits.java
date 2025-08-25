@@ -1,6 +1,7 @@
 package metroline.objects.gameobjects;
 
 import metroline.core.world.World;
+import metroline.input.selection.SelectionManager;
 import metroline.objects.enums.GameplayUnitsType;
 
 import javax.imageio.ImageIO;
@@ -40,6 +41,9 @@ public class GameplayUnits extends GameObject {
             // Запасной вариант - создаем простые иконки
             createFallbackIcons();
         }
+    }
+    public boolean isSelected() {
+        return SelectionManager.getInstance().isSelected(this);
     }
     private static BufferedImage loadIcon(String path) throws IOException {
 

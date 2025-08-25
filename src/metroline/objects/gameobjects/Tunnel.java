@@ -2,6 +2,7 @@ package metroline.objects.gameobjects;
 
 import metroline.core.world.World;
 import metroline.core.world.tiles.WorldTile;
+import metroline.input.selection.SelectionManager;
 import metroline.objects.enums.TunnelType;
 
 import java.awt.*;
@@ -345,7 +346,9 @@ public class Tunnel extends GameObject {
 //        }
 //        }
     }
-
+    public boolean isSelected() {
+        return SelectionManager.getInstance().isSelected(this);
+    }
     private GeneralPath createPathShape(List<PathPoint> path, int offsetX, int offsetY, float zoom) {
         GeneralPath pathShape = new GeneralPath();
         PathPoint first = path.get(0);

@@ -2,6 +2,7 @@ package metroline.objects.gameobjects;
 
 import metroline.core.world.tiles.Tile;
 import metroline.core.world.World;
+import metroline.input.selection.Selectable;
 
 import java.awt.*;
 import java.io.Serializable;
@@ -11,11 +12,11 @@ import java.util.concurrent.atomic.AtomicLong;
  * Base class for all game objects
  * @author Tesmio
  */
-public abstract class GameObject implements Serializable {
+public abstract class GameObject implements Serializable, Selectable {
     private static final long serialVersionUID = 1L;
     public int x;
     public int y;
-    private boolean selected;
+//private boolean selected;
     private World world;
     public String name;
     // Генератор уникальных ID для всех объектов
@@ -106,13 +107,16 @@ public abstract class GameObject implements Serializable {
      * Checks if this object is selected
      * @return True if selected
      */
-    public boolean isSelected() { return selected; }
-
+ //   public boolean isSelected() { return selected; }
+    @Override
+    public String getSelectionId() {
+        return this.getClass().getSimpleName() + "_" + System.identityHashCode(this);
+    }
     /**
      * Sets the selected state of this object
      * @param selected New selected state
      */
-    public void setSelected(boolean selected) { this.selected = selected; }
+  //  public void setSelected(boolean selected) { this.selected = selected; }
 
     /**
      * Draws the game object

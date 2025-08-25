@@ -1,8 +1,10 @@
 package metroline.input;
 
-import metroline.objects.gameobjects.GameObject;
-import metroline.objects.gameobjects.PathPoint;
-import metroline.objects.gameobjects.Train;
+import metroline.core.world.GameWorld;
+import metroline.input.selection.Selectable;
+import metroline.input.selection.SelectionManager;
+import metroline.objects.gameobjects.*;
+import metroline.objects.gameobjects.Label;
 import metroline.screens.worldscreens.WorldScreen;
 import metroline.screens.worldscreens.normal.GameWorldScreen;
 import metroline.screens.worldscreens.normal.WorldClickController;
@@ -52,19 +54,40 @@ public class MouseController extends MouseAdapter {
      */
     @Override
     public void mousePressed(MouseEvent e) {
+        SelectionManager selectionManager = SelectionManager.getInstance();
+
         if (SwingUtilities.isRightMouseButton(e)) {
             PathPoint worldPos = screen.screenToWorld(e.getX(), e.getY());
 
             if (screen instanceof GameWorldScreen) {
                 GameWorldScreen gameScreen = (GameWorldScreen) screen;
-
                 gameScreen.worldClickController.handleRightClick(worldPos.x, worldPos.y);
             }
             handleRightMousePressed(e);
         } else if (SwingUtilities.isLeftMouseButton(e)) {
-            handleLeftMousePressed(e);
+            PathPoint worldPos = screen.screenToWorld(e.getX(), e.getY());
+
+            // Проверяем, не кликнули ли мы уже на выделенный объект
+            Selectable selected = selectionManager.getSelected();
+            if (selected instanceof GameObject) {
+                GameObject selectedObj = (GameObject) selected;
+                // Если клик на уже выделенный объект - начинаем перетаскивание
+                if (isClickOnSelectedObject(selectedObj, worldPos.x, worldPos.y)) {
+                    isLeftMouseDragging = true;
+                    // Сохраняем смещение для перетаскивания
+                    WorldClickController.dragOffset = new PathPoint(
+                            worldPos.x - selectedObj.getX(),
+                            worldPos.y - selectedObj.getY()
+                    );
+                    return;
+                }
+            }
+
+            // Обычный клик - обрабатываем через контроллер
+            handleLeftMousePressed(e, worldPos);
         }
     }
+
 
     /**
      * Обработка перетаскивания мыши
@@ -106,6 +129,8 @@ public class MouseController extends MouseAdapter {
      * Обработка двойного клика
      */
     private void handleDoubleClick(MouseEvent e, PathPoint worldPos) {
+        SelectionManager selectionManager = SelectionManager.getInstance();
+        Selectable selected = selectionManager.getSelected();
 
         if (screen instanceof SandboxWorldScreen sbScreen) {
             if (!sbScreen.isCtrlPressed && !sbScreen.isShiftPressed) {
@@ -113,14 +138,12 @@ public class MouseController extends MouseAdapter {
                 sbScreen.sandboxClickHandler.handleRemoveTunnel(worldPos.x, worldPos.y);
             }
         } else if (screen instanceof GameWorldScreen gScreen) {
-            // Проверяем выделенный объект, а не объект под курсором
-            GameObject selected = gScreen.worldClickController.getSelectedObject();
 
             if (selected instanceof Train train) {
-                System.out.println("Double click on train: " + train.getName());
+
                 gScreen.showTrainInfo(train, worldPos.x, worldPos.y);
             } else {
-                // Для других объектов используем старую логику
+                // Для других объектов используем объект под курсором
                 GameObject objectUnderCursor = gScreen.getWorld().getGameObjectAt(worldPos.x, worldPos.y);
                 gScreen.showInfoPanel(objectUnderCursor, worldPos.x, worldPos.y);
             }
@@ -142,8 +165,17 @@ public class MouseController extends MouseAdapter {
     /**
      * Обработка нажатия левой кнопки мыши
      */
-    private void handleLeftMousePressed(MouseEvent e) {
-        PathPoint worldPos = screen.screenToWorld(e.getX(), e.getY());
+//    private void handleLeftMousePressed(MouseEvent e) {
+//        PathPoint worldPos = screen.screenToWorld(e.getX(), e.getY());
+//        isLeftMouseDragging = true;
+//
+//        if (screen instanceof SandboxWorldScreen sbScreen) {
+//            sbScreen.handleClick(worldPos.x, worldPos.y);
+//        } else if (screen instanceof GameWorldScreen gsScreen) {
+//            gsScreen.handleWorldClick(worldPos.x, worldPos.y);
+//        }
+//    }
+    private void handleLeftMousePressed(MouseEvent e, PathPoint worldPos) {
         isLeftMouseDragging = true;
 
         if (screen instanceof SandboxWorldScreen sbScreen) {
@@ -152,7 +184,6 @@ public class MouseController extends MouseAdapter {
             gsScreen.handleWorldClick(worldPos.x, worldPos.y);
         }
     }
-
     /**
      * Обработка перетаскивания правой кнопкой мыши
      */
@@ -172,17 +203,32 @@ public class MouseController extends MouseAdapter {
     /**
      * Обработка перетаскивания левой кнопкой мыши
      */
+//    private void handleLeftMouseDrag(MouseEvent e) {
+//        PathPoint worldPos = screen.screenToWorld(e.getX(), e.getY());
+//        if (worldPos != null) {
+//            if (screen instanceof SandboxWorldScreen sbscreen) {
+//                sbscreen.sandboxClickHandler.handleEditDrag(worldPos.x, worldPos.y);
+//            } else if (screen instanceof GameWorldScreen gamescreen) {
+//                gamescreen.worldClickController.handleEditDrag(worldPos.x, worldPos.y);
+//            }
+//        }
+//    }
     private void handleLeftMouseDrag(MouseEvent e) {
+        SelectionManager selectionManager = SelectionManager.getInstance();
+        Selectable selected = selectionManager.getSelected();
+
+        if (selected == null || WorldClickController.dragOffset == null) return;
+
         PathPoint worldPos = screen.screenToWorld(e.getX(), e.getY());
         if (worldPos != null) {
             if (screen instanceof SandboxWorldScreen sbscreen) {
                 sbscreen.sandboxClickHandler.handleEditDrag(worldPos.x, worldPos.y);
             } else if (screen instanceof GameWorldScreen gamescreen) {
+                // Передаем перетаскивание в контроллер
                 gamescreen.worldClickController.handleEditDrag(worldPos.x, worldPos.y);
             }
         }
     }
-
     /**
      * Обработка отпускания правой кнопки мыши
      */
@@ -199,14 +245,54 @@ public class MouseController extends MouseAdapter {
      */
     private void handleLeftMouseReleased(MouseEvent e) {
         isLeftMouseDragging = false;
-
-        if (screen instanceof SandboxWorldScreen sbscreen) {
-            sbscreen.sandboxClickHandler.selectedObject = null;
-            SandboxClickHandler.dragOffset = null;
-        } else if (screen instanceof GameWorldScreen gScreen) {
-            gScreen.worldClickController.selectedObject = null;
-            WorldClickController.dragOffset = null;
+        WorldClickController.dragOffset = null;
+//        if (screen instanceof SandboxWorldScreen sbscreen) {
+//            sbscreen.sandboxClickHandler.selectedObject = null;
+//            SandboxClickHandler.dragOffset = null;
+//        } else if (screen instanceof GameWorldScreen gScreen) {
+//            gScreen.worldClickController.selectedObject = null;
+//            WorldClickController.dragOffset = null;
+//        }
+    }
+    /**
+     * Проверка, кликнули ли на уже выделенный объект
+     */
+    private boolean isClickOnSelectedObject(GameObject selectedObj, int worldX, int worldY) {
+        if (selectedObj instanceof Station) {
+            Station station = (Station) selectedObj;
+            return worldX == station.getX() && worldY == station.getY();
+        } else if (selectedObj instanceof Label) {
+            Label label = (Label) selectedObj;
+            return worldX == label.getX() && worldY == label.getY();
+        } else if (selectedObj instanceof Tunnel) {
+            Tunnel tunnel = (Tunnel) selectedObj;
+            for (PathPoint p : tunnel.getPath()) {
+                if (p.getX() == worldX && p.getY() == worldY) {
+                    return true;
+                }
+            }
+        } else if (selectedObj instanceof Train) {
+            Train train = (Train) selectedObj;
+            return isClickOnTrain(train, worldX, worldY);
+        } else if (selectedObj instanceof GameplayUnits) {
+            GameplayUnits unit = (GameplayUnits) selectedObj;
+            return worldX == unit.getX() && worldY == unit.getY();
         }
+        return false;
+    }
+    /**
+     * Проверка попадания клика на поезд
+     */
+    private boolean isClickOnTrain(Train train, int worldX, int worldY) {
+        float trainX = train.getCurrentX();
+        float trainY = train.getCurrentY();
+        float trainWidth = 1.0f;
+        float trainHeight = 1.0f;
+
+        return worldX >= trainX - trainWidth/2 &&
+                worldX <= trainX + trainWidth/2 &&
+                worldY >= trainY - trainHeight/2 &&
+                worldY <= trainY + trainHeight/2;
     }
 
     /**
