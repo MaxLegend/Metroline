@@ -32,9 +32,7 @@ import java.util.List;
 import static metroline.objects.gameobjects.GameConstants.COST_STANDART_TRAIN;
 
 public class WorldClickController {
-    // Выбранные объекты
-  //  public static Station selectedStation = null;
-  //  public GameObject selectedObject = null;
+
     public static PathPoint dragOffset = null;
 
     // Ссылки
@@ -207,6 +205,7 @@ public class WorldClickController {
     /**
      * Обычный клик - выбор объектов
      */
+
     public void handleDefaultLeftClick(int x, int y) {
         SelectionManager selectionManager = SelectionManager.getInstance();
         Selectable selected = selectionManager.getSelected();
@@ -254,6 +253,7 @@ public class WorldClickController {
             handleStationDrag((Station)selected, x, y);
         } else if (selected instanceof Tunnel) {
             handleTunnelDrag((Tunnel)selected, x, y);
+
         }
     }
 
@@ -424,6 +424,7 @@ public class WorldClickController {
      * Попытка выбрать станцию
      */
     private boolean trySelectStation(int x, int y) {
+
         Station station = GameWorldScreen.getInstance().getWorld().getStationAt(x, y);
         if (station != null) {
             selectObject(station, x, y);
@@ -684,42 +685,7 @@ public class WorldClickController {
 
         }
     }
-    /**
-     * Проверяет валидность выделенных объектов и сбрасывает выделение если объект удален
-     */
-//    public void validateSelection() {
-//        GameWorld world = (GameWorld) screen.getWorld();
-//
-//        // Проверяем selectedObject
-//        if (selectedObject != null) {
-//            boolean objectExists = false;
-//
-//            if (selectedObject instanceof Station) {
-//                objectExists = world.getStations().contains(selectedObject);
-//            } else if (selectedObject instanceof Tunnel) {
-//                objectExists = world.getTunnels().contains(selectedObject);
-//            } else if (selectedObject instanceof Label) {
-//                objectExists = world.getLabels().contains(selectedObject);
-//            } else if (selectedObject instanceof GameplayUnits) {
-//                objectExists = world.getGameplayUnits().contains(selectedObject);
-//            } else if (selectedObject instanceof Train) {
-//                objectExists = world.getTrains().contains(selectedObject);
-//            }
-//
-//            if (!objectExists) {
-//                selectedObject = null;
-//                dragOffset = null;
-//            }
-//        }
-//
-//        // Проверяем selectedStation
-//        if (selectedStation != null) {
-//            if (!world.getStations().contains(selectedStation)) {
-//                selectedStation.setSelected(false);
-//                selectedStation = null;
-//            }
-//        }
-//    }
+
     /**
      * Завершение строительства туннеля
      */
@@ -739,7 +705,7 @@ public class WorldClickController {
      * Расчет стоимости станции
      */
     private float calculateStationCost(Station station) {
-        float totalCost = GameConstants.STATION_BASE_COST * GameWorldScreen.getInstance().getWorld().getWorldTile(station.getX(), station.getY()).getPerm();
+        float totalCost = (GameConstants.STATION_BASE_COST * 100) * GameWorldScreen.getInstance().getWorld().getWorldTile(station.getX(), station.getY()).getPerm();
 
         for (Tunnel tunnel : GameWorldScreen.getInstance().getWorld().getTunnels()) {
             if ((tunnel.getStart() == station || tunnel.getEnd() == station) &&

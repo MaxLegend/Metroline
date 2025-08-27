@@ -346,6 +346,11 @@ public class Tunnel extends GameObject {
 //        }
 //        }
     }
+
+    public PathPoint getPathPoint() {
+        return pathPoint;
+    }
+
     public boolean isSelected() {
         return SelectionManager.getInstance().isSelected(this);
     }

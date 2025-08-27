@@ -24,12 +24,12 @@ public class GameConstants {
     public static  long STATION_BUILD_TIME = 604800l;
     public static  long TUNNEL_BUILD_TIME = 604800l;
     // Константы стоимости
-    public static  float STATION_BASE_COST = 1.5f;
+    public static  float STATION_BASE_COST = 20f;
     public static  float TUNNEL_COST_PER_SEGMENT = 1;
 
     public static float STATION_BASE_REVENUE = 2;
 
-    public static  float BASE_STATION_UPKEEP = 0.2f; // Базовое содержание станции
+    public static  float BASE_STATION_UPKEEP = 20f; // Базовое содержание станции
     public static  float BASE_TUNNEL_UPKEEP_PER_SEGMENT = 0.1f; // Базовое содержание за сегмент туннеля
 
     public static  float GAMEPLAY_UNITS_COUNT = 10;

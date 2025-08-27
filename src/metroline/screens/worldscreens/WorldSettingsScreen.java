@@ -243,11 +243,11 @@ public class WorldSettingsScreen extends GameScreen {
         economyPanel.add(Box.createRigidArea(new Dimension(0, 20)));
 
         // Create economic sliders
-        stationBaseCostSlider = new MetrolineSlider("world.station_cost_desc", 0.1f, 20, GameConstants.STATION_BASE_COST, 0.1f);
+        stationBaseCostSlider = new MetrolineSlider("world.station_cost_desc", 5f, 40, GameConstants.STATION_BASE_COST, 0.5f);
         tunnelCostPerSegmentSlider = new MetrolineSlider("world.tunnel_segment_cost_desc",0.1f, 10, GameConstants.TUNNEL_COST_PER_SEGMENT, 0.1f);
         stationBaseRevenueSlider = new MetrolineSlider("world.station_revenue_desc",0.1f, 5, GameConstants.STATION_BASE_REVENUE, 0.1f);
         baseStationUpkeepSlider = new MetrolineSlider("world.station_upkeep_desc",0.1f, 8, GameConstants.BASE_STATION_UPKEEP, 0.1f);
-        baseTunnelUpkeepSlider = new MetrolineSlider("world.tunnel_upkeep_desc",0.1f, 2, GameConstants.BASE_TUNNEL_UPKEEP_PER_SEGMENT, 0.1f);
+        baseTunnelUpkeepSlider = new MetrolineSlider("world.tunnel_upkeep_desc",0.1f, 2, GameConstants.BASE_TUNNEL_UPKEEP_PER_SEGMENT, 0.5f);
         gameplayUnitsCountSlider = new MetrolineSlider("world.gameplay_units_desc",5f, 100, GameConstants.GAMEPLAY_UNITS_COUNT, 1f);
 
         // Add economic sliders to panel

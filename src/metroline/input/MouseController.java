@@ -226,6 +226,7 @@ public class MouseController extends MouseAdapter {
             } else if (screen instanceof GameWorldScreen gamescreen) {
                 // Передаем перетаскивание в контроллер
                 gamescreen.worldClickController.handleEditDrag(worldPos.x, worldPos.y);
+
             }
         }
     }
@@ -246,13 +247,10 @@ public class MouseController extends MouseAdapter {
     private void handleLeftMouseReleased(MouseEvent e) {
         isLeftMouseDragging = false;
         WorldClickController.dragOffset = null;
-//        if (screen instanceof SandboxWorldScreen sbscreen) {
-//            sbscreen.sandboxClickHandler.selectedObject = null;
-//            SandboxClickHandler.dragOffset = null;
-//        } else if (screen instanceof GameWorldScreen gScreen) {
-//            gScreen.worldClickController.selectedObject = null;
-//            WorldClickController.dragOffset = null;
-//        }
+        if(SelectionManager.getInstance().getSelected() instanceof Tunnel) {
+            SelectionManager.getInstance().deselect();
+        }
+
     }
     /**
      * Проверка, кликнули ли на уже выделенный объект

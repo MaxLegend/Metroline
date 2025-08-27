@@ -20,17 +20,24 @@ import java.awt.event.KeyEvent;
 import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
+import java.util.List;
+import java.util.TimerTask;
+
+
+//разобраться, доделать нормальный стабильный обновляемый фпс и все починить
 public class GameWorldScreen extends CachedWorldScreen {
     private static final int FPS_UPDATE_INTERVAL = 1000;
-    private static final int RENDER_TIMER_DELAY = 8; // ~60 FPS
+    private static final int TARGET_FPS = 144;
+    private static final int RENDER_DELAY_MS = 1000 / TARGET_FPS; // ~7ms для 144 FPS
 
     public static GameWorldScreen INSTANCE;
     public WorldClickController worldClickController;
 
     public final List<InfoWindow> infoWindows = new ArrayList<>();
     private Timer repaintTimer;
+    private java.util.Timer gameTimer;
+    private TimerTask renderTask;
 
     // Performance tracking
     private int fps;
@@ -41,6 +48,8 @@ public class GameWorldScreen extends CachedWorldScreen {
     private int worldUpdates;
     private long lastWorldUpdateTime;
 
+    private long lastUpdateTime;
+    private double deltaTime;
     // Debug
     public boolean debugMode = false;
 
@@ -49,10 +58,11 @@ public class GameWorldScreen extends CachedWorldScreen {
         INSTANCE = this;
 
         this.worldClickController = new WorldClickController(this);
-        setupRepaintTimer();
-
+       // setupRepaintTimer();
+        setupGameTimer();
         lastFpsTime = System.currentTimeMillis();
         lastWorldUpdateTime = lastFpsTime;
+        lastUpdateTime = System.nanoTime();
 
         parent.updateLanguage();
     }
@@ -69,47 +79,88 @@ public class GameWorldScreen extends CachedWorldScreen {
     public void createNewWorld(short width, short height, boolean hasPassengerCount,
             boolean hasAbilityPay, boolean hasLandscape,
             boolean hasRivers, int worldColor, int money) {
-        stopRepaintTimer();
-
+   //     stopRepaintTimer();
+        setupGameTimer();
         widthWorld = width;
         heightWorld = height;
         setWorld(new GameWorld(width, height, hasPassengerCount, hasAbilityPay,
                 hasLandscape, hasRivers, worldColor, money));
 
         worldClickController = new WorldClickController(this);
+        setupGameTimer();
+
         ((GameWorld)getWorld()).generateRandomGameplayUnits((int)GameConstants.GAMEPLAY_UNITS_COUNT);
 
         invalidateCache();
-        setupRepaintTimer();
+     //   stopGameTimer();
         repaint();
 
     }
 
-    private void setupRepaintTimer() {
-        if (repaintTimer != null && repaintTimer.isRunning()) {
+    private void setupGameTimer() {
+        stopGameTimer();
 
-            repaintTimer.stop();
+        gameTimer = new java.util.Timer("GameLoopTimer", true);
+        renderTask = new TimerTask() {
+            @Override
+            public void run() {
+                synchronized (GameWorldScreen.this) {
+                    long currentTime = System.nanoTime();
+                    deltaTime = (currentTime - lastUpdateTime) / 1_000_000_000.0; // в секундах
+                    lastUpdateTime = currentTime;
+
+                    // Обновление игровой логики
+                    updateGameLogic(deltaTime);
+
+                    // Отрисовка в EDT
+                    SwingUtilities.invokeLater(() -> {
+                        repaint();
+                    });
+                }
+            }
+        };
+
+        // Запускаем с фиксированной частотой
+        gameTimer.scheduleAtFixedRate(renderTask, 0, RENDER_DELAY_MS);
+    }
+    private void updateGameLogic(double deltaTime) {
+        // Создаем копии списков для безопасной итерации
+        List<InfoWindow> windowsCopy;
+        List<Station> stationsToCheck;
+        List<Tunnel> tunnelsToCheck;
+
+        synchronized (this) {
+            windowsCopy = new ArrayList<>(infoWindows);
+            stationsToCheck = new ArrayList<>(((GameWorld)getWorld()).getStations());
+            tunnelsToCheck = new ArrayList<>(((GameWorld)getWorld()).getTunnels());
         }
 
-        repaintTimer = new Timer(RENDER_TIMER_DELAY, e -> {
-            synchronized (this) {
-            worldClickController.checkConstructionProgress();
-            infoWindows.forEach(InfoWindow::updateInfo);
+        // Обновление окон информации
+        windowsCopy.forEach(InfoWindow::updateInfo);
 
-            ((GameWorld)getWorld()).updateTrains();
-        //   if(repaintTimer.getDelay() % 4 == 0) System.out.println(repaintTimer.getDelay() + " before World repaint "+ worldClickController.selectedObject);
-            repaint();
-      //      if(repaintTimer.getDelay() % 4 == 0) System.out.println(repaintTimer.getDelay() + " afte World repaint "+ worldClickController.selectedObject );
-        }});
+        // Проверка прогресса строительства
+        worldClickController.checkConstructionProgress();
 
-        repaintTimer.start();
+        // Обновление поездов
+        ((GameWorld)getWorld()).updateTrains();
+
+        worldUpdates++;
     }
 
-    public void stopRepaintTimer() {
-        if (repaintTimer != null) {
-            repaintTimer.stop();
+    public void stopGameTimer() {
+        if (renderTask != null) {
+            renderTask.cancel();
+        }
+        if (gameTimer != null) {
+            gameTimer.cancel();
+            gameTimer.purge();
         }
     }
+//    public void stopRepaintTimer() {
+//        if (repaintTimer != null) {
+//            repaintTimer.stop();
+//        }
+//    }
 
     public void updateMoneyDisplay() {
         if (getWorld() instanceof GameWorld) {
@@ -317,7 +368,6 @@ public class GameWorldScreen extends CachedWorldScreen {
 
 
     }
-
     private void updatePerformanceCounters() {
         frameCount++;
         long currentTime = System.currentTimeMillis();
@@ -335,6 +385,23 @@ public class GameWorldScreen extends CachedWorldScreen {
             }
         }
     }
+//    private void updatePerformanceCounters() {
+//        frameCount++;
+//        long currentTime = System.currentTimeMillis();
+//
+//        if (currentTime - lastFpsTime >= FPS_UPDATE_INTERVAL) {
+//            fps = frameCount;
+//            frameCount = 0;
+//            lastFpsTime = currentTime;
+//
+//            if (currentTime - lastWorldUpdateTime >= FPS_UPDATE_INTERVAL) {
+//                worldUpdates = 0;
+//                lastWorldUpdateTime = currentTime;
+//                totalRenderTime = 0;
+//                renderCount = 0;
+//            }
+//        }
+//    }
     public void showTrainInfo(Train train, int worldX, int worldY) {
         if (train == null ) {
             return;
@@ -379,12 +446,16 @@ public class GameWorldScreen extends CachedWorldScreen {
             screen.infoWindows.add(newWindow);
         }
     }
-    private void updateRenderStats(long renderStartTime) {
-        long renderDuration = System.nanoTime() - renderStartTime;
-        totalRenderTime += renderDuration;
-        renderCount++;
-    }
-
+//    private void updateRenderStats(long renderStartTime) {
+//        long renderDuration = System.nanoTime() - renderStartTime;
+//        totalRenderTime += renderDuration;
+//        renderCount++;
+//    }
+private void updateRenderStats(long renderStartTime) {
+    long renderDuration = System.nanoTime() - renderStartTime;
+    totalRenderTime += renderDuration;
+    renderCount++;
+}
     // Вспомогательный метод для подсчета объектов в сетке
     private int countObjectsInGrid(GameTile[] grid) {
         if (grid == null) return 0;
@@ -398,73 +469,131 @@ public class GameWorldScreen extends CachedWorldScreen {
         return count;
     }
 
-    private void drawPerformanceStats(Graphics2D g) {
-        // Save original settings
-        Color oldColor = g.getColor();
-        Font oldFont = g.getFont();
+//    private void drawPerformanceStats(Graphics2D g) {
+//        // Save original settings
+//        Color oldColor = g.getColor();
+//        Font oldFont = g.getFont();
+//
+//        // Setup debug font
+//        g.setColor(new Color(255, 255, 255, 200));
+//        g.setFont(new Font("Monospaced", Font.BOLD, 12));
+//        FontMetrics metrics = g.getFontMetrics();
+//
+//        // Prepare performance data
+//        Runtime runtime = Runtime.getRuntime();
+//        long usedMem = (runtime.totalMemory() - runtime.freeMemory()) / (1024 * 1024);
+//        long totalMem = runtime.totalMemory() / (1024 * 1024);
+//        long avgRenderTime = renderCount > 0 ? (totalRenderTime / renderCount) / 1000 : 0;
+//
+//        // Подсчитываем объекты в сетках
+//        int gameGridObjects = countObjectsInGrid(getWorld().getGameGrid());
+//        int gameplayGridObjects = countObjectsInGrid(getWorld().getGameplayGrid());
+//        BufferCapabilities caps = getGraphicsConfiguration().getBufferCapabilities();
+//
+//        String[] stats = {
+//                "=== PERFORMANCE STATS ===",
+//                String.format("FPS: %d (Target: %.1f)", fps, 1000.0/RENDER_TIMER_DELAY),
+//                String.format("Render: %d μs (avg)", avgRenderTime),
+//                String.format("World updates: %d/s", worldUpdates),
+//                "",
+//                "=== MEMORY USAGE ===",
+//                String.format("Used: %d MB / %d MB", usedMem, totalMem),
+//                String.format("Max: %d MB", runtime.maxMemory() / (1024 * 1024)),
+//                "",
+//                "=== WORLD STATS ===",
+//                String.format("World size: %dx%d", getWorld().getWidth(), getWorld().getHeight()),
+//                String.format("gameGrid objects: %d", gameGridObjects),
+//                String.format("gameplayGrid objects: %d", gameplayGridObjects),
+//                String.format("Stations: %d", getWorld().getStations().size()),
+//                String.format("Tunnels: %d", getWorld().getTunnels().size()),
+//                String.format("Labels: %d", getWorld().getLabels().size()),
+//                String.format("Units: %d", getWorld() instanceof GameWorld ?
+//                        ((GameWorld)getWorld()).getGameplayUnits().size() : 0),
+//                String.format("Zoom: %.2f", zoom),
+//                String.format("VSync: %b", caps.isPageFlipping())
+//        };
+//
+//        // Calculate background size
+//        int textHeight = metrics.getHeight() * stats.length;
+//        int textWidth = 0;
+//        for (String line : stats) {
+//            textWidth = Math.max(textWidth, metrics.stringWidth(line));
+//        }
+//     //   g.drawString(String.format("VSync: %b", caps.isPageFlipping()), 20, 50);
+//        // Draw background
+//        g.setColor(new Color(0, 0, 0, 150));
+//        g.fillRect(10, 10, textWidth + 20, textHeight + 20);
+//
+//        // Draw text
+//        g.setColor(Color.WHITE);
+//        int yPos = 30;
+//        for (String line : stats) {
+//            g.drawString(line, 20, yPos);
+//            yPos += metrics.getHeight();
+//        }
+//
+//        // Restore original settings
+//        g.setColor(oldColor);
+//        g.setFont(oldFont);
+//    }
+private void drawPerformanceStats(Graphics2D g) {
+    Color oldColor = g.getColor();
+    Font oldFont = g.getFont();
 
-        // Setup debug font
-        g.setColor(new Color(255, 255, 255, 200));
-        g.setFont(new Font("Monospaced", Font.BOLD, 12));
-        FontMetrics metrics = g.getFontMetrics();
+    g.setColor(new Color(255, 255, 255, 200));
+    g.setFont(new Font("Monospaced", Font.BOLD, 12));
+    FontMetrics metrics = g.getFontMetrics();
 
-        // Prepare performance data
-        Runtime runtime = Runtime.getRuntime();
-        long usedMem = (runtime.totalMemory() - runtime.freeMemory()) / (1024 * 1024);
-        long totalMem = runtime.totalMemory() / (1024 * 1024);
-        long avgRenderTime = renderCount > 0 ? (totalRenderTime / renderCount) / 1000 : 0;
+    Runtime runtime = Runtime.getRuntime();
+    long usedMem = (runtime.totalMemory() - runtime.freeMemory()) / (1024 * 1024);
+    long totalMem = runtime.totalMemory() / (1024 * 1024);
+    long avgRenderTime = renderCount > 0 ? (totalRenderTime / renderCount) / 1000 : 0;
 
-        // Подсчитываем объекты в сетках
-        int gameGridObjects = countObjectsInGrid(getWorld().getGameGrid());
-        int gameplayGridObjects = countObjectsInGrid(getWorld().getGameplayGrid());
-        BufferCapabilities caps = getGraphicsConfiguration().getBufferCapabilities();
+    int gameGridObjects = countObjectsInGrid(getWorld().getGameGrid());
+    int gameplayGridObjects = countObjectsInGrid(getWorld().getGameplayGrid());
 
-        String[] stats = {
-                "=== PERFORMANCE STATS ===",
-                String.format("FPS: %d (Target: %.1f)", fps, 1000.0/RENDER_TIMER_DELAY),
-                String.format("Render: %d μs (avg)", avgRenderTime),
-                String.format("World updates: %d/s", worldUpdates),
-                "",
-                "=== MEMORY USAGE ===",
-                String.format("Used: %d MB / %d MB", usedMem, totalMem),
-                String.format("Max: %d MB", runtime.maxMemory() / (1024 * 1024)),
-                "",
-                "=== WORLD STATS ===",
-                String.format("World size: %dx%d", getWorld().getWidth(), getWorld().getHeight()),
-                String.format("gameGrid objects: %d", gameGridObjects),
-                String.format("gameplayGrid objects: %d", gameplayGridObjects),
-                String.format("Stations: %d", getWorld().getStations().size()),
-                String.format("Tunnels: %d", getWorld().getTunnels().size()),
-                String.format("Labels: %d", getWorld().getLabels().size()),
-                String.format("Units: %d", getWorld() instanceof GameWorld ?
-                        ((GameWorld)getWorld()).getGameplayUnits().size() : 0),
-                String.format("Zoom: %.2f", zoom),
-                String.format("VSync: %b", caps.isPageFlipping())
-        };
+    String[] stats = {
+            "=== PERFORMANCE STATS ===",
+            String.format("FPS: %d (Target: %d)", fps, TARGET_FPS),
+            String.format("Render: %d μs (avg)", avgRenderTime),
+            String.format("World updates: %d/s", worldUpdates),
+            String.format("Delta time: %.4f", deltaTime),
+            "",
+            "=== MEMORY USAGE ===",
+            String.format("Used: %d MB / %d MB", usedMem, totalMem),
+            String.format("Max: %d MB", runtime.maxMemory() / (1024 * 1024)),
+            "",
+            "=== WORLD STATS ===",
+            String.format("World size: %dx%d", getWorld().getWidth(), getWorld().getHeight()),
+            String.format("gameGrid objects: %d", gameGridObjects),
+            String.format("gameplayGrid objects: %d", gameplayGridObjects),
+            String.format("Stations: %d", getWorld().getStations().size()),
+            String.format("Tunnels: %d", getWorld().getTunnels().size()),
+            String.format("Labels: %d", getWorld().getLabels().size()),
+            String.format("Units: %d", getWorld() instanceof GameWorld ?
+                    ((GameWorld)getWorld()).getGameplayUnits().size() : 0),
+            String.format("Zoom: %.2f", zoom)
+    };
 
-        // Calculate background size
-        int textHeight = metrics.getHeight() * stats.length;
-        int textWidth = 0;
-        for (String line : stats) {
-            textWidth = Math.max(textWidth, metrics.stringWidth(line));
-        }
-     //   g.drawString(String.format("VSync: %b", caps.isPageFlipping()), 20, 50);
-        // Draw background
-        g.setColor(new Color(0, 0, 0, 150));
-        g.fillRect(10, 10, textWidth + 20, textHeight + 20);
-
-        // Draw text
-        g.setColor(Color.WHITE);
-        int yPos = 30;
-        for (String line : stats) {
-            g.drawString(line, 20, yPos);
-            yPos += metrics.getHeight();
-        }
-
-        // Restore original settings
-        g.setColor(oldColor);
-        g.setFont(oldFont);
+    int textHeight = metrics.getHeight() * stats.length;
+    int textWidth = 0;
+    for (String line : stats) {
+        textWidth = Math.max(textWidth, metrics.stringWidth(line));
     }
+
+    g.setColor(new Color(0, 0, 0, 150));
+    g.fillRect(10, 10, textWidth + 20, textHeight + 20);
+
+    g.setColor(Color.WHITE);
+    int yPos = 30;
+    for (String line : stats) {
+        g.drawString(line, 20, yPos);
+        yPos += metrics.getHeight();
+    }
+
+    g.setColor(oldColor);
+    g.setFont(oldFont);
+}
 
     public void toggleDebugMode() {
         debugMode = !debugMode;

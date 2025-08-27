@@ -191,7 +191,8 @@ public class GameWorld extends World {
         // Обновляем состояние всех игровых объектов
         updateGameplayUnits();
     }
-    public void updateTrains() {
+
+        public void updateTrains() {
         long currentTime = System.nanoTime();
         long deltaTime = currentTime - lastTrainsUpdateTime;
         lastTrainsUpdateTime = currentTime;
