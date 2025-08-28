@@ -199,6 +199,9 @@ public class WorldClickController {
             handleExistingStation(existing);
         } else {
             handleNewStation(x, y);
+
+
+
         }
     }
 
@@ -300,6 +303,7 @@ public class WorldClickController {
         if (GameWorldScreen.getInstance().isCPressed) {
 
             showColorSelectionPopup(x, y);
+
         }
         else {
             // Создаем новую станцию

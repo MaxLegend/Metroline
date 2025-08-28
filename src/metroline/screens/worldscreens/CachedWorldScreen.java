@@ -214,7 +214,10 @@ public abstract class CachedWorldScreen extends WorldScreen {
         long frameStartTime = System.nanoTime();
         int width = getWorld().getWidth();
         int height = getWorld().getHeight();
-        if (!staticCacheValid || !validateVolatileImage(staticWorldCache, () -> updateStaticWorldCache(width, height))) {
+//        if (!staticCacheValid || !validateVolatileImage(staticWorldCache, () -> updateStaticWorldCache(width, height))) {
+//            updateStaticWorldCache(width, height);
+//        }
+        if (!staticCacheValid) {
             updateStaticWorldCache(width, height);
         }
         drawVolatileImage(g, staticWorldCache, 0, 0, () -> updateStaticWorldCache(width, height));

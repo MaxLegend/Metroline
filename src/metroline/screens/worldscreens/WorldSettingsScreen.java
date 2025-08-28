@@ -161,7 +161,7 @@ public class WorldSettingsScreen extends GameScreen {
         moneyValueLabel.setForeground(StyleUtil.FOREGROUND_COLOR);
         moneyValueLabel.setFont(new Font("Sans Serif", Font.BOLD, 13));
 
-        moneySlider = new MetrolineSlider("world.start_money_desc",50, 10000, 2000, 100);
+        moneySlider = new MetrolineSlider("world.start_money_desc",50, 1000000, 2000, 100);
 
         moneyTextLabel = new MetrolineLabel(moneySlider.getValue() + " M");
         moneyTextLabel.setFont(new Font("Sans Serif", Font.BOLD, 13));

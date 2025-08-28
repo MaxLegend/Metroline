@@ -32,6 +32,7 @@ import static metroline.MainFrame.*;
 
 public class MainFrameUI {
     public static MainFrame PARENT;
+
     private GameScreen currentScreen;
     private String currentScreenName;
     private MetrolineLabel timeLabel = new MetrolineLabel("00:00 01.01.0000");

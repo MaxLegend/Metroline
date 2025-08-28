@@ -12,6 +12,7 @@ import metroline.screens.GameScreen;
 import metroline.screens.panel.InfoWindow;
 import metroline.screens.render.StationRender;
 import metroline.screens.worldscreens.CachedWorldScreen;
+import metroline.util.MetroLogger;
 
 import javax.swing.*;
 import java.awt.*;
@@ -28,7 +29,7 @@ import java.util.TimerTask;
 //разобраться, доделать нормальный стабильный обновляемый фпс и все починить
 public class GameWorldScreen extends CachedWorldScreen {
     private static final int FPS_UPDATE_INTERVAL = 1000;
-    private static final int TARGET_FPS = 144;
+    private static final int TARGET_FPS = 500;
     private static final int RENDER_DELAY_MS = 1000 / TARGET_FPS; // ~7ms для 144 FPS
 
     public static GameWorldScreen INSTANCE;
@@ -63,7 +64,7 @@ public class GameWorldScreen extends CachedWorldScreen {
         lastFpsTime = System.currentTimeMillis();
         lastWorldUpdateTime = lastFpsTime;
         lastUpdateTime = System.nanoTime();
-
+        invalidateStationsCache();
         parent.updateLanguage();
     }
 
@@ -92,6 +93,7 @@ public class GameWorldScreen extends CachedWorldScreen {
         ((GameWorld)getWorld()).generateRandomGameplayUnits((int)GameConstants.GAMEPLAY_UNITS_COUNT);
 
         invalidateCache();
+        invalidateStationsCache();
      //   stopGameTimer();
         repaint();
 
@@ -185,6 +187,7 @@ public class GameWorldScreen extends CachedWorldScreen {
 
     @Override
     protected void paintComponent(Graphics gr) {
+        long start, end, result;
 
         long renderStartTime = System.nanoTime();
         super.paintComponent(gr);
@@ -195,13 +198,21 @@ public class GameWorldScreen extends CachedWorldScreen {
         AffineTransform oldTransform = g.getTransform();
         g.scale(zoom, zoom);
         g.translate(offsetX, offsetY);
-
+        start = System.nanoTime();
         renderWorld(g);
-      //  drawStaticWorld(g);
+        end = System.nanoTime();
+        result = end-start;
+       if(result % 1000 == 0) MetroLogger.logInfo("renderWorld " + result/1000000 + " ms");
+
         drawDynamicWorld(g);
+
+
+
+
         drawTrains(g);
-        // Рисуем выделения поверх всего
+
         drawSelections(g);
+
 
         // Restore transformations
         g.setTransform(oldTransform);
