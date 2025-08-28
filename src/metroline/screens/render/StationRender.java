@@ -13,23 +13,28 @@ import java.util.Map;
 
 public class StationRender {
 
-
     /**************************
      * ROUND STATIONS SECTION
      **************************/
-    public static void drawWorldColorRing(Station station,Graphics2D g2d, int offsetX, int offsetY, float zoom) {
-        int drawSize = (int) (24 * zoom);
-        int cellCenterX = (int) ((station.getX() * 32 + offsetX + 16) * zoom);
-        int cellCenterY = (int) ((station.getY() * 32 + offsetY + 16) * zoom);
-        int drawX = cellCenterX - drawSize / 2;
-        int drawY = cellCenterY - drawSize / 2;
-        int holeSize = (int) (30 * zoom);
-        int holeX = drawX + (drawSize - holeSize) / 2;
-        int holeY = drawY + (drawSize - holeSize) / 2;
 
-        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g2d.setColor(station.getWorld().getWorldColorAt(station.getX(), station.getY()));
-        g2d.fillOval(holeX, holeY, holeSize, holeSize);
+
+    public static void drawWorldColorRing(Station station,Graphics2D g2d, int offsetX, int offsetY, float zoom) {
+
+           int drawSize = (int) (24 * zoom);
+           int cellCenterX = (int) ((station.getX() * 32 + offsetX + 16) * zoom);
+           int cellCenterY = (int) ((station.getY() * 32 + offsetY + 16) * zoom);
+           int drawX = cellCenterX - drawSize / 2;
+           int drawY = cellCenterY - drawSize / 2;
+           int holeSize = (int) (30 * zoom);
+           int holeX = drawX + (drawSize - holeSize) / 2;
+           int holeY = drawY + (drawSize - holeSize) / 2;
+
+           g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+           g2d.setColor(station.getWorld().getWorldColorAt(station.getX(), station.getY()));
+           g2d.fillOval(holeX, holeY, holeSize, holeSize);
+
+
+
     }
     public static void drawRoundSelection(Station station, Graphics2D g2d, int offsetX, int offsetY, float zoom) {
         int drawSize = (int) (24 * zoom);
@@ -84,6 +89,7 @@ public class StationRender {
 
 
     public static void drawRoundStation(Station station, Graphics2D g2d, int offsetX, int offsetY, float zoom) {
+
         int  drawSize = (int) (24 * zoom);
         int  cellCenterX = (int) ((station.getX() * 32 + offsetX + 16) * zoom);
         int  cellCenterY = (int) ((station.getY() * 32 + offsetY + 16) * zoom);
@@ -245,14 +251,14 @@ public class StationRender {
 
         }
         if(station.isOnWater()) {
-            if(station.getType() == StationType.PLANNED || station.getType() == StationType.BUILDING
+            if (station.getType() == StationType.PLANNED || station.getType() == StationType.BUILDING
                     || station.getType() == StationType.CLOSED || station.getType() == StationType.DESTROYED) {
                 g2d.setColor(station.getWorld().getWorldColorAt(station.getX(), station.getY()).darker().darker());
                 g2d.setStroke(new BasicStroke(2 * zoom));
-                g2d.drawOval(drawX+4, drawY+4, drawSize-8, drawSize-8);
+                g2d.drawOval(drawX + 4, drawY + 4, drawSize - 8, drawSize - 8);
             } else {
                 g2d.setColor(station.getWorld().getWorldColorAt(station.getX(), station.getY()));
-                g2d.fillOval(drawX+5, drawY+5, drawSize-10, drawSize-10);
+                g2d.fillOval(drawX + 5, drawY + 5, drawSize - 10, drawSize - 10);
 
             }
 

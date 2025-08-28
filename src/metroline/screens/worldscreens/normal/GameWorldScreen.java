@@ -10,6 +10,7 @@ import metroline.objects.gameobjects.Label;
 import metroline.objects.gameobjects.*;
 import metroline.screens.GameScreen;
 import metroline.screens.panel.InfoWindow;
+import metroline.screens.render.StationPositionCache;
 import metroline.screens.render.StationRender;
 import metroline.screens.worldscreens.CachedWorldScreen;
 import metroline.util.MetroLogger;
@@ -64,7 +65,7 @@ public class GameWorldScreen extends CachedWorldScreen {
         lastFpsTime = System.currentTimeMillis();
         lastWorldUpdateTime = lastFpsTime;
         lastUpdateTime = System.nanoTime();
-        invalidateStationsCache();
+
         parent.updateLanguage();
     }
 
@@ -93,7 +94,7 @@ public class GameWorldScreen extends CachedWorldScreen {
         ((GameWorld)getWorld()).generateRandomGameplayUnits((int)GameConstants.GAMEPLAY_UNITS_COUNT);
 
         invalidateCache();
-        invalidateStationsCache();
+
      //   stopGameTimer();
         repaint();
 
@@ -145,7 +146,7 @@ public class GameWorldScreen extends CachedWorldScreen {
 
         // Обновление поездов
         ((GameWorld)getWorld()).updateTrains();
-
+        StationPositionCache.cleanupCache();
         worldUpdates++;
     }
 
@@ -187,7 +188,6 @@ public class GameWorldScreen extends CachedWorldScreen {
 
     @Override
     protected void paintComponent(Graphics gr) {
-        long start, end, result;
 
         long renderStartTime = System.nanoTime();
         super.paintComponent(gr);
@@ -198,11 +198,9 @@ public class GameWorldScreen extends CachedWorldScreen {
         AffineTransform oldTransform = g.getTransform();
         g.scale(zoom, zoom);
         g.translate(offsetX, offsetY);
-        start = System.nanoTime();
+
         renderWorld(g);
-        end = System.nanoTime();
-        result = end-start;
-       if(result % 1000 == 0) MetroLogger.logInfo("renderWorld " + result/1000000 + " ms");
+
 
         drawDynamicWorld(g);
 

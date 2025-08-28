@@ -125,8 +125,8 @@ public class WorldSettingsScreen extends GameScreen {
         centerPanel.add(Box.createRigidArea(new Dimension(0, 20)));
 
 
-        widthSlider = new MetrolineSlider("width_world_slider_desc", 20, 200, 40,10);
-        heightSlider = new MetrolineSlider("height_world_slider_desc",20, 200, 40, 10);
+        widthSlider = new MetrolineSlider("width_world_slider_desc", 20, 1000, 40,10);
+        heightSlider = new MetrolineSlider("height_world_slider_desc",20, 1000, 40, 10);
         widthSlider.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         heightSlider.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 

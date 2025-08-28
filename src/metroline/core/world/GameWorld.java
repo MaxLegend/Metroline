@@ -309,9 +309,7 @@ public class GameWorld extends World {
     public void addStation(Station station) {
         super.addStation(station);
     //    if(screen!=null)  ((GameWorldScreen)screen).notifyStationsChanged();
-        if (GameWorldScreen.getInstance() != null) {
-            GameWorldScreen.getInstance().invalidateStationsCache();
-        }
+
         if (station.getType() == StationType.BUILDING) {
             // Проверяем, не добавлена ли уже станция
             if (!getConstructionProcessor().getStationBuildStartTimes().containsKey(station)) {
@@ -389,9 +387,7 @@ public class GameWorld extends World {
 
         station.setType(StationType.DESTROYED);
 
-        if (GameWorldScreen.getInstance() != null) {
-            GameWorldScreen.getInstance().invalidateStationsCache();
-        }
+
         long startTime = gameTime.getCurrentTimeMillis();
         getConstructionProcessor().getStationDestructionStartTimes().put(station, startTime);
 
@@ -548,10 +544,7 @@ public class GameWorld extends World {
     @Override
     public void removeStation(Station station) {
         super.removeStation(station);
-        // Инвалидируем кэш станций
-        if (GameWorldScreen.getInstance() != null) {
-            GameWorldScreen.getInstance().invalidateStationsCache();
-        }
+
     }
     public float getMoney() {
         return money;

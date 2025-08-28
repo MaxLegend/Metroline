@@ -11,6 +11,7 @@ import metroline.objects.enums.TrainType;
 import metroline.objects.enums.TunnelType;
 import metroline.objects.gameobjects.Label;
 import metroline.objects.gameobjects.*;
+import metroline.screens.render.StationPositionCache;
 import metroline.util.MetroLogger;
 import metroline.util.localizate.LngUtil;
 import metroline.util.ui.MetrolineButton;
@@ -254,6 +255,7 @@ public class WorldClickController {
             handleLabelDrag((Label) selected, x, y);
         } else if (selected instanceof Station) {
             handleStationDrag((Station)selected, x, y);
+            StationPositionCache.invalidateStationPositions((Station)selected);
         } else if (selected instanceof Tunnel) {
             handleTunnelDrag((Tunnel)selected, x, y);
 

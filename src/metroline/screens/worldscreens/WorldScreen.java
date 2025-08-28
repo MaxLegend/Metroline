@@ -31,7 +31,7 @@ public class WorldScreen extends GameScreen {
     private volatile boolean gcRequested = false;
 
     // Настройки GC
-    private static final long GC_MEMORY_THRESHOLD = 120 * 1024 * 1024; // 150MB порог
+    private static final long GC_MEMORY_THRESHOLD = 256 * 1024 * 1024; // 150MB порог
     private static final long GC_COOLDOWN_MS = 2000; // 2 секунды между вызовами
     private static final int GC_FRAME_INTERVAL = 60; // Каждые 60 кадров
     private static final long MAX_GC_PAUSE_MS = 10; // Максимальная пауза для GC
@@ -187,7 +187,7 @@ public class WorldScreen extends GameScreen {
         }
 
         // Логирование памяти каждые 120 кадров
-        if (frameCount % 120 == 0) {
+        if (frameCount % 880 == 0) {
             logMemoryUsage();
         }
     }
@@ -224,7 +224,7 @@ public class WorldScreen extends GameScreen {
     public void controlFrameRate(long frameStartTime) {
         long frameTimeNs = System.nanoTime() - frameStartTime;
         long frameTimeMs = frameTimeNs / 1000000;
-        long targetFrameTimeMs = 1000 / 144; // ~7ms для 144 FPS
+        long targetFrameTimeMs = 1000 / 880; // ~7ms для 144 FPS
 
         if (frameTimeMs < targetFrameTimeMs) {
             try {

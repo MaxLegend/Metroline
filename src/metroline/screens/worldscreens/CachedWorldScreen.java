@@ -214,9 +214,7 @@ public abstract class CachedWorldScreen extends WorldScreen {
         long frameStartTime = System.nanoTime();
         int width = getWorld().getWidth();
         int height = getWorld().getHeight();
-//        if (!staticCacheValid || !validateVolatileImage(staticWorldCache, () -> updateStaticWorldCache(width, height))) {
-//            updateStaticWorldCache(width, height);
-//        }
+
         if (!staticCacheValid) {
             updateStaticWorldCache(width, height);
         }
@@ -354,13 +352,6 @@ public abstract class CachedWorldScreen extends WorldScreen {
             drawGameplayUnits(g);
         }
         drawLabels(g);
-//       if(GameWorld.showPaymentZones) {
-//           drawPaymentZones(g);
-//       }
-//        if(GameWorld.showPassengerZones) {
-//            drawPassengerZones(g);
-//        }
-
 
         g.setTransform(originalTransform);
     }
@@ -411,6 +402,8 @@ public abstract class CachedWorldScreen extends WorldScreen {
         for (Station station : getWorld().getStations()) {
             if (roundStations) {
                 StationRender.drawWorldColorRing(station, g, 0, 0, 1);
+           //     StationRender.isRoundRingRendered = true;
+
             } else {
                 StationRender.drawWorldColorSquare(station, g, 0, 0, 1);
             }
@@ -422,6 +415,7 @@ public abstract class CachedWorldScreen extends WorldScreen {
         for (Station station : sortedStations) {
             if (roundStations) {
                 StationRender.drawRoundStation(station, g, 0, 0, 1);
+
             } else {
                 StationRender.drawSquareStation(station, g, 0, 0, 1);
             }

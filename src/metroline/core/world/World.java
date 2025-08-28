@@ -225,9 +225,7 @@ public class World implements Serializable {
             Label label = new Label(this, labelPos.x, labelPos.y, station.getName(), station);
             addLabel(label);
         }
-        if (GameWorldScreen.getInstance() != null) {
-            GameWorldScreen.getInstance().invalidateStationsCache();
-        }
+
     }
 
     /**
@@ -265,9 +263,7 @@ public class World implements Serializable {
 
         // Remove any tunnels connected to this station
         tunnels.removeIf(t -> t.getStart() == station || t.getEnd() == station);
-        if (GameWorldScreen.getInstance() != null) {
-            GameWorldScreen.getInstance().invalidateStationsCache();
-        }
+
     }
     /**
      * Gets the station at specified coordinates
