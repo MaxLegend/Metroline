@@ -6,14 +6,16 @@ import metroline.core.world.tiles.GameTile;
 import metroline.input.KeyboardController;
 import metroline.input.selection.Selectable;
 import metroline.input.selection.SelectionManager;
-import metroline.objects.gameobjects.Label;
+import metroline.objects.gameobjects.StationLabel;
 import metroline.objects.gameobjects.*;
-import metroline.screens.GameScreen;
 import metroline.screens.panel.InfoWindow;
+import metroline.screens.panel.LinesLegendWindow;
 import metroline.screens.render.StationPositionCache;
 import metroline.screens.render.StationRender;
 import metroline.screens.worldscreens.CachedWorldScreen;
-import metroline.util.MetroLogger;
+
+
+
 
 import javax.swing.*;
 import java.awt.*;
@@ -201,11 +203,7 @@ public class GameWorldScreen extends CachedWorldScreen {
 
         renderWorld(g);
 
-
         drawDynamicWorld(g);
-
-
-
 
         drawTrains(g);
 
@@ -260,9 +258,14 @@ public class GameWorldScreen extends CachedWorldScreen {
         }
 
     }
-
-    public List<Station> getAllStationsSorted() {
-        List<Station> stations = new ArrayList<>(getWorld().getStations());
+    public void setLegendWindow(LinesLegendWindow legendWindow) {
+        this.legendWindow = legendWindow;
+        if (getWorld() instanceof GameWorld) {
+            ((GameWorld) getWorld()).setLegendWindow(legendWindow);
+        }
+    }
+    public ArrayList<Station> getAllStationsSorted() {
+        ArrayList<Station> stations = new ArrayList<>(getWorld().getStations());
         stations.sort((a, b) -> {
             int yCompare = Integer.compare(a.getY(), b.getY());
             return yCompare != 0 ? yCompare : Integer.compare(a.getX(), b.getX());
@@ -283,7 +286,7 @@ public class GameWorldScreen extends CachedWorldScreen {
 
             // Determine which grid the object is on
             String gridType = "Unknown";
-            if (selectedObject instanceof Station || selectedObject instanceof Tunnel || selectedObject instanceof Label) {
+            if (selectedObject instanceof Station || selectedObject instanceof Tunnel || selectedObject instanceof StationLabel) {
                 gridType = "gameGrid (Stations/Tunnels/Labels)";
             } else if (selectedObject instanceof GameplayUnits) {
                 gridType = "gameplayGrid (GameplayUnits)";
@@ -325,12 +328,12 @@ public class GameWorldScreen extends CachedWorldScreen {
                 details.add(String.format("Unit Type: %s", unit.getType()));
                 details.add(String.format("Income Multiplier: %.2f", unit.getType().getIncomeMultiplier()));
             }
-            else if (selectedObject instanceof Label) {
-                Label label = (Label) selectedObject;
-                details.add(String.format("Text: %s", label.getText()));
+            else if (selectedObject instanceof StationLabel) {
+                StationLabel stationLabel = (StationLabel) selectedObject;
+                details.add(String.format("Text: %s", stationLabel.getText()));
                 details.add(String.format("Parent: %s",
-                        label.getParentGameObject() != null ?
-                                label.getParentGameObject().getClass().getSimpleName() : "None"));
+                        stationLabel.getParentGameObject() != null ?
+                                stationLabel.getParentGameObject().getClass().getSimpleName() : "None"));
             }
 
             // Calculate background size
@@ -446,8 +449,8 @@ public class GameWorldScreen extends CachedWorldScreen {
             }
             else if (selectedObject instanceof Tunnel) {
                 newWindow.displayTunnelInfo((Tunnel) selectedObject, windowPoint);
-            }else if (selectedObject instanceof Label) {
-                newWindow.displayLabelInfo((Label) selectedObject, windowPoint);
+            }else if (selectedObject instanceof StationLabel) {
+                newWindow.displayLabelInfo((StationLabel) selectedObject, windowPoint);
             }else if (selectedObject instanceof GameplayUnits) {
                 newWindow.displayGameplayUnitsInfo((GameplayUnits) selectedObject, windowPoint);
             }

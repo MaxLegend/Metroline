@@ -1,7 +1,5 @@
 package metroline.objects.gameobjects;
 
-import metroline.core.world.GameWorld;
-import metroline.core.world.SandboxWorld;
 import metroline.core.world.World;
 import metroline.input.selection.SelectionManager;
 
@@ -10,17 +8,17 @@ import java.awt.*;
 /**
  * TODO Вынести рендер в отдельный класс
  */
-public class Label extends GameObject {
+public class StationLabel extends GameObject {
     private String text;
     private GameObject parentStation;
 
 
 
-    public Label() {
+    public StationLabel() {
         super(0, 0);
     }
 
-    public Label(World world, int x, int y, String text, GameObject parentStation) {
+    public StationLabel(World world, int x, int y, String text, GameObject parentStation) {
         super(x, y);
         this.setWorld(world);
         this.text = text;

@@ -5,21 +5,23 @@ import metroline.core.world.GameWorld;
 import metroline.core.world.World;
 import metroline.core.world.tiles.WorldTile;
 import metroline.objects.gameobjects.GameplayUnits;
-import metroline.objects.gameobjects.Label;
+import metroline.objects.gameobjects.StationLabel;
 import metroline.objects.gameobjects.Station;
 import metroline.objects.gameobjects.Tunnel;
 import metroline.screens.panel.LinesLegendWindow;
 import metroline.screens.render.StationRender;
+import metroline.util.compressor.WorldThreadImageCompressor;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
 import java.awt.image.VolatileImage;
 import java.util.ArrayList;
 import java.util.List;
 
 
-//TODO Починить белый экран при переключении в полноэкранный и обратно.
-//TODO Сделать определенное кэширование для динамических объектов с перерисовкой только при добавлении.
+
+//TODO Сделать таки чанковую систему. Иначе больших миров мне не видать
 //TODO Починить все что сломалось. Починить слои. Добавить еще слоев. Убрать множество окон для одного объекта
 public abstract class CachedWorldScreen extends WorldScreen {
     protected static final int TILE_SIZE = 32;
@@ -42,7 +44,79 @@ public abstract class CachedWorldScreen extends WorldScreen {
     protected Font debugFont = new Font("Monospaced", Font.PLAIN, 12);
     public LinesLegendWindow legendWindow;
 
-    private Runtime RUNTIME = Runtime.getRuntime();
+    protected BufferedImage compressedStaticCache;
+    protected BufferedImage compressedPaymentZonesCache;
+    protected BufferedImage compressedPassengerZonesCache;
+
+    protected boolean compressedCacheValid = false;
+
+    /**
+     * Обновляет сжатый кэш статического мира
+     */
+    protected void updateCompressedStaticCache() {
+        if (staticWorldCache == null || compressedCacheValid || compressedStaticCache != null) {
+            return; // Уже сжато
+        }
+        if (staticWorldCache == null) {
+            compressedStaticCache = null;
+            return;
+        }
+
+        int worldWidth = getWorld().getWidth();
+        int worldHeight = getWorld().getHeight();
+
+        compressedStaticCache = WorldThreadImageCompressor.compressWorldImageOptimized(
+                staticWorldCache,
+                worldWidth,
+                worldHeight,
+                TILE_SIZE
+        );
+
+        compressedCacheValid = true;
+    }
+
+    /**
+     * Восстанавливает VolatileImage из сжатого кэша
+     */
+    protected void restoreFromCompressedCache() {
+        if (compressedStaticCache == null) return;
+
+        GraphicsConfiguration gc = getGraphicsConfiguration();
+        if (gc == null) return;
+
+        // Распаковываем и создаем VolatileImage
+        BufferedImage decompressed = WorldThreadImageCompressor.decompressWorldImage(
+                compressedStaticCache,
+                TILE_SIZE
+        );
+
+        staticWorldCache = WorldThreadImageCompressor.convertBufferedImageToVolatileImage(
+                decompressed,
+                gc
+        );
+
+        // Освобождаем память от временных объектов
+        decompressed.flush();
+    }
+
+    /**
+     * Освобождает память, занятую сжатыми кэшами
+     */
+    public void flushCompressedCaches() {
+        if (compressedStaticCache != null) {
+            compressedStaticCache.flush();
+            compressedStaticCache = null;
+        }
+        if (compressedPaymentZonesCache != null) {
+            compressedPaymentZonesCache.flush();
+            compressedPaymentZonesCache = null;
+        }
+        if (compressedPassengerZonesCache != null) {
+            compressedPassengerZonesCache.flush();
+            compressedPassengerZonesCache = null;
+        }
+        compressedCacheValid = false;
+    }
 
     public CachedWorldScreen(MainFrame parent, World world) {
         super(parent, world);
@@ -85,13 +159,22 @@ public abstract class CachedWorldScreen extends WorldScreen {
         return gc.createCompatibleVolatileImage(width, height, Transparency.TRANSLUCENT);
     }
 
-
     public void invalidateCache() {
-            staticCacheValid = false;
-            paymentZonesCacheValid = false;
-            passengerZonesCacheValid = false;
-            worldChanged = true;
+        staticCacheValid = false;
+        paymentZonesCacheValid = false;
+        passengerZonesCacheValid = false;
+        compressedCacheValid = false;
+        worldChanged = true;
+
+        // Освобождаем сжатые кэши при инвалидации
+        flushCompressedCaches();
     }
+//    public void invalidateCache() {
+//            staticCacheValid = false;
+//            paymentZonesCacheValid = false;
+//            passengerZonesCacheValid = false;
+//            worldChanged = true;
+//    }
     public void invalidateZonesCache() {
         paymentZonesCacheValid = false;
         passengerZonesCacheValid = false;
@@ -104,6 +187,7 @@ public abstract class CachedWorldScreen extends WorldScreen {
             staticCacheValid = false;
             return;
         }
+
         boolean needsRecreation = needToRecreateCache(staticWorldCache, width, height);
 
         if (needsRecreation) {
@@ -113,16 +197,16 @@ public abstract class CachedWorldScreen extends WorldScreen {
             staticWorldCache = createCompatibleVolatileImage(width * TILE_SIZE, height * TILE_SIZE);
         }
 
-        // Валидация без рекурсивных вызовов
-
         int validateResult = staticWorldCache.validate(getGraphicsConfiguration());
+        boolean needsRedraw = (validateResult != VolatileImage.IMAGE_OK);
+
         if (validateResult == VolatileImage.IMAGE_INCOMPATIBLE) {
             staticWorldCache.flush();
             staticWorldCache = createCompatibleVolatileImage(width * TILE_SIZE, height * TILE_SIZE);
-            validateResult = staticWorldCache.validate(getGraphicsConfiguration());
+            needsRedraw = true;
         }
 
-        if (validateResult != VolatileImage.IMAGE_OK) {
+        if (needsRedraw) {
             Graphics2D g = staticWorldCache.createGraphics();
             try {
                 clearImage(g, staticWorldCache);
@@ -132,7 +216,10 @@ public abstract class CachedWorldScreen extends WorldScreen {
                 g.dispose();
             }
 
+            // 🔁 Сжимаем ТОЛЬКО если изображение было перерисовано
+            updateCompressedStaticCache();
         }
+
         staticCacheValid = true;
         worldChanged = false;
     }
@@ -209,15 +296,33 @@ public abstract class CachedWorldScreen extends WorldScreen {
         g.setComposite(AlphaComposite.SrcOver);
     }
 
-
+    // Добавляем финализатор для очистки ресурсов
+    @Override
+    protected void finalize() throws Throwable {
+        try {
+            flushCompressedCaches();
+        } finally {
+            super.finalize();
+        }
+    }
     public void renderWorld(Graphics2D g) {
         long frameStartTime = System.nanoTime();
         int width = getWorld().getWidth();
         int height = getWorld().getHeight();
+        // 🔁 Восстанови из сжатого кэша, если статический кэш валиден, но изображение утеряно
+        // 🔁 Восстанови ТОЛЬКО если кэш валиден, но изображение утеряно
+        if (compressedCacheValid && staticCacheValid && staticWorldCache == null) {
+            restoreFromCompressedCache();
+            if (staticWorldCache != null) {
+                System.out.println("[RENDER] Restored from compressed cache");
+            }
+        }
 
-        if (!staticCacheValid) {
+        // Если всё ещё нет кэша — пересоздаём
+        if (!staticCacheValid || staticWorldCache == null) {
             updateStaticWorldCache(width, height);
         }
+
         drawVolatileImage(g, staticWorldCache, 0, 0, () -> updateStaticWorldCache(width, height));
         // Обновляем и рисуем кэш зон платежеспособности
         if (GameWorld.showPaymentZones) {
@@ -431,8 +536,8 @@ public abstract class CachedWorldScreen extends WorldScreen {
     }
 
     protected void drawLabels(Graphics2D g) {
-        for (Label label : getWorld().getLabels()) {
-            label.draw(g, 0, 0, 1);
+        for (StationLabel stationLabel : getWorld().getLabels()) {
+            stationLabel.draw(g, 0, 0, 1);
         }
     }
     protected void drawAnimatedWater(Graphics2D g) {

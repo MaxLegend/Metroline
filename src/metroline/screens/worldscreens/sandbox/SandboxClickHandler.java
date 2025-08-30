@@ -5,11 +5,10 @@ import metroline.input.selection.Selectable;
 import metroline.input.selection.SelectionManager;
 import metroline.objects.enums.StationColors;
 import metroline.objects.gameobjects.GameObject;
-import metroline.core.time.GameTime;
 import metroline.objects.gameobjects.*;
 import metroline.objects.enums.StationType;
 import metroline.objects.enums.TunnelType;
-import metroline.objects.gameobjects.Label;
+import metroline.objects.gameobjects.StationLabel;
 import metroline.screens.worldscreens.normal.GameWorldScreen;
 
 import javax.swing.*;
@@ -53,12 +52,12 @@ public class SandboxClickHandler {
             return;
         }
 
-        if (selected instanceof Label) {
-            Label label = (Label) selected;
+        if (selected instanceof StationLabel) {
+            StationLabel stationLabel = (StationLabel) selected;
             int newX = x - dragOffset.x;
             int newY = y - dragOffset.y;
 
-            if (label.tryMoveTo(newX, newY)) {
+            if (stationLabel.tryMoveTo(newX, newY)) {
                 SandboxWorldScreen.getInstance().repaint();
             }
             return;
@@ -74,7 +73,7 @@ public class SandboxClickHandler {
                     newY >= 0 && newY < SandboxWorldScreen.getInstance().getWorld().getHeight() &&
                     SandboxWorldScreen.getInstance().getWorld().getStationAt(newX, newY) == null) {
 
-                Label label = SandboxWorldScreen.getInstance().getWorld().getLabelForStation(station);
+                StationLabel stationLabel = SandboxWorldScreen.getInstance().getWorld().getLabelForStation(station);
                 // Remove from old position
                 SandboxWorldScreen.getInstance().getWorld().getGameTile(station.getX(), station.getY()).setContent(null);
 
@@ -92,11 +91,11 @@ public class SandboxClickHandler {
                     }
                 }
 
-                if (label != null) {
+                if (stationLabel != null) {
                     // Находим новую позицию для метки
                     PathPoint newLabelPos = SandboxWorldScreen.getInstance().getWorld().findFreePositionNear(station.getX(), station.getY(), station.getName());
                     if (newLabelPos != null) {
-                        label.tryMoveTo(newLabelPos.x, newLabelPos.y);
+                        stationLabel.tryMoveTo(newLabelPos.x, newLabelPos.y);
                     }
                 }
                 SandboxWorldScreen.getInstance().repaint();
@@ -129,8 +128,8 @@ public class SandboxClickHandler {
         else if (selected instanceof Tunnel) {
             SandboxWorldScreen.getInstance().getWorld().removeTunnel((Tunnel)selected);
         }
-        else if (selected instanceof Label) {
-            SandboxWorldScreen.getInstance().getWorld().removeLabel((Label)selected);
+        else if (selected instanceof StationLabel) {
+            SandboxWorldScreen.getInstance().getWorld().removeLabel((StationLabel)selected);
         }
 
         selectionManager.deselect();
@@ -293,9 +292,9 @@ public class SandboxClickHandler {
         SelectionManager selectionManager = SelectionManager.getInstance();
 
         // Проверяем метки
-        Label label = SandboxWorldScreen.getInstance().getWorld().getLabelAt(x, y);
-        if (label != null) {
-            selectObject(label, x, y);
+        StationLabel stationLabel = SandboxWorldScreen.getInstance().getWorld().getLabelAt(x, y);
+        if (stationLabel != null) {
+            selectObject(stationLabel, x, y);
             return;
         }
 

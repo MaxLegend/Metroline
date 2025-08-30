@@ -49,9 +49,9 @@ public abstract class GameObject implements Serializable, Selectable {
     public void setName(String name) {
         this.name = name;
         // Обновляем метку, если она существует
-        Label label = getWorld().getLabelForGameObject(this);
-        if (label != null) {
-            label.setText(name);
+        StationLabel stationLabel = getWorld().getLabelForGameObject(this);
+        if (stationLabel != null) {
+            stationLabel.setText(name);
         }
     }
     /**

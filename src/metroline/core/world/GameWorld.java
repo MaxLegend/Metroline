@@ -21,6 +21,7 @@ import metroline.util.ui.UserInterfaceUtil;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -36,7 +37,7 @@ public class GameWorld extends World {
     public static boolean showGameplayUnits = false;
     public static boolean showPaymentZones = false;
     public static boolean showPassengerZones = false;
-    private List<GameplayUnits> gameplayUnits = new ArrayList<>();
+    private List<GameplayUnits> gameplayUnits = new CopyOnWriteArrayList<>();
     private List<Train> trains = new ArrayList<>();
     public long lastTrainsUpdateTime;
 
@@ -360,7 +361,9 @@ public class GameWorld extends World {
         return obj instanceof GameplayUnits ? (GameplayUnits)obj : null;
     }
 
-
+//    public List<GameplayUnits> getAllGameplayUnits() {
+//        return new ArrayList<>(allGameplayUnits);
+//    }
 
     public void startDestroyingTunnel(Tunnel tunnel) {
         if (tunnel.getType() != TunnelType.ACTIVE) {
@@ -424,9 +427,9 @@ public class GameWorld extends World {
         }
 
         // Затем проверяем метки (если нужно)
-        Label label = this.getLabelAt(x, y);
-        if (label != null) {
-            return label;
+        StationLabel stationLabel = this.getLabelAt(x, y);
+        if (stationLabel != null) {
+            return stationLabel;
         }
         GameplayUnits gUnits = this.getGameplayUnitsAt(x, y);
         if (gUnits != null) {
@@ -807,7 +810,7 @@ public class GameWorld extends World {
             this.stations = loadedWorld.stations;   // Ссылка
             this.gameplayUnits = loadedWorld.gameplayUnits; // Ссылка
             this.tunnels = loadedWorld.tunnels;     // Ссылка
-            this.labels = loadedWorld.labels;       // Ссылка
+            this.stationLabels = loadedWorld.stationLabels;       // Ссылка
             this.gameTime = loadedWorld.gameTime;   // Ссылка
             this.roundStationsEnabled = loadedWorld.roundStationsEnabled;
             this.processor = new ConstructionTimeProcessor(this.gameTime, this);

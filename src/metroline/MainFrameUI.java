@@ -379,12 +379,12 @@ public class MainFrameUI {
             SandboxWorld world = (SandboxWorld) ((SandboxWorldScreen) currentScreen).getWorld();
             if (world != null && world.getGameTime() != null) {
 
-                world.getGameTime().setTimeScale(scale*100);
+                world.getGameTime().setTimeScale(scale*1000);
             }
         } else if (currentScreen instanceof GameWorldScreen) {
             GameWorld world = (GameWorld) ((GameWorldScreen) currentScreen).getWorld();
             if (world != null && world.getGameTime() != null) {
-                world.getGameTime().setTimeScale(scale*100);
+                world.getGameTime().setTimeScale(scale*1000);
             }
         }
     }

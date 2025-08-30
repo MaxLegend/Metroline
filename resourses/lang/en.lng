@@ -134,7 +134,7 @@ infoWnd.abilityPay=Ability Pay:
 infoWnd.passengerCount=Passengers Flow:
 infoWnd.revenue:Day Revenue:
 infoWnd.gUnits=Revenue Multiplier:
-infoWnd.label=Label
+infoWnd.stationLabel=Label
 infoWnd.upkeep:Upkeep:
 tunnel.upkeep:Upkeep:
 units.house_culture=House of Culture

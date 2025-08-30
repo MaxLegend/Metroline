@@ -181,7 +181,7 @@ infoWnd.abilityPay=Платежеспособность:
 infoWnd.passengerCount=Пассажиропоток:
 infoWnd.revenue:Доход в сутки:
 infoWnd.gUnits=Множитель доходности:
-infoWnd.label=Метка
+infoWnd.stationLabel=Метка
 infoWnd.upkeep:Расходы содержания:
 tunnel.upkeep:Расходы содержания:
 units.house_culture=Дом культуры

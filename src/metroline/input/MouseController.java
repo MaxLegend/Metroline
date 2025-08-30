@@ -1,10 +1,9 @@
 package metroline.input;
 
-import metroline.core.world.GameWorld;
 import metroline.input.selection.Selectable;
 import metroline.input.selection.SelectionManager;
 import metroline.objects.gameobjects.*;
-import metroline.objects.gameobjects.Label;
+import metroline.objects.gameobjects.StationLabel;
 import metroline.screens.worldscreens.WorldScreen;
 import metroline.screens.worldscreens.normal.GameWorldScreen;
 import metroline.screens.worldscreens.normal.WorldClickController;
@@ -259,9 +258,9 @@ public class MouseController extends MouseAdapter {
         if (selectedObj instanceof Station) {
             Station station = (Station) selectedObj;
             return worldX == station.getX() && worldY == station.getY();
-        } else if (selectedObj instanceof Label) {
-            Label label = (Label) selectedObj;
-            return worldX == label.getX() && worldY == label.getY();
+        } else if (selectedObj instanceof StationLabel) {
+            StationLabel stationLabel = (StationLabel) selectedObj;
+            return worldX == stationLabel.getX() && worldY == stationLabel.getY();
         } else if (selectedObj instanceof Tunnel) {
             Tunnel tunnel = (Tunnel) selectedObj;
             for (PathPoint p : tunnel.getPath()) {

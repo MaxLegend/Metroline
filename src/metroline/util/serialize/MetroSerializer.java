@@ -6,7 +6,7 @@ import metroline.core.time.GameTime;
 import metroline.core.world.GameWorld;
 import metroline.core.world.tiles.GameTile;
 import metroline.core.world.tiles.WorldTile;
-import metroline.objects.gameobjects.Label;
+import metroline.objects.gameobjects.StationLabel;
 
 import java.awt.*;
 import java.io.*;
@@ -160,13 +160,13 @@ public class MetroSerializer {
 
             // Метки
             writer.write("labels:[\n");
-            for (Label label : world.getLabels()) {
+            for (StationLabel stationLabel : world.getLabels()) {
                 writer.write(String.format(
                         "{text:%s,x:%d,y:%d,parentStationId:%d}\n",
-                        ParsingUtils.escapeString(label.getText()),
-                        label.getX(),
-                        label.getY(),
-                        label.getParentGameObject().getUniqueId()
+                        ParsingUtils.escapeString(stationLabel.getText()),
+                        stationLabel.getX(),
+                        stationLabel.getY(),
+                        stationLabel.getParentGameObject().getUniqueId()
                 ));
             }
             writer.write("]\n");
@@ -420,9 +420,9 @@ public class MetroSerializer {
             if (line.equals("labels:[")) {
                 // Чтение меток
                 while (!(line = reader.readLine()).equals("]")) {
-                    Label label = ParsingUtils.parseLabel(line, gameWorld, stationIdMap); // Используем вспомогательный метод
-                    if (label != null) {
-                        gameWorld.labels.add(label); // Добавляем в список меток мира
+                    StationLabel stationLabel = ParsingUtils.parseLabel(line, gameWorld, stationIdMap); // Используем вспомогательный метод
+                    if (stationLabel != null) {
+                        gameWorld.stationLabels.add(stationLabel); // Добавляем в список меток мира
                         // Также нужно установить контент в gameGrid, если это необходимо
                         // gameGrid[label.getX()][label.getY()].setContent(label);
                     }

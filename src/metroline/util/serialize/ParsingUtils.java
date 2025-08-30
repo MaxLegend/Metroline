@@ -3,7 +3,7 @@ package metroline.util.serialize;
 import metroline.core.world.GameWorld;
 import metroline.objects.enums.*;
 import metroline.objects.gameobjects.*;
-import metroline.objects.gameobjects.Label;
+import metroline.objects.gameobjects.StationLabel;
 
 import java.awt.*;
 
@@ -112,9 +112,9 @@ public class ParsingUtils {
             case "label" -> {
                 try {
                     long labelId = Long.parseLong(value);
-                    for (Label label : world.getLabels()) {
-                        if (label.getUniqueId() == labelId) {
-                            yield label;
+                    for (StationLabel stationLabel : world.getLabels()) {
+                        if (stationLabel.getUniqueId() == labelId) {
+                            yield stationLabel;
                         }
                     }
                 } catch (NumberFormatException e) {
@@ -165,10 +165,10 @@ public class ParsingUtils {
         if (obj instanceof Station) {
             Station station = (Station) obj;
             return String.format("station:%d", station.getUniqueId()); // Используем ID вместо имени
-        } else if (obj instanceof Label) {
-            Label label = (Label) obj;
+        } else if (obj instanceof StationLabel) {
+            StationLabel stationLabel = (StationLabel) obj;
             // Используем уникальный ID для надежности
-            return String.format("label:%d", label.getUniqueId());
+            return String.format("label:%d", stationLabel.getUniqueId());
         } else if (obj instanceof PathPoint) {
             PathPoint pathPoint = (PathPoint) obj;
             return String.format("pathpoint:%d,%d", pathPoint.getX(), pathPoint.getY());
@@ -355,7 +355,7 @@ public class ParsingUtils {
      * @param stationIdMap Карта для поиска станций по ID.
      * @return Созданный объект Label или null при ошибке.
      */
-    public static Label parseLabel(String line, GameWorld world, Map<Long, Station> stationIdMap) {
+    public static StationLabel parseLabel(String line, GameWorld world, Map<Long, Station> stationIdMap) {
         // Пример строки: {text:"Label text",x:15,y:25,parentStationId:123456}
         if (line == null || !line.startsWith("{") || !line.endsWith("}")) {
             System.err.println("Некорректный формат строки метки: " + line);
@@ -393,8 +393,8 @@ public class ParsingUtils {
 
             Station parent = stationIdMap.get(parentStationId);
             if (parent != null) {
-                Label label = new Label(world, x, y, text, parent);
-                return label;
+                StationLabel stationLabel = new StationLabel(world, x, y, text, parent);
+                return stationLabel;
             } else {
                 System.err.println("Родительская станция не найдена для метки: " + text + " с ID: " + parentStationId);
             }

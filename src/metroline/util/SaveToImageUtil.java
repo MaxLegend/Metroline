@@ -1,7 +1,7 @@
 package metroline.util;
 
 import metroline.core.world.World;
-import metroline.objects.gameobjects.Label;
+import metroline.objects.gameobjects.StationLabel;
 import metroline.objects.gameobjects.Station;
 import metroline.objects.gameobjects.Tunnel;
 import metroline.screens.worldscreens.WorldScreen;
@@ -103,7 +103,7 @@ public class SaveToImageUtil {
         if (screen instanceof SandboxWorldScreen) {
             ((SandboxWorldScreen)screen).drawStaticWorld(g2d);
         } else if (screen instanceof GameWorldScreen) {
-                 ((GameWorldScreen)screen).drawStaticWorld(g2d);
+       //          ((GameWorldScreen)screen).drawStaticWorld(g2d);
         }
 
         // Рисуем туннели
@@ -117,12 +117,12 @@ public class SaveToImageUtil {
         }
 
         // Рисуем метки с улучшенным качеством текста
-        for (Label label : world.getLabels()) {
+        for (StationLabel stationLabel : world.getLabels()) {
             Graphics2D labelG = (Graphics2D) g2d.create();
             try {
                 labelG.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
                         RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
-                label.draw(labelG, 0, 0, 1);
+                stationLabel.draw(labelG, 0, 0, 1);
             } finally {
                 labelG.dispose();
             }

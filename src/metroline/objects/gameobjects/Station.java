@@ -86,9 +86,9 @@ public class Station extends GameObject {
     public void setName(String name) {
         this.name = name;
         // Обновляем метку, если она существует
-        Label label = getWorld().getLabelForStation(this);
-        if (label != null) {
-            label.setText(name);
+        StationLabel stationLabel = getWorld().getLabelForStation(this);
+        if (stationLabel != null) {
+            stationLabel.setText(name);
         }
     }
     public boolean isSelected() {
@@ -197,9 +197,9 @@ public class Station extends GameObject {
 
 
         // Обновляем метку, если она существует
-        Label label = getWorld().getLabelForStation(this);
-        if (label != null) {
-            label.setText(name);
+        StationLabel stationLabel = getWorld().getLabelForStation(this);
+        if (stationLabel != null) {
+            stationLabel.setText(name);
         }
 
         // Уведомляем связанные туннели об изменении

@@ -9,7 +9,7 @@ import metroline.objects.enums.StationColors;
 import metroline.objects.enums.StationType;
 import metroline.objects.enums.TrainType;
 import metroline.objects.enums.TunnelType;
-import metroline.objects.gameobjects.Label;
+import metroline.objects.gameobjects.StationLabel;
 import metroline.objects.gameobjects.*;
 import metroline.screens.render.StationPositionCache;
 import metroline.util.MetroLogger;
@@ -251,8 +251,8 @@ public class WorldClickController {
         // Проверяем границы мира
         if (!isWithinWorldBounds(x, y)) return;
 
-        if (selected instanceof Label) {
-            handleLabelDrag((Label) selected, x, y);
+        if (selected instanceof StationLabel) {
+            handleLabelDrag((StationLabel) selected, x, y);
         } else if (selected instanceof Station) {
             handleStationDrag((Station)selected, x, y);
             StationPositionCache.invalidateStationPositions((Station)selected);
@@ -323,11 +323,11 @@ public class WorldClickController {
     /**
      * Перетаскивание метки
      */
-    private void handleLabelDrag(Label label, int x, int y) {
+    private void handleLabelDrag(StationLabel stationLabel, int x, int y) {
         int newX = x - dragOffset.x;
         int newY = y - dragOffset.y;
 
-        if (label.tryMoveTo(newX, newY)) {
+        if (stationLabel.tryMoveTo(newX, newY)) {
             GameWorldScreen.getInstance().repaint();
         }
     }
@@ -386,11 +386,11 @@ public class WorldClickController {
         }
 
         // Перемещаем метку станции
-        Label label = world.getLabelForStation(station);
-        if (label != null) {
+        StationLabel stationLabel = world.getLabelForStation(station);
+        if (stationLabel != null) {
             PathPoint newLabelPos = world.findFreePositionNear(station.getX(), station.getY(), station.getName());
             if (newLabelPos != null) {
-                label.tryMoveTo(newLabelPos.x, newLabelPos.y);
+                stationLabel.tryMoveTo(newLabelPos.x, newLabelPos.y);
             }
         }
 
@@ -409,14 +409,14 @@ public class WorldClickController {
      */
     private boolean trySelectLabel(int x, int y) {
         // Сначала точное совпадение
-        Label label = GameWorldScreen.getInstance().getWorld().getLabelAt(x, y);
-        if (label != null) {
-            selectObject(label, x, y);
+        StationLabel stationLabel = GameWorldScreen.getInstance().getWorld().getLabelAt(x, y);
+        if (stationLabel != null) {
+            selectObject(stationLabel, x, y);
             return true;
         }
 
         // Затем проверяем визуальную область
-        for (Label l : GameWorldScreen.getInstance().getWorld().getLabels()) {
+        for (StationLabel l : GameWorldScreen.getInstance().getWorld().getLabels()) {
             if (isClickOnLabelVisualArea(l, x, y)) {
                 selectObject(l, x, y);
                 return true;
@@ -538,12 +538,12 @@ public class WorldClickController {
     /**
      * Проверка визуальной области метки
      */
-    private boolean isClickOnLabelVisualArea(Label label, int clickX, int clickY) {
-        if (label.getParentGameObject() == null) return false;
+    private boolean isClickOnLabelVisualArea(StationLabel stationLabel, int clickX, int clickY) {
+        if (stationLabel.getParentGameObject() == null) return false;
 
-        GameObject parent = label.getParentGameObject();
-        int relX = label.getX() - parent.getX();
-        int relY = label.getY() - parent.getY();
+        GameObject parent = stationLabel.getParentGameObject();
+        int relX = stationLabel.getX() - parent.getX();
+        int relY = stationLabel.getY() - parent.getY();
 
         // Рассчитываем визуальную позицию (упрощенная версия)
         int baseOffsetX = 32 + 8;

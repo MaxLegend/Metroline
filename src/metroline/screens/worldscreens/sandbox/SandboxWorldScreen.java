@@ -4,7 +4,7 @@ package metroline.screens.worldscreens.sandbox;
 import metroline.MainFrame;
 import metroline.core.world.SandboxWorld;
 import metroline.core.world.tiles.WorldTile;
-import metroline.objects.gameobjects.Label;
+import metroline.objects.gameobjects.StationLabel;
 import metroline.objects.gameobjects.Station;
 import metroline.objects.gameobjects.Tunnel;
 import metroline.screens.render.StationRender;
@@ -161,8 +161,8 @@ public class SandboxWorldScreen extends CachedWorldScreen {
             }
         }
 
-        for (Label label : getWorld().getLabels()) {
-            label.draw(g2d, 0, 0, 1);
+        for (StationLabel stationLabel : getWorld().getLabels()) {
+            stationLabel.draw(g2d, 0, 0, 1);
         }
 
         // Восстанавливаем трансформации

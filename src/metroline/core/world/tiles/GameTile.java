@@ -2,7 +2,7 @@ package metroline.core.world.tiles;
 
 import metroline.objects.gameobjects.GameObject;
 import metroline.core.world.GameWorld;
-import metroline.objects.gameobjects.Label;
+import metroline.objects.gameobjects.StationLabel;
 import metroline.objects.gameobjects.Station;
 
 /**
@@ -45,7 +45,7 @@ public class GameTile extends Tile {
     public void restoreContent(GameWorld world) {
         if (content instanceof Station) {
             content = world.getStationAt(getX(), getY());
-        } else if (content instanceof Label) {
+        } else if (content instanceof StationLabel) {
             content = world.getLabelAt(getX(), getY());
         }
     }

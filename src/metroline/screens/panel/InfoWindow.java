@@ -4,7 +4,7 @@ import metroline.MainFrame;
 
 import metroline.core.time.GameTime;
 import metroline.objects.gameobjects.*;
-import metroline.objects.gameobjects.Label;
+import metroline.objects.gameobjects.StationLabel;
 import metroline.screens.worldscreens.normal.GameWorldScreen;
 import metroline.screens.worldscreens.WorldScreen;
 import metroline.util.localizate.LngUtil;
@@ -416,8 +416,8 @@ public class InfoWindow extends JWindow {
         setVisible(true);
         pack(); // Обновляем размер окна под содержимое
     }
-    public void displayLabelInfo(Label label, Point location) {
-        this.currentObject = label;
+    public void displayLabelInfo(StationLabel stationLabel, Point location) {
+        this.currentObject = stationLabel;
         updateInfo();
         setLocation(location);
         setVisible(true);
@@ -505,11 +505,11 @@ public class InfoWindow extends JWindow {
             StringBuilder info = new StringBuilder("<html>");
             info.append(LngUtil.translatable("infoWnd.gUnits")+ " ").append(gUnits.getType().getIncomeMultiplier()).append("<br>");
             infoLabel.setText(info.toString());
-        }     else if (currentObject instanceof Label) {
-            Label label = (Label) currentObject;
-            titleLabel.setText(LngUtil.translatable(label.getText()));
+        }     else if (currentObject instanceof StationLabel) {
+            StationLabel stationLabel = (StationLabel) currentObject;
+            titleLabel.setText(LngUtil.translatable(stationLabel.getText()));
             StringBuilder info = new StringBuilder("<html>");
-            info.append(LngUtil.translatable("infoWnd.label")+ " ").append(label.getText()).append("<br>");
+            info.append(LngUtil.translatable("infoWnd.label")+ " ").append(stationLabel.getText()).append("<br>");
             infoLabel.setText(info.toString());
         }
 

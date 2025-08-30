@@ -4,8 +4,8 @@ import metroline.core.world.World;
 import metroline.objects.enums.Direction;
 import metroline.objects.gameobjects.PathPoint;
 import metroline.objects.gameobjects.Station;
+import metroline.objects.gameobjects.StationLabel;
 import metroline.objects.gameobjects.Tunnel;
-import metroline.objects.gameobjects.Label;
 import metroline.util.MetroLogger;
 
 import java.awt.*;
@@ -24,8 +24,8 @@ public class DebugInfoRenderer {
 
         if (obj instanceof Station) {
             renderStationDebugInfo(g, (Station) obj, world, yPos);
-        } else if (obj instanceof Label) {
-            renderLabelDebugInfo(g, (Label) obj, yPos);
+        } else if (obj instanceof StationLabel) {
+            renderLabelDebugInfo(g, (StationLabel) obj, yPos);
         } else if (obj instanceof Tunnel) {
             renderTunnelDebugInfo(g, (Tunnel) obj, yPos);
         }
@@ -50,9 +50,9 @@ public class DebugInfoRenderer {
             g.drawString("Labels (" + world.getLabelsForStation(station).size() + "):", 10, yPos);
             yPos += 15;
 
-            for (Label label : world.getLabelsForStation(station)) {
-                g.drawString("- '" + label.getText() + "' at (" +
-                        label.getX() + "," + label.getY() + ")", 20, yPos);
+            for (StationLabel stationLabel : world.getLabelsForStation(station)) {
+                g.drawString("- '" + stationLabel.getText() + "' at (" +
+                        stationLabel.getX() + "," + stationLabel.getY() + ")", 20, yPos);
                 yPos += 15;
             }
         }
@@ -68,19 +68,19 @@ public class DebugInfoRenderer {
         }
     }
 
-    private static void renderLabelDebugInfo(Graphics2D g, Label label, int yPos) {
+    private static void renderLabelDebugInfo(Graphics2D g, StationLabel stationLabel, int yPos) {
         yPos += 15;
         g.drawString("=== SELECTED LABEL ===", 10, yPos);
         yPos += 15;
-        g.drawString("Hash: " + label.hashCode(), 10, yPos);
+        g.drawString("Hash: " + stationLabel.hashCode(), 10, yPos);
         yPos += 15;
-        g.drawString("Text: '" + label.getText() + "'", 10, yPos);
+        g.drawString("Text: '" + stationLabel.getText() + "'", 10, yPos);
         yPos += 15;
-        g.drawString("Position: (" + label.getX() + "," + label.getY() + ")", 10, yPos);
+        g.drawString("Position: (" + stationLabel.getX() + "," + stationLabel.getY() + ")", 10, yPos);
         yPos += 15;
-        g.drawString("Parent Station: " + label.getParentGameObject().getName() +
-                " (" + label.getParentGameObject().getX() + "," +
-                label.getParentGameObject().getY() + ")", 10, yPos);
+        g.drawString("Parent Station: " + stationLabel.getParentGameObject().getName() +
+                " (" + stationLabel.getParentGameObject().getX() + "," +
+                stationLabel.getParentGameObject().getY() + ")", 10, yPos);
     }
 
     private static void renderTunnelDebugInfo(Graphics2D g, Tunnel tunnel, int yPos) {

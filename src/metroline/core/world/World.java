@@ -7,10 +7,9 @@ import metroline.core.time.GameTime;
 import metroline.core.world.tiles.GameTile;
 import metroline.core.world.tiles.WorldTile;
 import metroline.objects.enums.Direction;
-import metroline.objects.gameobjects.Label;
+import metroline.objects.gameobjects.StationLabel;
 import metroline.screens.worldscreens.normal.GameWorldScreen;
 import metroline.screens.worldscreens.WorldScreen;
-import metroline.screens.worldscreens.normal.WorldClickController;
 import metroline.util.*;
 import metroline.util.localizate.LngUtil;
 import metroline.util.serialize.MetroSerializer;
@@ -37,7 +36,7 @@ public class World implements Serializable {
 
     public java.util.List<Station> stations = new ArrayList<>();
     public java.util.List<Tunnel> tunnels = new ArrayList<>();
-    public List<Label> labels = new ArrayList<>();
+    public List<StationLabel> stationLabels = new ArrayList<>();
 
     public transient WorldScreen screen;
     public boolean roundStationsEnabled = false;
@@ -100,19 +99,19 @@ public class World implements Serializable {
             }
         }
     }
-    public Label getLabelForGameObject(GameObject station) {
-        for (Label label : labels) {
-            if (label.getParentGameObject() == station) {
-                return label;
+    public StationLabel getLabelForGameObject(GameObject station) {
+        for (StationLabel stationLabel : stationLabels) {
+            if (stationLabel.getParentGameObject() == station) {
+                return stationLabel;
             }
         }
         return null;
     }
 
-    public Label getLabelForStation(Station station) {
-        for (Label label : labels) {
-            if (label.getParentGameObject() == station) {
-                return label;
+    public StationLabel getLabelForStation(Station station) {
+        for (StationLabel stationLabel : stationLabels) {
+            if (stationLabel.getParentGameObject() == station) {
+                return stationLabel;
             }
         }
         return null;
@@ -166,20 +165,20 @@ public class World implements Serializable {
      * Gets all labels
      * @return List of labels
      */
-    public List<Label> getLabels() { return labels; }
+    public List<StationLabel> getLabels() { return stationLabels; }
 
     /**
      * Adds a label to the world
-     * @param label Station to add
+     * @param stationLabel Station to add
      */
-    public void addLabel(Label label) {
-        labels.add(label);
-        getGameTile(label.getX(), label.getY()).setContent(label);
+    public void addLabel(StationLabel stationLabel) {
+        stationLabels.add(stationLabel);
+        getGameTile(stationLabel.getX(), stationLabel.getY()).setContent(stationLabel);
 
     }
-    public void removeLabel(Label label) {
-        labels.remove(label);
-        getGameTile(label.getX(), label.getY()).setContent(null);
+    public void removeLabel(StationLabel stationLabel) {
+        stationLabels.remove(stationLabel);
+        getGameTile(stationLabel.getX(), stationLabel.getY()).setContent(null);
 
     }
     /**
@@ -188,21 +187,21 @@ public class World implements Serializable {
      * @param y Y coordinate
      * @return label or null if none exists
      */
-    public Label getLabelAt(int x, int y) {
+    public StationLabel getLabelAt(int x, int y) {
         if (x < 0 || x >= width || y < 0 || y >= height) return null;
         GameObject obj = getGameTile(x, y).getContent();
-        return obj instanceof Label ? (Label)obj : null;
+        return obj instanceof StationLabel ? (StationLabel)obj : null;
     }
 
-    public List<Label> getLabelsForStation(Station station) {
+    public List<StationLabel> getLabelsForStation(Station station) {
         // Возвращает метки для конкретной станции
-        List<Label> stationLabels = new ArrayList<>();
-        for (Label label : getLabels()) {
-            if (label.getParentGameObject().equals(station)) {
-                stationLabels.add(label);
+        List<StationLabel> stationStationLabels = new ArrayList<>();
+        for (StationLabel stationLabel : getLabels()) {
+            if (stationLabel.getParentGameObject().equals(station)) {
+                stationStationLabels.add(stationLabel);
             }
         }
-        return stationLabels;
+        return stationStationLabels;
     }
     /******************
      * STATIONS
@@ -222,8 +221,8 @@ public class World implements Serializable {
         // Передаем имя станции для выбора оптимальной позиции
         PathPoint labelPos = findFreePositionNear(station.getX(), station.getY(), station.getName());
         if (labelPos != null) {
-            Label label = new Label(this, labelPos.x, labelPos.y, station.getName(), station);
-            addLabel(label);
+            StationLabel stationLabel = new StationLabel(this, labelPos.x, labelPos.y, station.getName(), station);
+            addLabel(stationLabel);
         }
 
     }
@@ -250,9 +249,9 @@ public class World implements Serializable {
                 selectionManager.deselect();
             }
         }
-        Label label = getLabelForStation(station);
-        if (label != null) {
-            removeLabel(label);
+        StationLabel stationLabel = getLabelForStation(station);
+        if (stationLabel != null) {
+            removeLabel(stationLabel);
         }
         for (Station connectedStation : new ArrayList<>(station.getConnections().values())) {
             station.disconnect(connectedStation);
@@ -340,9 +339,9 @@ public class World implements Serializable {
         }
 
         // Затем проверяем метки (если нужно)
-        Label label = this.getLabelAt(x, y);
-        if (label != null) {
-            return label;
+        StationLabel stationLabel = this.getLabelAt(x, y);
+        if (stationLabel != null) {
+            return stationLabel;
         }
 
         // Если ничего не найдено
@@ -609,21 +608,30 @@ public class World implements Serializable {
         return y * width + x;
     }
 
-public WorldTile getWorldTile(int x, int y) {
-    //    System.out.println("getWorldTile: " + x + ", " + y);
-    if (x < 0 || x >= width || y < 0 || y >= height) return null;
-    return worldGrid[index(x, y)];
-}
+    public WorldTile getWorldTile(int x, int y) {
+        if (x < 0 || x >= width || y < 0 || y >= height) return null;
+        return worldGrid[y * width + x];
+    }
+
+    public GameTile getGameTile(int x, int y) {
+        if (x < 0 || x >= width || y < 0 || y >= height) return null;
+        return gameGrid[y * width + x];
+    }
+//public WorldTile getWorldTile(int x, int y) {
+//    //    System.out.println("getWorldTile: " + x + ", " + y);
+//    if (x < 0 || x >= width || y < 0 || y >= height) return null;
+//    return worldGrid[index(x, y)];
+//}
     public void setWorldTile(int x, int y, WorldTile tile) {
         if (x < 0 || x >= width || y < 0 || y >= height) return;
         worldGrid[index(x, y)] = tile;
 
     }
 
-    public GameTile getGameTile(int x, int y) {
-        if (x < 0 || x >= width || y < 0 || y >= height) return null;
-        return gameGrid[index(x, y)];
-    }
+//    public GameTile getGameTile(int x, int y) {
+//        if (x < 0 || x >= width || y < 0 || y >= height) return null;
+//        return gameGrid[index(x, y)];
+//    }
     public void setGameTile(int x, int y, GameTile tile) {
         if (x < 0 || x >= width || y < 0 || y >= height) return;
         gameGrid[index(x, y)] = tile;
@@ -636,6 +644,8 @@ public WorldTile getWorldTile(int x, int y) {
         if (x < 0 || x >= width || y < 0 || y >= height) return;
         gameplayGrid[index(x, y)] = tile;
     }
+
+
     /**
      * Gets the world grid
      * @return 2D array of world tiles
@@ -746,7 +756,7 @@ public WorldTile getWorldTile(int x, int y) {
         this.gameGrid = source.gameGrid;
         this.stations = source.stations;
         this.tunnels = source.tunnels;
-        this.labels = source.labels;
+        this.stationLabels = source.stationLabels;
         this.gameTime = source.gameTime;
         this.roundStationsEnabled = source.roundStationsEnabled;
         this.SAVE_FILE = source.SAVE_FILE;
