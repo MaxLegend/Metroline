@@ -19,7 +19,8 @@ import java.util.ArrayList;
 
 /**
  * Main application frame that contains all game screens and toolbar
- * TODO: РАЗОБРАТЬСЯ, ПОЧЕМУ ОПЯТЬ КТО ТО ВЫЗЫВАЕТ КАСКАД. НАЙТИ СПОСОБ ВООБЩЕ ЗАПРЕТИТЬ ПЕРЕРИСОВКУ ЭКРАНА
+ * TODO: Деньги сохраняются некорректно
+ * TODO:  Не очищается мапа станций которые строились (и наверное тех что разрушаются - тоже)
  * @author Tesmio
  */
 public class MainFrame extends JFrame {

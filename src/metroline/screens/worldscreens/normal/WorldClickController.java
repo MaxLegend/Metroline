@@ -522,9 +522,8 @@ public class WorldClickController {
             } else {
                 // Обычный ПКМ - добавление поезда (только не для депо)
                 if(station.getType() == StationType.DEPO) {
-                    showDepotMenu(station, x, y);
-          //          world.addTrainToStation(station, TrainType.STANDART);
-         //           world.removeMoney(COST_STANDART_TRAIN); //TODO Добавить типы поездов и цены на них
+                    showDepotMenu(station, x, y); //TODO разобраться почему остается висеть попап-меню если выбрать поезд без выхода из зоны панельки покупки
+
                 }
             }
         }

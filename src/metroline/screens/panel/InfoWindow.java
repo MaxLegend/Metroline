@@ -23,6 +23,8 @@ import java.awt.event.*;
 
 /**
  * TODO При определенных, пока неустановленных условиях активированное окно для ввода может повесить игру
+ * TODO Добавить редактирование названия и через метку тоже
+ * TODO Ремонт станций доделать
  */
 public class InfoWindow extends JWindow {
     private JLabel titleLabel;

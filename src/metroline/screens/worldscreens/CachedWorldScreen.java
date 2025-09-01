@@ -21,8 +21,7 @@ import java.util.List;
 
 
 
-//TODO Сделать таки чанковую систему. Иначе больших миров мне не видать
-//TODO Починить все что сломалось. Починить слои. Добавить еще слоев. Убрать множество окон для одного объекта
+// TODO Добавить еще слоев. Убрать множество окон для одного объекта
 public abstract class CachedWorldScreen extends WorldScreen {
     protected static final int TILE_SIZE = 32;
     protected static final int CACHE_SCALE = 2;
