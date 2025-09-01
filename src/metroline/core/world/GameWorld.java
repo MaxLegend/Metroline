@@ -50,7 +50,7 @@ public class GameWorld extends World {
     }
 
     public GameWorld(short width, short height,boolean hasPassengerCount, boolean hasAbilityPay,  boolean hasLandscape, boolean hasRivers, int worldColor, int money) {
-        super(null, width, height, hasPassengerCount, hasAbilityPay, hasLandscape,hasRivers,worldColor, SAVE_FILE);
+        super(null, width, height,worldColor, SAVE_FILE);
         this.mainFrame = MainFrame.getInstance();
         this.money = money;
         this.gameTime = new GameTime();
@@ -154,10 +154,10 @@ public class GameWorld extends World {
 
         if (hasRivers) {
             if(getWidth() > 100 || getHeight() > 100) {
-                addRivers(rand.nextInt(2,8));
+                addRivers(rand.nextInt(2,4));
             } else
             if(getWidth() > 50 || getHeight() > 50) {
-                addRivers(rand.nextInt(3,5));
+                addRivers(rand.nextInt(1,3));
             } else {
                 addRivers(rand.nextInt(1,2));
             }

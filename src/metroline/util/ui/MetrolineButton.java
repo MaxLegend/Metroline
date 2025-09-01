@@ -60,10 +60,12 @@ public class MetrolineButton extends JButton implements ITranslatable {
     }
     public static MetrolineButton createMetrolineButton(String text, ActionListener action) {
         MetrolineButton button = new MetrolineButton(text);
+        Dimension buttonSize = new Dimension(300, 60);
+        Font buttonFont = MetrolineFont.getMainFont(16);
         button.setPreferredSize(new Dimension(200, 40));
         button.setBackground(new Color(50, 50, 50));
         button.setForeground(Color.WHITE);
-        button.setFont(new Font("Sans Serif", Font.BOLD, 13));
+        button.setFont(buttonFont);
         button.setBorder(BorderFactory.createEmptyBorder(5, 15, 5, 15));
         button.setFocusPainted(false);
         button.setHorizontalAlignment(SwingConstants.CENTER);

@@ -57,7 +57,10 @@ public class MouseController extends MouseAdapter {
 
         if (SwingUtilities.isRightMouseButton(e)) {
             PathPoint worldPos = screen.screenToWorld(e.getX(), e.getY());
-
+            if (screen instanceof SandboxWorldScreen) {
+                SandboxWorldScreen gameScreen = (SandboxWorldScreen) screen;
+                gameScreen.sandboxClickHandler.handleRightClick(worldPos.x, worldPos.y);
+            }
             if (screen instanceof GameWorldScreen) {
                 GameWorldScreen gameScreen = (GameWorldScreen) screen;
                 gameScreen.worldClickController.handleRightClick(worldPos.x, worldPos.y);
@@ -133,8 +136,8 @@ public class MouseController extends MouseAdapter {
 
         if (screen instanceof SandboxWorldScreen sbScreen) {
             if (!sbScreen.isCtrlPressed && !sbScreen.isShiftPressed) {
-                sbScreen.sandboxClickHandler.handleEditStationName(worldPos.x, worldPos.y);
-                sbScreen.sandboxClickHandler.handleRemoveTunnel(worldPos.x, worldPos.y);
+//                sbScreen.sandboxClickHandler.handleEditStationName(worldPos.x, worldPos.y);
+//                sbScreen.sandboxClickHandler.handleRemoveTunnel(worldPos.x, worldPos.y);
             }
         } else if (screen instanceof GameWorldScreen gScreen) {
 
@@ -164,21 +167,12 @@ public class MouseController extends MouseAdapter {
     /**
      * Обработка нажатия левой кнопки мыши
      */
-//    private void handleLeftMousePressed(MouseEvent e) {
-//        PathPoint worldPos = screen.screenToWorld(e.getX(), e.getY());
-//        isLeftMouseDragging = true;
-//
-//        if (screen instanceof SandboxWorldScreen sbScreen) {
-//            sbScreen.handleClick(worldPos.x, worldPos.y);
-//        } else if (screen instanceof GameWorldScreen gsScreen) {
-//            gsScreen.handleWorldClick(worldPos.x, worldPos.y);
-//        }
-//    }
+
     private void handleLeftMousePressed(MouseEvent e, PathPoint worldPos) {
         isLeftMouseDragging = true;
 
         if (screen instanceof SandboxWorldScreen sbScreen) {
-            sbScreen.handleClick(worldPos.x, worldPos.y);
+            sbScreen.handleWorldClick(worldPos.x, worldPos.y);
         } else if (screen instanceof GameWorldScreen gsScreen) {
             gsScreen.handleWorldClick(worldPos.x, worldPos.y);
         }

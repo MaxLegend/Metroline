@@ -162,7 +162,7 @@ public class WorldClickController {
                     bothBuilt && targetBuilt ? TunnelType.BUILDING : TunnelType.PLANNED);
 
             world.addTunnel(tunnel);
-
+            tunnel.setTunnelColor(station.getColor());
             // Снимаем выделение
             selectionManager.deselect();
         } else {

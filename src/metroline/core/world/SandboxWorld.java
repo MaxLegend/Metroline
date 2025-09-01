@@ -17,7 +17,7 @@ public class SandboxWorld extends World {
     }
 
     public SandboxWorld(short width, short height,  int worldColor) {
-        super(null, width, height, false, false, false ,false,worldColor, SAVE_FILE);
+        super(null, width, height, worldColor, SAVE_FILE);
         generateWorld(worldColor);
     }
     public void generateWorld( int worldColor) {

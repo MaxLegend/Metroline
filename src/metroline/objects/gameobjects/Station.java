@@ -105,6 +105,7 @@ public class Station extends GameObject {
     public Color getColor() {
         return color.getColor();
     }
+
     /**
      * Gets the station color enum
      * @return StationColor enum value
@@ -261,7 +262,9 @@ public class Station extends GameObject {
      * Automatically determines and updates station type based on connections
      */
     public void updateType() {
-
+        if(this.type == StationType.DEPO) {
+            return;
+        }
         // Проверяем соседей
         boolean hasSameColorNeighbor = false;
         boolean hasDifferentColorNeighbor = false;

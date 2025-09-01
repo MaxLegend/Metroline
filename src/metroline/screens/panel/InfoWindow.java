@@ -21,7 +21,9 @@ import metroline.core.world.GameWorld;
 import java.awt.*;
 import java.awt.event.*;
 
-
+/**
+ * TODO При определенных, пока неустановленных условиях активированное окно для ввода может повесить игру
+ */
 public class InfoWindow extends JWindow {
     private JLabel titleLabel;
     private JLabel infoLabel;
@@ -504,8 +506,13 @@ public class InfoWindow extends JWindow {
             titleLabel.setText(LngUtil.translatable(gUnits.getType().getLocalizedName()));
             StringBuilder info = new StringBuilder("<html>");
             info.append(LngUtil.translatable("infoWnd.gUnits")+ " ").append(gUnits.getType().getIncomeMultiplier()).append("<br>");
+            info.append(LngUtil.translatable("infoWnd.position") + " ").append(gUnits.getX()).append(", ").append(gUnits.getY()).append("<br>");
+            info.append(LngUtil.translatable("infoWnd.condition") + " ").append(gUnits.getCondition()).append("<br>");
+            info.append(LngUtil.translatable("infoWnd.isAbandoned") + " ").append(gUnits.isAbandoned()).append("<br>");
             infoLabel.setText(info.toString());
-        }     else if (currentObject instanceof StationLabel) {
+        }
+
+        else if (currentObject instanceof StationLabel) {
             StationLabel stationLabel = (StationLabel) currentObject;
             titleLabel.setText(LngUtil.translatable(stationLabel.getText()));
             StringBuilder info = new StringBuilder("<html>");

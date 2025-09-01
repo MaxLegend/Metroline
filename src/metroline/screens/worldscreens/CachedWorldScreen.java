@@ -309,8 +309,7 @@ public abstract class CachedWorldScreen extends WorldScreen {
         long frameStartTime = System.nanoTime();
         int width = getWorld().getWidth();
         int height = getWorld().getHeight();
-        // 🔁 Восстанови из сжатого кэша, если статический кэш валиден, но изображение утеряно
-        // 🔁 Восстанови ТОЛЬКО если кэш валиден, но изображение утеряно
+
         if (compressedCacheValid && staticCacheValid && staticWorldCache == null) {
             restoreFromCompressedCache();
             if (staticWorldCache != null) {

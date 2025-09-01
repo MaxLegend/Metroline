@@ -4,6 +4,7 @@ import metroline.core.world.World;
 import metroline.core.world.tiles.WorldTile;
 import metroline.input.selection.SelectionManager;
 import metroline.objects.enums.TunnelType;
+import metroline.screens.render.StationRender;
 
 import java.awt.*;
 import java.awt.geom.Area;
@@ -21,7 +22,7 @@ public class Tunnel extends GameObject {
     private Station end;
     private List<PathPoint> path = new ArrayList<>();
     private PathPoint pathPoint; // For single bend tunnels
-
+    private Color tunnelColor;
     private float maintenanceCost; // Кэшированная стоимость обслуживания
     private boolean costDirty = true; // Флаг необходимости перерасчета
 
@@ -38,7 +39,12 @@ public class Tunnel extends GameObject {
         calculatePath();
     }
 
-
+    public void setTunnelColor(Color tunnelColor) {
+        this.tunnelColor = tunnelColor;
+    }
+    public Color getTunnelColor() {
+        return tunnelColor;
+    }
     public void setType(TunnelType type) {
         this.type = type;
     }

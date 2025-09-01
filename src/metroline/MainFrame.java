@@ -2,18 +2,13 @@ package metroline;
 
 
 import metroline.input.KeyboardController;
-import metroline.objects.gameobjects.GameplayUnits;
-import metroline.objects.gameobjects.Station;
-import metroline.objects.gameobjects.Tunnel;
 import metroline.screens.GameScreen;
-import metroline.screens.panel.InfoWindow;
 import metroline.screens.panel.LinesLegendWindow;
-import metroline.screens.worldscreens.CachedWorldScreen;
-import metroline.screens.worldscreens.normal.GameWorldScreen;
 import metroline.util.MetroLogger;
 
 import metroline.util.localizate.ITranslatable;
 import metroline.util.localizate.LngUtil;
+import metroline.util.ui.ImageCacheUtil;
 import metroline.util.ui.tooltip.CursorTooltip;
 
 import javax.swing.*;
@@ -32,8 +27,11 @@ public class MainFrame extends JFrame {
     public static final String SANDBOX_SCREEN_NAME = "sandbox_gamescreen";
     public static final String MAIN_MENU_SCREEN_NAME = "menu";
     public static final String GAME_SCREEN_NAME = "gamescreen";
-    public static final String WORLD_SETTINGS_SCREEN_NAME = "world_settings";
+    public static final String WORLD_MENU_SCREEN_NAME = "world_menu";
+    public static final String GAME_WORLD_SETTINGS_SCREEN_NAME = "game_world_settings";
     public static final String SANDBOX_SETTINGS_SCREEN_NAME = "sandbox_world_settings";
+    public static final String GLOBAL_SETTINGS_SCREEN_NAME = "global_settings";
+
     private boolean repaintBlocked = false;
     private GameScreen currentScreen;
     private String currentScreenName;
@@ -57,7 +55,18 @@ public class MainFrame extends JFrame {
             e.printStackTrace();
         }
     }
+    public void preloadBackgrounds() {
+        // Предзагружаем все фоновые изображения при запуске
+        String[] backgrounds = {
+                "/backgrounds/background.png",
+                "/backgrounds/background2.png",
+                // добавьте другие фоны которые используются
+        };
 
+        for (String bg : backgrounds) {
+            ImageCacheUtil.loadCachedImage(bg);
+        }
+    }
     /**
      * MainFrame constructor
      */
@@ -76,7 +85,7 @@ public class MainFrame extends JFrame {
                 CursorTooltip.hideTooltip();
             }
         });
-
+        preloadBackgrounds();
         initializeWindow(false);
 
 

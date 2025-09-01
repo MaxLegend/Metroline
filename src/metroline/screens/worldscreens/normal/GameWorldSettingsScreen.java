@@ -1,11 +1,10 @@
-package metroline.screens.worldscreens;
+package metroline.screens.worldscreens.normal;
 
 import metroline.MainFrame;
 import metroline.core.world.GameWorld;
 import metroline.input.KeyboardController;
 import metroline.objects.gameobjects.GameConstants;
 import metroline.screens.GameScreen;
-import metroline.screens.worldscreens.normal.GameWorldScreen;
 import metroline.util.ColorUtil;
 import metroline.util.localizate.LngUtil;
 import metroline.util.ui.*;
@@ -17,14 +16,18 @@ import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
-public class WorldSettingsScreen extends GameScreen {
+public class GameWorldSettingsScreen extends GameScreen {
     public static final Color[] WORLD_COLORS = {
             new Color(203, 202, 202), // Светло-серый
             new Color(110, 110, 110), // Серый (по умолчанию)
             new Color(70, 70, 70),    // Темно-серый
             new Color(150, 100, 80),  // Коричневый
-            new Color(80, 100, 150)   // Голубоватый
+            new Color(80, 100, 150),   // Голубоватый
+            new Color(100, 120, 100)  // Зеленовато-серый
     };
+
+    private static int worldColorIndex = 1;
+
     private MetrolineSlider moneySlider;
     private MetrolineLabel moneyValueLabel = new MetrolineLabel("M");;
     private MetrolineLabel moneyTextLabel;
@@ -58,7 +61,7 @@ public class WorldSettingsScreen extends GameScreen {
     private MetrolineLabel baseTunnelUpkeepValueLabel= new MetrolineLabel("M");
     private MetrolineLabel gameplayUnitsCountValueLabel= new MetrolineLabel("M");
 
-    public WorldSettingsScreen(MainFrame parent) {
+    public GameWorldSettingsScreen(MainFrame parent) {
         super(parent);
         this.parent = parent;
         setBackground(StyleUtil.BACKGROUND_COLOR);
@@ -428,7 +431,15 @@ public class WorldSettingsScreen extends GameScreen {
         KeyboardController.getInstance().setCurrentWorldScreen(this);
         requestFocusInWindow();
     }
+    public static int getWorldColorIndex() {
+        return worldColorIndex;
+    }
 
+    public static void setWorldColorIndex(int index) {
+        if (index >= 0 && index < WORLD_COLORS.length) {
+            worldColorIndex = index;
+        }
+    }
     @Override
     public void onDeactivate() {
         KeyboardController.getInstance().setCurrentWorldScreen(null);

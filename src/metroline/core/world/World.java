@@ -46,7 +46,7 @@ public class World implements Serializable {
         super();
     }
 
-    public World(WorldScreen screen, short width, short height,boolean hasPassengerCount, boolean hasAbilityPay, boolean hasLandscape, boolean hasRivers, int worldColor, String saveName) {
+    public World(WorldScreen screen, short width, short height, int worldColor, String saveName) {
         this.screen = screen;
         this.width = width;
         this.height = height;
@@ -454,13 +454,13 @@ public class World implements Serializable {
 
         while (!(currentX == end.getX() && currentY == end.getY())) {
             // Основное движение к цели (70% вероятность)
-            if (rand.nextFloat() < 0.7) {
+            if (rand.nextFloat() < 0.2) {
                 currentX = clamp(currentX + dx, 0, width-1);
                 currentY = clamp(currentY + dy, 0, height-1);
             }
 
             // Добавляем изгибы (40% вероятность)
-            if (rand.nextFloat() < 0.4) {
+            if (rand.nextFloat() < 0.8) {
                 int offset = rand.nextBoolean() ? 1 : -1;
                 currentX = clamp(currentX + perpX * offset, 0, width-1);
                 currentY = clamp(currentY + perpY * offset, 0, height-1);

@@ -63,27 +63,33 @@ public class SandboxWorldScreen extends CachedWorldScreen {
      * @param x X coordinate in world space
      * @param y Y coordinate in world space
      */
-    public void handleClick(int x, int y) {
+//    public void handleClick(int x, int y) {
+//        if (x < 0 || x >= getWorld().getWidth() || y < 0 || y >= getWorld().getHeight()) {
+//            return;
+//        }
+//        if (isShiftPressed && isCPressed) {
+//            sandboxClickHandler.showColorSelectionPopup(x, y);
+//        }
+//        else if (isShiftPressed) {
+//            sandboxClickHandler.handleStationClick(x, y);
+//        }
+//        else if (isCtrlPressed) {
+//
+//            sandboxClickHandler.handleTunnelClick(x, y);
+//        }
+//        else {
+//            sandboxClickHandler.handleDefaultClick(x, y);
+//        }
+//
+//        repaint();
+//    }
+    public void handleWorldClick(int x, int y) {
         if (x < 0 || x >= getWorld().getWidth() || y < 0 || y >= getWorld().getHeight()) {
             return;
         }
-        if (isShiftPressed && isCPressed) {
-            sandboxClickHandler.showColorSelectionPopup(x, y);
-        }
-        else if (isShiftPressed) {
-            sandboxClickHandler.handleStationClick(x, y);
-        }
-        else if (isCtrlPressed) {
-
-            sandboxClickHandler.handleTunnelClick(x, y);
-        }
-        else {
-            sandboxClickHandler.handleDefaultClick(x, y);
-        }
-
+        sandboxClickHandler.mainClickHandler(x, y);
         repaint();
     }
-
     public static synchronized SandboxWorldScreen getInstance() {
         if (INSTANCE == null) {
             throw new IllegalStateException("SandboxWorldScreen not initialized");

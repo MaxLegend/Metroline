@@ -11,7 +11,7 @@ import java.awt.*;
  */
 public class WorldTile extends Tile {
     private float perm; // 0 = can build, 1 = cannot build
-    private int baseTileColorRGB = 0x6E6E6E; // (110,110,110)
+    private static int baseTileColorRGB = 0x6E6E6E; // (110,110,110)
     private transient Color cachedBaseTileColor; // создаётся лениво, 1 раз
 
     private boolean isWater; // Новая переменная для воды
@@ -74,6 +74,7 @@ public class WorldTile extends Tile {
         return new Color(r, g, b);
     }
 
+
     public WorldTile getWorldTile() {
         return new WorldTile(getX(), getY());
     }
@@ -104,6 +105,9 @@ public class WorldTile extends Tile {
     public void setBaseTileColor(int rgb) {
         this.baseTileColorRGB = rgb;
         this.cachedBaseTileColor = null; // сброс кеша
+    }
+    public static Color getStaticBaseTileColor() {
+ return new Color(baseTileColorRGB);
     }
     public Color getBaseTileColor() {
         if (cachedBaseTileColor == null) {

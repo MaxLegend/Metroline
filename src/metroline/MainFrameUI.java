@@ -3,15 +3,14 @@ package metroline;
 import metroline.core.time.GameTime;
 import metroline.core.world.GameWorld;
 import metroline.core.world.SandboxWorld;
-import metroline.objects.gameobjects.GameplayUnits;
-import metroline.objects.gameobjects.Station;
-import metroline.objects.gameobjects.Tunnel;
 import metroline.screens.GameScreen;
+import metroline.screens.GlobalSettingsScreen;
 import metroline.screens.MenuScreen;
 import metroline.screens.panel.InfoWindow;
 import metroline.screens.panel.LinesLegendWindow;
+import metroline.screens.worldscreens.WorldMenuScreen;
 import metroline.screens.worldscreens.WorldScreen;
-import metroline.screens.worldscreens.WorldSettingsScreen;
+import metroline.screens.worldscreens.normal.GameWorldSettingsScreen;
 import metroline.screens.worldscreens.normal.GameWorldScreen;
 import metroline.screens.worldscreens.sandbox.SandboxSettingsScreen;
 import metroline.screens.worldscreens.sandbox.SandboxWorldScreen;
@@ -544,7 +543,7 @@ public class MainFrameUI {
         // Добавляем пункты меню
         popupMenu.addMetrolineItem(LngUtil.translatable("toolbar.save_game"), this::saveGame);
         popupMenu.addMetrolineItem(LngUtil.translatable("toolbar.load_game"), this::loadGame);
-        popupMenu.addMetrolineItem(LngUtil.translatable("toolbar.back_menu"), this::backToMenu);
+        popupMenu.addMetrolineItem(LngUtil.translatable("button.backToMenu"), this::backToMenu);
         popupMenu.addMetrolineItem(LngUtil.translatable("toolbar.exit"), this::exitGame);
 
         popupMenu.showUnderComponent(sourceButton);
@@ -594,10 +593,14 @@ public class MainFrameUI {
                 return new SandboxWorldScreen(PARENT);
             case GAME_SCREEN_NAME:
                 return new GameWorldScreen(PARENT);
-            case WORLD_SETTINGS_SCREEN_NAME:
-                return new WorldSettingsScreen(PARENT);
+            case GAME_WORLD_SETTINGS_SCREEN_NAME:
+                return new GameWorldSettingsScreen(PARENT);
             case SANDBOX_SETTINGS_SCREEN_NAME:
                 return new SandboxSettingsScreen(PARENT);
+            case GLOBAL_SETTINGS_SCREEN_NAME:
+                return new GlobalSettingsScreen(PARENT);
+            case WORLD_MENU_SCREEN_NAME:
+                return new WorldMenuScreen(PARENT);
             default:
                 throw new IllegalArgumentException("Unknown screen: " + screenName);
         }

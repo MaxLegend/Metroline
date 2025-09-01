@@ -1,68 +1,108 @@
+# COMMON LOCALIZATION
+button.backToMenu=Back to Menu
+-------------------------------
+# Main menu
+-------------------------------
 create_world_title=CREATE NEW WORLD
-main_menu.start=New Game
-main_menu.start_sandbox=New Sandbox
-main_menu.load_sandbox=Load Sandbox
-main_menu.load_standart=Load Game
-main_menu.settings=Settings
-main_menu.exit=Exit Game
-main_menu.change_lng=Language: English
+main_menu.start=Start Game
+main_menu.global_settings=Settings
+main_menu.exit=Exit
 
-world.not_loaded=Failed world load!
-world.not_saved=Failed world save!
-world.loaded=World successfully loaded!
-world.saved=World successfully saved!
-world.save_png=Image saved in
-world.color=World Color
-world.gen_landscape=Generate Hard Rocks
-world.gen_river=Generate Rivers
+-------------------------------
+# GLOBAL SETTINGS
+----------------------------
+global_settings.change_lng=Language: English
+global_settings.title=SETTINGS
+-------------------------------
+# WORLD MENU
+----------------------------
+world_menu.start=Standard Game
+world_menu.start_sandbox=Editor
+world_menu.load_sandbox=Load Editor
+world_menu.load_standart=Load Game
+world_menu.title=SELECT GAME MODE
+-------------------------------
+# World
+-------------------------------
+world.not_loaded=World loading error!
+world.not_saved=World saving error!
+world.loaded=World loaded successfully!
+world.saved=World saved successfully!
+world.save_png=Image saved to
+world.color=Metro map color
+world.gen_landscape=Generate inclusions
+world.gen_river=Generate rivers
 world.back=Back
-world.create_standart=Create World
-world.create_sandbox=Create Sandbox
+world.create_standart=Create map
+world.create_sandbox=Create sandbox
+world.gen_abilityPay_zone=Affordability zones
+world.gen_passengerCount_zone=Passenger traffic zones
+world.width=World width
+world.height=World height
+world.start_money_desc=Amount of money at the start of the game.
+width_world_slider_desc=Sets the world width in cells.
+height_world_slider_desc=Sets the world height in cells.
+world.economy_settings=Economy settings
+world.cells=cells
+world.round_stations=Round stations
+world.start_money=Starting capital
+world.station_cost=Station cost
+world.tunnel_segment_cost=Tunnel segment cost
+world.station_revenue=Station revenue
+world.station_upkeep=Station upkeep
+world.tunnel_upkeep=Tunnel upkeep
+world.gameplay_units=Gameplay units
+
+world.gen_abilityPay_zone_desc=Generate affordability zones that affect station revenue.
+world.gen_passengerCount_zone_desc=Generate passenger traffic that affects station revenue.
+world.gen_landscape_desc=Generate solid inclusions - station construction cost depends on rock hardness (the harder, the more expensive).
+world.gen_river_desc=Generate rivers, where more expensive above-water metro stations can be built, generating more money.
+world.round_stations_desc=Simply renders round stations instead of square ones.
+
+world.station_cost_desc=Base station cost.
+world.tunnel_segment_cost_desc=Base tunnel cost per one tunnel segment (between cell centers).
+world.station_revenue_desc=Estimated station revenue considering construction difficulty, affordability, and passenger traffic.
+world.station_upkeep_desc=Calculates station maintenance cost considering rock hardness.
+world.tunnel_upkeep_desc=Calculates tunnel maintenance cost depending on the number of segments.
+world.gameplay_units_desc=Number of gameplay points of interest (e.g., museums, airports, etc.). A station built near a point of interest generates more money.
+-------------------------------
+# Toolbar
+-------------------------------
 toolbar.save_game=Save Game
 toolbar.load_game=Load Game
-toolbar.back_menu=Back in menu
 toolbar.game=Game
-toolbar.exit=Exit in metroline
+toolbar.exit=Exit Game
 toolbar.build_station=●
-toolbar.build_station_desc=Set station
+toolbar.build_station_desc=Place station
 toolbar.build_tunnel=＝
-toolbar.build_tunnel_desc=Tunnel (Connect stations)
+toolbar.build_tunnel_desc=Connect stations with a tunnel
 toolbar.choose_color=🎨
 toolbar.choose_color_desc=Choose station color
 toolbar.cancel_selection=↩
-toolbar.cancel_selection_desc=Cancel selection
+toolbar.cancel_selection_desc=Cancel all
 toolbar.destroy=✕
-toolbar.destroy_desc=Destroy
+toolbar.destroy_desc=Destroy station
 timebar.pause=Pause
-timebar.timespeed=Time Speed:
+timebar.timespeed=Time speed:
 
-world.width=World Width
-world.height=World Height
-world.cells=cells
-world.round_stations=Rounded Stations
-world.start_money=Start Money
+-------------------------------
+# Station and Tunnels
+-------------------------------
+stype.destroyed=Destructible
+stype.closed=Closed
+stype.planned=Planned
+stype.building=Under construction
+stype.regular=Single
+stype.transfer=Transfer
+stype.terminal=Terminal
+stype.transit=Regular
+stype.depo=Depot
 
-world.station_cost=Station Cost
-world.tunnel_segment_cost=Tunnel Cost
-world.station_revenue=Station Revenue
-world.station_upkeep=Station Upkeep
-world.tunnel_upkeep=Tunnel Upkeep
-world.gameplay_units=Gameplay Units
-world.economy_settings=Economy Settings
-world.start_money_desc=Start Money in your Metro
+ttype.destroyed=Destructible
+ttype.planned=Planned
+ttype.building=Under construction
+ttype.active=Regular
 
-world.gen_abilityPay_zone_desc =Generation of solvency zones that affect the revenue of stations.
-world.gen_passengerCount_zone_desc=Generation of passenger flows that affect station revenue.
-world.gen_landscape_desc=Generation of solid inclusions - the cost of building stations depends on the hardness of the rock (the harder the more expensive).
-world.gen_river_desc =Generation of rivers on which more expensive surface metro stations can be built, bringing in more money.
-world.round_stations_desc=Just drawing round stations instead of square ones.
-
-world.station_cost_desc=Base cost of the station.
-world.tunnel_segment_cost_desc=Base cost of the stage for one segment of the stage (between the centers of the cells).
-world.station_revenue_desc=Estimated revenue of the station, taking into account the complexity of construction, solvency and passenger traffic.
-world.station_upkeep_desc =Calculation of the cost of maintaining the station, taking into account the hardness of the rock.
-world.tunnel_upkeep_desc =Calculation of the cost of stage maintenance depending on the number of segments.
-world.gameplay_units_desc=The number of game points of interest (for example, museums, airports, etc.). A station built near the point of interest earns more money.
 st_name_1=Anacostia
 st_name_2=Second Avenue
 st_name_3=Third Avenue
@@ -88,12 +128,7 @@ st_name_22=Garrettford
 st_name_23=Anderson Avenue
 st_name_24=Monroe Street
 st_name_25=Providence
-money.currency=$
-infoWnd.position=Coords:
-infoWnd.type=Type:
-infoWnd.color=Color:
-infoWnd.cost=Cost:
-infoWnd.connections=Connections:
+
 color.red=Red
 color.dark_green=Dark Green
 color.blue=Blue
@@ -110,47 +145,12 @@ color.pink=Pink
 color.mint=Mint
 color.maroon=Maroon
 color.light_green=Light Green
-stype.destroyed=Destroyed
-stype.closed=Closed
-stype.planned=Planned
-stype.building=Under Construction
-stype.regular=Regular Station
-stype.transfer=Transfer Station
-stype.terminal=Terminal Station
-stype.transit=Default Station
-stype.depo=Depot
-ttype.destroyed=Destroyed
-ttype.planned=Planned
-ttype.building=Under Construction
-ttype.active=Active
-infoWnd.tunnel_from=From:
-infoWnd.tunnel_to=To:
-infoWnd.tunnel_length=Length:
-infoWnd.tunnel_segments=segments
-infoWnd.tunnel_type=Type:
-infoWnd.tunnel_cost=Cost:
-infoWnd.tunnel_title=Tunnel
-infoWnd.abilityPay=Ability Pay:
-infoWnd.passengerCount=Passengers Flow:
-infoWnd.revenue:Day Revenue:
-infoWnd.gUnits=Revenue Multiplier:
-infoWnd.stationLabel=Label
-infoWnd.upkeep:Upkeep:
-tunnel.upkeep:Upkeep:
-units.house_culture=House of Culture
-units.church=Church
-units.airport=Airport
-units.port=Port
-units.cityhall=Cityhall
-units.shop=Shop
-units.factory=Factory
-units.museum=Museum
-legend.title=Metro Lines
-legend.button=Metro Lines
+station.build_date=Build year:
+
 line.red=Red Line
 line.dark_green=Dark Green Line
 line.blue=Blue Line
-line.dark_blue=Navy Blue Line
+line.dark_blue=Dark Blue Line
 line.cyan=Cyan Line
 line.brown=Brown Line
 line.orange=Orange Line
@@ -163,12 +163,50 @@ line.pink=Pink Line
 line.mint=Mint Line
 line.maroon=Maroon Line
 line.light_green=Light Green Line
-world.gen_abilityPay_zone=Ability Pay Zones
-world.gen_passengerCount_zone=Passengers Zones
+
+-------------------------------
+# Economics
+-------------------------------
+money.currency=₽
 elayer.passenger=Passenger Traffic
 elayer.abilityPay=Affordability
-elayer.gameplayUnits=Gameplay Units
+elayer.gameplayUnits=Surface Buildings
 timebar.economic_layers=Layers
+
+-------------------------------
+# Info
+-------------------------------
+infoWnd.position=Position:
+infoWnd.type=Type:
+infoWnd.color=Color:
+infoWnd.cost=Cost:
+infoWnd.connections=Connected:
+infoWnd.tunnel_from=From:
+infoWnd.tunnel_to=To:
+infoWnd.tunnel_length=Length:
+infoWnd.tunnel_segments=segments
+infoWnd.tunnel_type=Type:
+infoWnd.tunnel_cost=Cost:
+infoWnd.tunnel_title=Tunnel
+infoWnd.abilityPay=Affordability:
+infoWnd.passengerCount=Passenger Traffic:
+infoWnd.revenue:Daily Revenue:
+infoWnd.gUnits=Revenue Multiplier:
+infoWnd.stationLabel=Label
+infoWnd.upkeep:Maintenance Costs:
+tunnel.upkeep:Maintenance Costs:
+units.house_culture=House of Culture
+units.church=Church
+units.airport=Airport
+units.port=Port
+units.cityhall=City Hall
+units.shop=Shop
+units.factory=Factory
+units.museum=Museum
+
+# Line Legend
+legend.title=Metro Lines
+legend.button=Metro Lines
 
 -------------------------------
 # Trains

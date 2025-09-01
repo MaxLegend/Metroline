@@ -91,4 +91,5 @@ public enum StationColors {
     public static StationColors fromColor(Color color) {
         return fromRGB(color.getRed(), color.getGreen(), color.getBlue());
     }
+
 }

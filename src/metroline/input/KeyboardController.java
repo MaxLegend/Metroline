@@ -5,7 +5,7 @@ import metroline.core.world.GameWorld;
 import metroline.screens.GameScreen;
 import metroline.screens.worldscreens.WorldScreen;
 import metroline.screens.worldscreens.normal.GameWorldScreen;
-import metroline.util.SaveToImageUtil;
+import metroline.util.ImageUtil;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
@@ -71,11 +71,14 @@ public class KeyboardController {
         }
 
         if (e.isControlDown() && e.getKeyCode() == KeyEvent.VK_S) {
-            System.out.println("SAve MODE" + currentScreen );
             if(mainFrame.getCurrentScreen() instanceof GameWorldScreen worldScreen) {
                 boolean isSandbox = worldScreen != null &&
                         worldScreen.getClass().getSimpleName().contains("Sandbox");
-                SaveToImageUtil.saveWorldToPNG(isSandbox);
+                float zoom = worldScreen.getZoom();
+                float offsetX = worldScreen.getOffsetX();
+                float offsetY = worldScreen.getOffsetY();
+                Rectangle visibleArea = ImageUtil.getVisibleArea(worldScreen, zoom, offsetX, offsetY);
+                ImageUtil.saveVisibleAreaToPNG(isSandbox, 4, visibleArea, zoom, offsetX, offsetY);
                 e.consume();
                 return;
             }

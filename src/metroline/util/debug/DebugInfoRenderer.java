@@ -6,6 +6,7 @@ import metroline.objects.gameobjects.PathPoint;
 import metroline.objects.gameobjects.Station;
 import metroline.objects.gameobjects.StationLabel;
 import metroline.objects.gameobjects.Tunnel;
+import metroline.screens.render.StationRender;
 import metroline.util.MetroLogger;
 
 import java.awt.*;

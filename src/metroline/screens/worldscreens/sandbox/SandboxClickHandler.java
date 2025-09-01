@@ -1,26 +1,33 @@
 package metroline.screens.worldscreens.sandbox;
 
+import metroline.core.world.SandboxWorld;
+import metroline.core.world.SandboxWorld;
+import metroline.input.KeyboardController;
 import metroline.input.selection.GameSelectionListener;
 import metroline.input.selection.Selectable;
 import metroline.input.selection.SelectionManager;
 import metroline.objects.enums.StationColors;
-import metroline.objects.gameobjects.GameObject;
-import metroline.objects.gameobjects.*;
 import metroline.objects.enums.StationType;
 import metroline.objects.enums.TunnelType;
-import metroline.objects.gameobjects.StationLabel;
-import metroline.screens.worldscreens.normal.GameWorldScreen;
+import metroline.objects.gameobjects.*;
+import metroline.screens.render.StationPositionCache;
+import metroline.util.MetroLogger;
+import metroline.util.ui.MetrolinePopupMenu;
+import metroline.util.ui.MetrolineButton;
+import metroline.util.ui.tooltip.CursorTooltip;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.List;
 
-
-import static metroline.screens.worldscreens.sandbox.SandboxWorldScreen.*;
+import static metroline.objects.gameobjects.GameConstants.COST_STANDART_TRAIN;
 
 /**
- * Main world click handler
+ * Main world click handler for Sandbox mode
  * @author Tesmio
  */
 public class SandboxClickHandler {
@@ -29,152 +36,101 @@ public class SandboxClickHandler {
     private static int dragStartY;
     private static boolean dragging = false;
     private static StationColors currentStationColor = StationColors.RED;
-    private boolean colorSelectionEnabled = false;
+
     public SandboxWorldScreen screen;
+
     public SandboxClickHandler(SandboxWorldScreen screen) {
         this.screen = screen;
         SelectionManager.getInstance().addListener(new GameSelectionListener(screen.parent));
     }
-    /**
-     * Handles mouse drag in edit mode
-     * @param x X coordinate
-     * @param y Y coordinate
-     */
-    public void handleEditDrag(int x, int y) {
-        SelectionManager selectionManager = SelectionManager.getInstance();
-        Selectable selected = selectionManager.getSelected();
 
-        if (selected == null || dragOffset == null) return;
-
-        // Проверяем границы
-        if (x < 0 || x >= SandboxWorldScreen.getInstance().getWorld().getWidth() ||
-                y < 0 || y >= SandboxWorldScreen.getInstance().getWorld().getHeight()) {
-            return;
-        }
-
-        if (selected instanceof StationLabel) {
-            StationLabel stationLabel = (StationLabel) selected;
-            int newX = x - dragOffset.x;
-            int newY = y - dragOffset.y;
-
-            if (stationLabel.tryMoveTo(newX, newY)) {
-                SandboxWorldScreen.getInstance().repaint();
-            }
-            return;
-        }
-
-        if (selected instanceof Station) {
-            Station station = (Station) selected;
-            int newX = x - dragOffset.x;
-            int newY = y - dragOffset.y;
-
-            // Check if new position is valid
-            if (newX >= 0 && newX < SandboxWorldScreen.getInstance().getWorld().getWidth() &&
-                    newY >= 0 && newY < SandboxWorldScreen.getInstance().getWorld().getHeight() &&
-                    SandboxWorldScreen.getInstance().getWorld().getStationAt(newX, newY) == null) {
-
-                StationLabel stationLabel = SandboxWorldScreen.getInstance().getWorld().getLabelForStation(station);
-                // Remove from old position
-                SandboxWorldScreen.getInstance().getWorld().getGameTile(station.getX(), station.getY()).setContent(null);
-
-                // Update position
-                station.x = newX;
-                station.y = newY;
-
-                // Add to new position
-                SandboxWorldScreen.getInstance().getWorld().getGameTile(newX, newY).setContent(station);
-
-                // Recalculate all connected tunnels
-                for (Tunnel t : SandboxWorldScreen.getInstance().getWorld().getTunnels()) {
-                    if (t.getStart() == station || t.getEnd() == station) {
-                        t.calculatePath();
-                    }
-                }
-
-                if (stationLabel != null) {
-                    // Находим новую позицию для метки
-                    PathPoint newLabelPos = SandboxWorldScreen.getInstance().getWorld().findFreePositionNear(station.getX(), station.getY(), station.getName());
-                    if (newLabelPos != null) {
-                        stationLabel.tryMoveTo(newLabelPos.x, newLabelPos.y);
-                    }
-                }
-                SandboxWorldScreen.getInstance().repaint();
-            }
-        }
-        else if (selected instanceof Tunnel) {
-            Tunnel tunnel = (Tunnel) selected;
-
-            // Проверяем, что новая позиция не совпадает со станцией
-            Station stationAtPos = SandboxWorldScreen.getInstance().getWorld().getStationAt(x, y);
-            if (stationAtPos == null) {
-                tunnel.moveControlPoint(x, y);
-                SandboxWorldScreen.getInstance().repaint();
-            }
-        }
-    }
+    /*********************************
+     * ОСНОВНЫЕ МЕТОДЫ ОБРАБОТКИ КЛИКОВ
+     *********************************/
 
     /**
-     * Handles delete game objects
+     * Основной обработчик кликов
      */
-    public void deleteSelectedObject() {
-        SelectionManager selectionManager = SelectionManager.getInstance();
-        Selectable selected = selectionManager.getSelected();
+    public void mainClickHandler(int x, int y) {
+        KeyboardController keyboard = KeyboardController.getInstance();
+        boolean isShiftPressed = keyboard.isKeyPressed(KeyEvent.VK_SHIFT);
+        boolean isCtrlPressed = keyboard.isKeyPressed(KeyEvent.VK_CONTROL);
+        boolean isAltPressed = keyboard.isKeyPressed(KeyEvent.VK_ALT);
+        boolean isCPressed = keyboard.isKeyPressed(KeyEvent.VK_C);
 
-        if (selected == null) return;
-
-        if (selected instanceof Station) {
-            SandboxWorldScreen.getInstance().getWorld().removeStation((Station)selected);
-        }
-        else if (selected instanceof Tunnel) {
-            SandboxWorldScreen.getInstance().getWorld().removeTunnel((Tunnel)selected);
-        }
-        else if (selected instanceof StationLabel) {
-            SandboxWorldScreen.getInstance().getWorld().removeLabel((StationLabel)selected);
-        }
-
-        selectionManager.deselect();
-        SandboxWorldScreen.getInstance().repaint();
-    }
-
-    public void handleRemoveTunnel(int worldX, int worldY) {
-        Tunnel tunnel = SandboxWorldScreen.getInstance().getWorld().getTunnelAt(worldX, worldY);
-        if (tunnel != null) {
-            SandboxWorldScreen.getInstance().getWorld().removeTunnel(tunnel);
-            SandboxWorldScreen.getInstance().repaint();
+        if (isAltPressed || screen.isAltPressed) {
+            handleAltClick(x, y);
+        } else if (isShiftPressed && isCPressed || screen.isShiftPressed && screen.isCPressed) {
+            showColorSelectionPopup(x, y);
+        } else if (isShiftPressed || screen.isShiftPressed) {
+            handleShiftClick(x, y);
+        } else if (isCtrlPressed || screen.isCtrlPressed) {
+            handleCtrlClick(x, y);
+        } else {
+            handleDefaultLeftClick(x, y);
         }
     }
 
-    public void handleEditStationName(int x, int y) {
-        Station station = SandboxWorldScreen.getInstance().getWorld().getStationAt(x, y);
+    /*********************************
+     * ОБРАБОТЧИКИ КОНКРЕТНЫХ ДЕЙСТВИЙ
+     *********************************/
+
+    /**
+     * Alt+Click - удаление объектов
+     */
+    public void handleAltClick(int x, int y) {
+        SandboxWorld world = (SandboxWorld) SandboxWorldScreen.getInstance().getWorld();
+
+        // Проверяем объекты в порядке приоритета
+        Station station = world.getStationAt(x, y);
         if (station != null) {
-            Point mouseWorldPos = new Point(station.getX(), station.getY());
-            editStationName(station, mouseWorldPos);
+            world.removeStation(station);
+            SandboxWorldScreen.getInstance().repaint();
+            return;
+        }
+
+        Tunnel tunnel = world.getTunnelAt(x, y);
+        if (tunnel != null) {
+            world.removeTunnel(tunnel);
+            SandboxWorldScreen.getInstance().repaint();
+            return;
+        }
+
+        StationLabel label = world.getLabelAt(x, y);
+        if (label != null) {
+            world.removeLabel(label);
+            SandboxWorldScreen.getInstance().repaint();
+            return;
         }
     }
 
     /**
-     * Handles tunnel creation
-     * @param x X coordinate
-     * @param y Y coordinate
+     * Ctrl+Click - создание туннелей
      */
-    public void handleTunnelClick(int x, int y) {
-        SelectionManager selectionManager = SelectionManager.getInstance();
-        Station station = SandboxWorldScreen.getInstance().getWorld().getStationAt(x, y);
+    public void handleCtrlClick(int x, int y) {
+        SandboxWorld world = (SandboxWorld) SandboxWorldScreen.getInstance().getWorld();
+        Station station = world.getStationAt(x, y);
+
         if (station == null) return;
 
+        SelectionManager selectionManager = SelectionManager.getInstance();
         Selectable selected = selectionManager.getSelected();
 
-        if (selected instanceof Station && selected != station) {
+        if (selected != null && !(selected instanceof Station)) {
+            selectionManager.deselect();
+            return;
+        }
+
+        if (selected != null && selected != station) {
             Station selectedStation = (Station) selected;
 
-            // Создаём туннель
-            Tunnel tunnel = new Tunnel(SandboxWorldScreen.getInstance().getWorld(), selectedStation, station, TunnelType.ACTIVE);
-            SandboxWorldScreen.getInstance().getWorld().addTunnel(tunnel);
+            // Создаем туннель между двумя станциями
+            Tunnel tunnel = new Tunnel(world, selectedStation, station, TunnelType.ACTIVE);
+            world.addTunnel(tunnel);
 
             // Снимаем выделение
             selectionManager.deselect();
         } else {
-            // Выбираем новую станцию (или снимаем выделение если кликнули ту же)
             if (selectionManager.isSelected(station)) {
                 selectionManager.deselect();
             } else {
@@ -186,15 +142,295 @@ public class SandboxClickHandler {
     }
 
     /**
+     * Shift+Click - строительство станций
+     */
+    public void handleShiftClick(int x, int y) {
+        Station existing = SandboxWorldScreen.getInstance().getWorld().getStationAt(x, y);
+
+        if (existing != null) {
+            handleExistingStation(existing);
+        } else {
+            handleNewStation(x, y);
+        }
+    }
+
+    /**
+     * Обычный клик - выбор объектов
+     */
+    public void handleDefaultLeftClick(int x, int y) {
+        SelectionManager selectionManager = SelectionManager.getInstance();
+        Selectable selected = selectionManager.getSelected();
+
+        // Проверяем объекты в порядке приоритета
+        if (trySelectLabel(x, y)) return;
+        if (trySelectStation(x, y)) return;
+        if (trySelectTunnel(x, y)) return;
+
+        // Если кликнули на пустое место - снимаем выделение
+        selectionManager.deselect();
+    }
+
+    /**
+     * Обработка правого клика
+     */
+    public void handleRightClick(int x, int y) {
+        KeyboardController keyboard = KeyboardController.getInstance();
+        boolean isShiftPressed = keyboard.isKeyPressed(KeyEvent.VK_SHIFT);
+
+        SandboxWorld world = (SandboxWorld) SandboxWorldScreen.getInstance().getWorld();
+        GameObject clickedObject = world.getGameObjectAt(x, y);
+
+        if (clickedObject instanceof Station) {
+            Station station = (Station) clickedObject;
+
+            // Shift+ПКМ - превращение в депо
+            if (isShiftPressed || screen.isShiftPressed) {
+                if (station.getType() != StationType.DEPO) {
+                    station.setType(StationType.DEPO);
+                    SandboxWorldScreen.getInstance().repaint();
+                }
+            } else {
+                    editStationName(station, new Point(x, y));
+
+            }
+        }
+    }
+
+    /*********************************
+     * ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ
+     *********************************/
+
+    /**
+     * Обработка существующей станции
+     */
+    private void handleExistingStation(Station station) {
+        SelectionManager selectionManager = SelectionManager.getInstance();
+
+        if (!selectionManager.isSelected(station)) {
+            selectionManager.select(station);
+        } else {
+            selectionManager.deselect();
+        }
+
+        SandboxWorldScreen.getInstance().repaint();
+    }
+
+    /**
+     * Создание новой станции
+     */
+    private void handleNewStation(int x, int y) {
+        if (!isPositionValidForStation(x, y)) {
+            return;
+        }
+
+        if (SandboxWorldScreen.getInstance().isCPressed) {
+            showColorSelectionPopup(x, y);
+        } else {
+            Station station = new Station(
+                    SandboxWorldScreen.getInstance().getWorld(),
+                    x, y,
+                    currentStationColor,
+                    StationType.REGULAR
+            );
+            SandboxWorldScreen.getInstance().getWorld().addStation(station);
+            checkForTransferStation(station);
+            SandboxWorldScreen.getInstance().repaint();
+        }
+    }
+
+    /**
+     * Попытка выбрать метку
+     */
+    private boolean trySelectLabel(int x, int y) {
+        StationLabel stationLabel = SandboxWorldScreen.getInstance().getWorld().getLabelAt(x, y);
+        if (stationLabel != null) {
+            selectObject(stationLabel, x, y);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Попытка выбрать станцию
+     */
+    private boolean trySelectStation(int x, int y) {
+        Station station = SandboxWorldScreen.getInstance().getWorld().getStationAt(x, y);
+        if (station != null) {
+            selectObject(station, x, y);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Попытка выбрать туннель
+     */
+    private boolean trySelectTunnel(int x, int y) {
+        Tunnel tunnel = SandboxWorldScreen.getInstance().getWorld().getTunnelAt(x, y);
+        if (tunnel != null) {
+            for (PathPoint p : tunnel.getPath()) {
+                if (p.getX() == x && p.getY() == y) {
+                    selectObject(tunnel, x, y);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Выбор объекта
+     */
+    private void selectObject(GameObject obj, int clickX, int clickY) {
+        SelectionManager.getInstance().select(obj);
+        dragOffset = new PathPoint(clickX - obj.getX(), clickY - obj.getY());
+        SandboxWorldScreen.getInstance().repaint();
+    }
+
+    /**
+     * Обработка перетаскивания
+     */
+    public void handleEditDrag(int x, int y) {
+        SelectionManager selectionManager = SelectionManager.getInstance();
+        Selectable selected = selectionManager.getSelected();
+        if (dragOffset == null) return;
+
+        // Проверяем границы мира
+        if (!isWithinWorldBounds(x, y)) return;
+
+        if (selected instanceof StationLabel) {
+            handleLabelDrag((StationLabel) selected, x, y);
+        } else if (selected instanceof Station) {
+            handleStationDrag((Station) selected, x, y);
+        } else if (selected instanceof Tunnel) {
+            handleTunnelDrag((Tunnel) selected, x, y);
+        }
+    }
+
+    /**
+     * Перетаскивание метки
+     */
+    private void handleLabelDrag(StationLabel stationLabel, int x, int y) {
+        int newX = x - dragOffset.x;
+        int newY = y - dragOffset.y;
+
+        if (stationLabel.tryMoveTo(newX, newY)) {
+            SandboxWorldScreen.getInstance().repaint();
+        }
+    }
+
+    /**
+     * Перетаскивание станции
+     */
+    private void handleStationDrag(Station station, int x, int y) {
+        int newX = x - dragOffset.x;
+        int newY = y - dragOffset.y;
+
+        if (isPositionValidForStation(newX, newY)) {
+            moveStationTo(station, newX, newY);
+        }
+    }
+
+    /**
+     * Перетаскивание туннеля
+     */
+    private void handleTunnelDrag(Tunnel tunnel, int x, int y) {
+        // Проверяем, что новая позиция не совпадает со станцией
+        Station stationAtPos = SandboxWorldScreen.getInstance().getWorld().getStationAt(x, y);
+        if (stationAtPos == null) {
+            tunnel.moveControlPoint(x, y);
+            SandboxWorldScreen.getInstance().repaint();
+        }
+    }
+
+    /**
+     * Перемещение станции
+     */
+    private void moveStationTo(Station station, int newX, int newY) {
+        SandboxWorld world = (SandboxWorld) SandboxWorldScreen.getInstance().getWorld();
+
+        // Удаляем из старой позиции
+        world.getGameTile(station.getX(), station.getY()).setContent(null);
+
+        // Обновляем позицию
+        station.x = newX;
+        station.y = newY;
+
+        // Добавляем в новую позицию
+        world.getGameTile(newX, newY).setContent(station);
+
+        // Пересчитываем все связанные туннели
+        for (Tunnel t : world.getTunnels()) {
+            if (t.getStart() == station || t.getEnd() == station) {
+                t.calculatePath();
+            }
+        }
+
+        // Перемещаем метку станции
+        StationLabel stationLabel = world.getLabelForStation(station);
+        if (stationLabel != null) {
+            PathPoint newLabelPos = world.findFreePositionNear(station.getX(), station.getY(), station.getName());
+            if (newLabelPos != null) {
+                stationLabel.tryMoveTo(newLabelPos.x, newLabelPos.y);
+            }
+        }
+
+        SandboxWorldScreen.getInstance().repaint();
+    }
+
+    /**
+     * Проверка валидности позиции для станции
+     */
+    private boolean isPositionValidForStation(int x, int y) {
+        SandboxWorld world = (SandboxWorld) SandboxWorldScreen.getInstance().getWorld();
+
+        // Проверяем границы мира
+        if (x < 0 || x >= world.getWidth() || y < 0 || y >= world.getHeight()) {
+            return false;
+        }
+
+        // Проверяем, что клетка свободна
+        return world.getStationAt(x, y) == null;
+    }
+
+    /**
+     * Проверка границ мира
+     */
+    private boolean isWithinWorldBounds(int x, int y) {
+        return x >= 0 && x < SandboxWorldScreen.getInstance().getWorld().getWidth() &&
+                y >= 0 && y < SandboxWorldScreen.getInstance().getWorld().getHeight();
+    }
+
+    /**
+     * Проверка на трансферную станцию
+     */
+    private static void checkForTransferStation(Station station) {
+        int x = station.getX();
+        int y = station.getY();
+
+        for (int ny = Math.max(0, y-1); ny < Math.min(SandboxWorldScreen.getInstance().getWorld().getHeight(), y+2); ny++) {
+            for (int nx = Math.max(0, x-1); nx < Math.min(SandboxWorldScreen.getInstance().getWorld().getWidth(), x+2); nx++) {
+                if (nx == x && ny == y) continue;
+
+                Station neighbor = SandboxWorldScreen.getInstance().getWorld().getStationAt(nx, ny);
+                if (neighbor != null && !neighbor.getColor().equals(station.getColor())) {
+                    station.setType(StationType.TRANSFER);
+                    neighbor.setType(StationType.TRANSFER);
+                    return;
+                }
+            }
+        }
+    }
+
+    /**
      * Показ выбора цвета
      */
     public void showColorSelectionPopup(int x, int y) {
-        Window parentWindow = SwingUtilities.getWindowAncestor(GameWorldScreen.getInstance());
+        Window parentWindow = SwingUtilities.getWindowAncestor(SandboxWorldScreen.getInstance());
         JDialog colorDialog = new JDialog(parentWindow);
         colorDialog.setUndecorated(true);
         colorDialog.setModal(false);
 
-        // Создаем панель с темной подложкой и скругленными углами
         JPanel mainPanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -212,7 +448,6 @@ public class SandboxClickHandler {
         mainPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
         mainPanel.setOpaque(false);
 
-        // Панель для цветов
         JPanel colorPanel = new JPanel(new GridLayout(4, 4, 5, 5));
         colorPanel.setOpaque(false);
 
@@ -224,13 +459,11 @@ public class SandboxClickHandler {
         mainPanel.add(colorPanel, BorderLayout.CENTER);
         colorDialog.add(mainPanel);
 
-        // Рассчитываем позицию как для InfoWindow
-        Point screenPoint = GameWorldScreen.getInstance().worldToScreen(x, y);
+        Point screenPoint = SandboxWorldScreen.getInstance().worldToScreen(x, y);
         Point windowPoint = new Point(screenPoint);
-        SwingUtilities.convertPointToScreen(windowPoint, GameWorldScreen.getInstance());
+        SwingUtilities.convertPointToScreen(windowPoint, SandboxWorldScreen.getInstance());
         colorDialog.setLocation(windowPoint.x + 20, windowPoint.y + 20);
 
-        // Обработчики закрытия
         colorDialog.addWindowFocusListener(new WindowAdapter() {
             @Override
             public void windowLostFocus(WindowEvent e) {
@@ -248,12 +481,9 @@ public class SandboxClickHandler {
             protected void paintComponent(Graphics g) {
                 Graphics2D g2d = (Graphics2D) g.create();
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                // Рисуем скругленную кнопку
                 g2d.setColor(colorButton);
                 g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
 
-                // Обводка при наведении
                 if (getModel().isRollover()) {
                     g2d.setColor(Color.WHITE);
                     g2d.setStroke(new BasicStroke(2));
@@ -283,91 +513,25 @@ public class SandboxClickHandler {
         return colorBtn;
     }
 
-    /**
-     * Handles selection of stations/tunnels
-     * @param x X coordinate
-     * @param y Y coordinate
-     */
-    public void handleDefaultClick(int x, int y) {
-        SelectionManager selectionManager = SelectionManager.getInstance();
 
-        // Проверяем метки
-        StationLabel stationLabel = SandboxWorldScreen.getInstance().getWorld().getLabelAt(x, y);
-        if (stationLabel != null) {
-            selectObject(stationLabel, x, y);
-            return;
-        }
 
-        // Проверяем станции
-        Station station = SandboxWorldScreen.getInstance().getWorld().getStationAt(x, y);
-        if (station != null) {
-            selectObject(station, x, y);
-            return;
-        }
-
-        // Проверяем туннели
-        Tunnel tunnel = SandboxWorldScreen.getInstance().getWorld().getTunnelAt(x, y);
-        if (tunnel != null) {
-            // Ищем конкретную точку туннеля
-            for (PathPoint p : tunnel.getPath()) {
-                if (p.getX() == x && p.getY() == y) {
-                    selectObject(tunnel, x, y);
-                    break;
-                }
-            }
-            return;
-        }
-
-        if (SandboxWorldScreen.getInstance().isShiftPressed) {
-            if (SandboxWorldScreen.getInstance().getWorld().getStationAt(x, y) == null) {
-                Station newStation = new Station(SandboxWorldScreen.getInstance().getWorld(), x, y, currentStationColor, StationType.REGULAR);
-                SandboxWorldScreen.getInstance().getWorld().addStation(newStation);
-                checkForTransferStation(newStation);
-                SandboxWorldScreen.getInstance().repaint();
-            }
-        } else {
-            // Если кликнули на пустое место - снимаем выделение
-            selectionManager.deselect();
-        }
-    }
-
-    private void selectObject(GameObject obj, int clickX, int clickY) {
-        SelectionManager.getInstance().select(obj);
-        dragOffset = new PathPoint(clickX - obj.getX(), clickY - obj.getY());
-        SandboxWorldScreen.getInstance().repaint();
-    }
-
-    public Selectable getSelectedObject() {
-        return SelectionManager.getInstance().getSelected();
-    }
 
     /**
-     * Deselects all game objects
-     */
-    private void deselectAll() {
-        SelectionManager.getInstance().deselect();
-    }
-
-    /**
-     * Edit station name
+     * Редактирование имени станции
      */
     static void editStationName(Station station, Point mouseWorldPos) {
-        // Получаем экранные координаты из мировых
         Point screenPos = SandboxWorldScreen.getInstance().worldToScreen(
                 mouseWorldPos.x,
                 mouseWorldPos.y
         );
 
-        // Конвертируем в координаты окна
         Point windowPos = new Point(screenPos);
         SwingUtilities.convertPointToScreen(windowPos, SandboxWorldScreen.getInstance());
 
-        // Создаем кастомное окно
         JDialog dialog = new JDialog();
         dialog.setUndecorated(true);
         dialog.setBackground(new Color(0, 0, 0, 0));
 
-        // Основная панель
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(new Color(45, 45, 45));
         panel.setBorder(BorderFactory.createCompoundBorder(
@@ -375,7 +539,6 @@ public class SandboxClickHandler {
                 BorderFactory.createEmptyBorder(5, 10, 5, 10)
         ));
 
-        // Текстовое поле
         JTextField textField = new JTextField(station.getName(), 15);
         textField.setForeground(Color.WHITE);
         textField.setBackground(new Color(60, 60, 60));
@@ -384,7 +547,6 @@ public class SandboxClickHandler {
         textField.setCaretColor(Color.WHITE);
         textField.selectAll();
 
-        // Обработчики событий
         textField.addActionListener(e -> {
             applyNameChange(station, textField.getText().trim());
             dialog.dispose();
@@ -401,14 +563,8 @@ public class SandboxClickHandler {
         panel.add(textField, BorderLayout.CENTER);
         dialog.add(panel);
         dialog.pack();
+        dialog.setLocation(windowPos.x + 20, windowPos.y + 20);
 
-        // Позиционируем окно рядом с курсором
-        dialog.setLocation(
-                windowPos.x + 20,
-                windowPos.y + 20
-        );
-
-        // Закрытие при клике вне окна
         dialog.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -430,61 +586,42 @@ public class SandboxClickHandler {
     }
 
     /**
-     * Handles station placement/removal
-     * @param x X coordinate
-     * @param y Y coordinate
+     * Удаление выбранного объекта
      */
-    public void handleStationClick(int x, int y) {
+    public void deleteSelectedObject() {
         SelectionManager selectionManager = SelectionManager.getInstance();
-        Station existing = SandboxWorldScreen.getInstance().getWorld().getStationAt(x, y);
+        Selectable selected = selectionManager.getSelected();
 
-        if (existing != null) {
-            if (!selectionManager.isSelected(existing) && !getInstance().isShiftPressed) {
-                selectionManager.select(existing);
-            } else if (getInstance().isShiftPressed) {
-                SandboxWorldScreen.getInstance().getWorld().removeStation(existing);
-                selectionManager.deselect();
-            }
-            return;
+        if (selected == null) return;
+
+        if (selected instanceof Station) {
+            SandboxWorldScreen.getInstance().getWorld().removeStation((Station)selected);
+        } else if (selected instanceof Tunnel) {
+            SandboxWorldScreen.getInstance().getWorld().removeTunnel((Tunnel)selected);
+        } else if (selected instanceof StationLabel) {
+            SandboxWorldScreen.getInstance().getWorld().removeLabel((StationLabel)selected);
         }
 
-        if (SandboxWorldScreen.getInstance().isCPressed) {
-            showColorSelectionPopup(x, y);
-            return;
-        }
-
-        // Создаем новую станцию с текущим цветом
-        Station station = new Station(SandboxWorldScreen.getInstance().getWorld(), x, y, currentStationColor, StationType.REGULAR);
-        SandboxWorldScreen.getInstance().getWorld().addStation(station);
-        checkForTransferStation(station);
+        selectionManager.deselect();
+        SandboxWorldScreen.getInstance().repaint();
     }
 
     /**
-     * Checks if a station should be converted to a transfer station
-     * @param station Station to check
+     * Получение выбранного объекта
      */
-    private static void checkForTransferStation(Station station) {
-        int x = station.getX();
-        int y = station.getY();
-
-        for (int ny = Math.max(0, y-1); ny < Math.min(SandboxWorldScreen.getInstance().getWorld().getHeight(), y+2); ny++) {
-            for (int nx = Math.max(0, x-1); nx < Math.min(SandboxWorldScreen.getInstance().getWorld().getWidth(), x+2); nx++) {
-                if (nx == x && ny == y) continue;
-
-                Station neighbor = SandboxWorldScreen.getInstance().getWorld().getStationAt(nx, ny);
-                if (neighbor != null && !neighbor.getColor().equals(station.getColor())) {
-                    station.setType(StationType.TRANSFER);
-                    neighbor.setType(StationType.TRANSFER);
-                    return;
-                }
-            }
-        }
+    public Selectable getSelectedObject() {
+        return SelectionManager.getInstance().getSelected();
     }
 
     /**
-     * Starts dragging the view
-     * @param x Starting X coordinate
-     * @param y Starting Y coordinate
+     * Снятие выделения со всех объектов
+     */
+    public void deselectAll() {
+        SelectionManager.getInstance().deselect();
+    }
+
+    /**
+     * Начало перетаскивания вида
      */
     public static void startDrag(int x, int y) {
         dragging = true;
@@ -493,9 +630,7 @@ public class SandboxClickHandler {
     }
 
     /**
-     * Updates view during drag
-     * @param x Current X coordinate
-     * @param y Current Y coordinate
+     * Обновление вида при перетаскивании
      */
     public static void updateDrag(int x, int y) {
         if (dragging) {
@@ -506,7 +641,7 @@ public class SandboxClickHandler {
     }
 
     /**
-     * Stops dragging the view
+     * Остановка перетаскивания вида
      */
     public static void stopDrag() {
         dragging = false;

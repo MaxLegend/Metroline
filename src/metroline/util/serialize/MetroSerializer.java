@@ -7,6 +7,7 @@ import metroline.core.world.GameWorld;
 import metroline.core.world.tiles.GameTile;
 import metroline.core.world.tiles.WorldTile;
 import metroline.objects.gameobjects.StationLabel;
+import metroline.screens.render.StationRender;
 
 import java.awt.*;
 import java.io.*;
@@ -14,6 +15,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+
+import static metroline.util.serialize.ParsingUtils.parseTrain;
 
 /**
  * Сериализатор для сохранения и загрузки состояния игрового мира.
@@ -85,14 +88,16 @@ public class MetroSerializer {
             writer.write("stations:[\n");
             for (Station station : world.getStations()) {
                 writer.write(String.format(
-                        "{id:%d,name:%s,x:%d,y:%d,color:%s,type:%s,constructionDate:%d}\n",
+                        "{id:%d,name:%s,x:%d,y:%d,color:%s,type:%s,constructionDate:%d,%s}\n",
                         station.getUniqueId(),
                         ParsingUtils.escapeString(station.getName()),
                         station.getX(),
                         station.getY(),
                         colorToHex(station.getColor()),
                         station.getType().name(),
-                        station.getConstructionDate()
+                        station.getConstructionDate(),
+                        // Добавляем флаг isDepo для станций типа DEPO
+                        station.getType() == StationType.DEPO ? "isDepo:true" : ""
                 ));
             }
             writer.write("]\n");
@@ -258,6 +263,34 @@ public class MetroSerializer {
                             content != null ? ParsingUtils.serializeGameObject(content) : "null"
                     ));
                 }
+            }
+            writer.write("]\n");
+
+            writer.write("trains:[\n");
+            for (Train train : world.getTrains()) {
+                writer.write(String.format(Locale.US,
+                        "{id:%d,type:%s,color:%s,currentStationId:%d,previousTunnelStartId:%d,previousTunnelEndId:%d," +
+                                "currentTunnelStartId:%d,currentTunnelEndId:%d,progress:%.3f,movingForward:%b," +
+                                "waitTimer:%.1f,hasPaid:%b,currentSpeed:%.4f,targetSpeed:%.4f," +
+                                "isAccelerating:%b,isBraking:%b,direction:%s}\n",
+                        train.getUniqueId(),
+                        train.getTrainType().name(),
+                        colorToHex(train.getColor()),
+                        train.getCurrentStation() != null ? train.getCurrentStation().getUniqueId() : -1,
+                        train.getPreviousTunnel() != null ? train.getPreviousTunnel().getStart().getUniqueId() : -1,
+                        train.getPreviousTunnel() != null ? train.getPreviousTunnel().getEnd().getUniqueId() : -1,
+                        train.getCurrentTunnel() != null ? train.getCurrentTunnel().getStart().getUniqueId() : -1,
+                        train.getCurrentTunnel() != null ? train.getCurrentTunnel().getEnd().getUniqueId() : -1,
+                        train.getProgress(),
+                        train.isMovingForward(),
+                        train.getWaitTimer(),
+                        train.hasPaidAtCurrentStation(),
+                        train.getCurrentSpeed(),
+                        train.getTargetSpeed(),
+                        train.isAccelerating(),
+                        train.isBraking(),
+                        train.getDirection() != null ? train.getDirection().name() : "EAST"
+                ));
             }
             writer.write("]\n");
         }
@@ -521,6 +554,17 @@ public class MetroSerializer {
                 }
                 continue;
             }
+            if (line.equals("trains:[")) {
+                // Чтение поездов
+                while (!(line = reader.readLine()).equals("]")) {
+                    Train train = ParsingUtils.parseTrain(line, gameWorld, stationIdMap);
+                    if (train != null) {
+                        gameWorld.getTrains().add(train);
+                    }
+                }
+                continue;
+            }
+
         }
     }
 }

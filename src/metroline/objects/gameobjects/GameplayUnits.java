@@ -123,6 +123,7 @@ public class GameplayUnits extends GameObject {
             }
         }
     }
+
     private void abandon() {
         isAbandoned = true;
         // Можно изменить внешний вид заброшенного здания

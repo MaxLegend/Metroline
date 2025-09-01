@@ -148,6 +148,19 @@ public class ParsingUtils {
                 }
                 yield null;
             }
+            case "train" -> {
+                try {
+                    long trainId = Long.parseLong(value);
+                    for (Train train : world.getTrains()) {
+                        if (train.getUniqueId() == trainId) {
+                            yield train;
+                        }
+                    }
+                } catch (NumberFormatException e) {
+                    System.err.println("Ошибка при парсинге ID поезда: " + value);
+                }
+                yield null;
+            }
             default -> {
                 System.err.println("Неизвестный тип объекта: " + type);
                 yield null;
@@ -175,7 +188,10 @@ public class ParsingUtils {
         } else if (obj instanceof GameplayUnits) {
             GameplayUnits gUnits = (GameplayUnits) obj;
             return String.format("gameplay_units:%d", gUnits.getUniqueId());
-        }
+        }  else if (obj instanceof Train) {
+        Train train = (Train) obj;
+        return String.format("train:%d", train.getUniqueId());
+    }
         return "null";
     }
 
@@ -186,6 +202,63 @@ public class ParsingUtils {
      * @param world Ссылка на текущий игровой мир.
      * @return Созданный объект Station или null при ошибке.
      */
+//    public static Station parseStation(String line, GameWorld world) {
+//        // Пример строки: {id:123,name:"Station 1",x:10,y:20,color:#FF0000,type:REGULAR}
+//        if (line == null || !line.startsWith("{") || !line.endsWith("}")) {
+//            System.err.println("Некорректный формат строки станции: " + line);
+//            return null;
+//        }
+//        String content = line.substring(1, line.length() - 1); // Убираем { и }
+//        String[] parts = content.split(",");
+//
+//        long id = -1;
+//        String name = "";
+//        int x = 0, y = 0;
+//        Color color = Color.BLACK; // Значение по умолчанию
+//        StationType type = StationType.REGULAR; // Значение по умолчанию
+//        long constructionDate = world.getGameTime().getCurrentTimeMillis(); // Текущее время по умолчанию
+//        // Парсим все поля по ключам
+//        for (String part : parts) {
+//            String[] keyValue = part.split(":", 2);
+//            if (keyValue.length == 2) {
+//                String key = keyValue[0].trim();
+//                String value = keyValue[1].trim();
+//                switch (key) {
+//                    case "id":
+//                        try { id = Long.parseLong(value); } catch (NumberFormatException ignored) {}
+//                        break;
+//                    case "name":
+//                        name = unescapeString(value);
+//                        break;
+//                    case "x":
+//                        try { x = Integer.parseInt(value); } catch (NumberFormatException ignored) {}
+//                        break;
+//                    case "y":
+//                        try { y = Integer.parseInt(value); } catch (NumberFormatException ignored) {}
+//                        break;
+//                    case "color":
+//                        color = parseColor(value);
+//                        break;
+//                    case "type":
+//                        try { type = StationType.valueOf(value); } catch (IllegalArgumentException ignored) {}
+//                        break;
+//                    case "constructionDate":
+//                        try { constructionDate = Long.parseLong(value); } catch (NumberFormatException ignored) {
+//                            System.err.println("Некорректный формат constructionDate: " + value);
+//                        }
+//                        break;
+//                }
+//            }
+//        }
+//
+//        Station station = new Station(world, x, y, StationColors.fromColor(color), type);
+//        station.setName(name);
+//        station.setConstructionDate(constructionDate); // Устанавливаем дату постройки
+//        if (id != -1) {
+//            station.setUniqueId(id); // Устанавливаем сохраненный ID
+//        }
+//        return station;
+//    }
     public static Station parseStation(String line, GameWorld world) {
         // Пример строки: {id:123,name:"Station 1",x:10,y:20,color:#FF0000,type:REGULAR}
         if (line == null || !line.startsWith("{") || !line.endsWith("}")) {
@@ -201,6 +274,8 @@ public class ParsingUtils {
         Color color = Color.BLACK; // Значение по умолчанию
         StationType type = StationType.REGULAR; // Значение по умолчанию
         long constructionDate = world.getGameTime().getCurrentTimeMillis(); // Текущее время по умолчанию
+        boolean isDepo = false; // Флаг для станций депо
+
         // Парсим все поля по ключам
         for (String part : parts) {
             String[] keyValue = part.split(":", 2);
@@ -231,6 +306,15 @@ public class ParsingUtils {
                             System.err.println("Некорректный формат constructionDate: " + value);
                         }
                         break;
+                    case "isDepo":
+                        // Если есть флаг isDepo, устанавливаем тип станции как DEPO
+                        isDepo = Boolean.parseBoolean(value);
+                        if (isDepo && type != StationType.DEPO) {
+                            type = StationType.DEPO;
+
+                        }
+
+                        break;
                 }
             }
         }
@@ -243,7 +327,6 @@ public class ParsingUtils {
         }
         return station;
     }
-
     /**
      * Разбирает строку, представляющую туннель.
      *
@@ -652,5 +735,156 @@ public class ParsingUtils {
                 System.err.println("Туннель не найден для данных строительства/разрушения: startId=" + startId + ", endId=" + endId);
             }
         }
+    }
+    static Train parseTrain(String line, GameWorld world, Map<Long, Station> stationIdMap) {
+        if (line == null || !line.startsWith("{") || !line.endsWith("}")) {
+            System.err.println("Некорректный формат строки поезда: " + line);
+            return null;
+        }
+
+        String content = line.substring(1, line.length() - 1);
+        String[] parts = content.split(",");
+
+        long id = -1;
+        TrainType type = TrainType.CLASSIC;
+        Color color = Color.GRAY; // Цвет по умолчанию
+        long currentStationId = -1;
+        long prevTunnelStartId = -1, prevTunnelEndId = -1;
+        long currTunnelStartId = -1, currTunnelEndId = -1;
+        float progress = 0f;
+        boolean movingForward = true;
+        float waitTimer = 0f;
+        boolean hasPaid = false;
+        float currentSpeed = 0f;
+        float targetSpeed = 0f;
+        boolean isAccelerating = false;
+        boolean isBraking = false;
+        Direction direction = Direction.EAST;
+
+        for (String part : parts) {
+            String[] keyValue = part.split(":", 2);
+            if (keyValue.length == 2) {
+                String key = keyValue[0].trim();
+                String value = keyValue[1].trim();
+                switch (key) {
+                    case "id":
+                        try { id = Long.parseLong(value); } catch (NumberFormatException ignored) {}
+                        break;
+                    case "type":
+                        try { type = TrainType.valueOf(value); } catch (IllegalArgumentException ignored) {}
+                        break;
+                    case "color": // Добавляем парсинг цвета
+                        try {  color = parseColor(value); } catch (IllegalArgumentException ignored) {}
+                        break;
+                    case "currentStationId":
+                        try { currentStationId = Long.parseLong(value); } catch (NumberFormatException ignored) {}
+                        break;
+                    case "previousTunnelStartId":
+                        try { prevTunnelStartId = Long.parseLong(value); } catch (NumberFormatException ignored) {}
+                        break;
+                    case "previousTunnelEndId":
+                        try { prevTunnelEndId = Long.parseLong(value); } catch (NumberFormatException ignored) {}
+                        break;
+                    case "currentTunnelStartId":
+                        try { currTunnelStartId = Long.parseLong(value); } catch (NumberFormatException ignored) {}
+                        break;
+                    case "currentTunnelEndId":
+                        try { currTunnelEndId = Long.parseLong(value); } catch (NumberFormatException ignored) {}
+                        break;
+                    case "progress":
+                        try { progress = Float.parseFloat(value); } catch (NumberFormatException ignored) {}
+                        break;
+                    case "movingForward":
+                        try { movingForward = Boolean.parseBoolean(value); } catch (NumberFormatException ignored) {}
+                        break;
+                    case "waitTimer":
+                        try { waitTimer = Float.parseFloat(value); } catch (NumberFormatException ignored) {}
+                        break;
+                    case "hasPaid":
+                        try { hasPaid = Boolean.parseBoolean(value); } catch (NumberFormatException ignored) {}
+                        break;
+                    case "currentSpeed":
+                        try { currentSpeed = Float.parseFloat(value); } catch (NumberFormatException ignored) {}
+                        break;
+                    case "targetSpeed":
+                        try { targetSpeed = Float.parseFloat(value); } catch (NumberFormatException ignored) {}
+                        break;
+                    case "isAccelerating":
+                        try { isAccelerating = Boolean.parseBoolean(value); } catch (NumberFormatException ignored) {}
+                        break;
+                    case "isBraking":
+                        try { isBraking = Boolean.parseBoolean(value); } catch (NumberFormatException ignored) {}
+                        break;
+                    case "direction":
+                        try { direction = Direction.valueOf(value); } catch (IllegalArgumentException ignored) {}
+                        break;
+                }
+            }
+        }
+
+        // Находим станцию и туннели
+        Station currentStation = stationIdMap.get(currentStationId);
+        Tunnel previousTunnel = findTunnel(world, prevTunnelStartId, prevTunnelEndId);
+        Tunnel currentTunnel = findTunnel(world, currTunnelStartId, currTunnelEndId);
+
+        // Создаем поезд
+        Train train;
+        if (currentStation != null) {
+            train = new Train(world, currentStation, type);
+
+        } else {
+            // Если станция не найдена, создаем поезд в депо или на первой доступной станции
+            Station firstStation = world.getStations().stream()
+                                        .filter(s -> s.getType() == StationType.DEPO)
+                                        .findFirst()
+                                        .orElse(world.getStations().isEmpty() ? null : world.getStations().get(0));
+            if (firstStation == null) return null;
+            train = new Train(world, firstStation, type);
+        }
+        train.setColor(color);
+        // Устанавливаем сохраненные параметры
+        if (id != -1) {
+            train.setUniqueId(id);
+        }
+        train.setCurrentStation(currentStation);
+        train.setPreviousTunnel(previousTunnel);
+        train.setCurrentTunnel(currentTunnel);
+        train.setProgress(progress);
+        train.setMovingForward(movingForward);
+        train.setWaitTimer(waitTimer);
+        train.setHasPaidAtCurrentStation(hasPaid);
+        train.setCurrentSpeed(currentSpeed);
+        train.setTargetSpeed(targetSpeed);
+        train.setAccelerating(isAccelerating);
+        train.setBraking(isBraking);
+        train.setDirection(direction);
+
+        // Обновляем позицию
+        if (currentTunnel != null && currentTunnel.getPath() != null && !currentTunnel.getPath().isEmpty()) {
+            train.updatePositionFromPathProgress();
+        }
+
+        return train;
+    }
+
+    private static Tunnel findTunnel(GameWorld world, long startId, long endId) {
+        if (startId == -1 || endId == -1) return null;
+
+        Station start = world.getStations().stream()
+                             .filter(s -> s.getUniqueId() == startId)
+                             .findFirst()
+                             .orElse(null);
+        Station end = world.getStations().stream()
+                           .filter(s -> s.getUniqueId() == endId)
+                           .findFirst()
+                           .orElse(null);
+
+        if (start == null || end == null) return null;
+
+        return world.getTunnels().stream()
+                    .filter(t -> (t.getStart() == start && t.getEnd() == end) ||
+                            (t.getStart() == end && t.getEnd() == start))
+                    .findFirst()
+                    .orElse(null);
     }
 }

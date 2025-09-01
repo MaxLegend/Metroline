@@ -3,10 +3,7 @@ package metroline.objects.gameobjects;
 import metroline.core.world.GameWorld;
 import metroline.core.world.World;
 import metroline.input.selection.SelectionManager;
-import metroline.objects.enums.Direction;
-import metroline.objects.enums.StationType;
-import metroline.objects.enums.TrainType;
-import metroline.objects.enums.TunnelType;
+import metroline.objects.enums.*;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
@@ -88,7 +85,22 @@ public class Train extends GameObject {
 
         this.x = Math.round(currentX);
         this.y = Math.round(currentY);
+
+
     }
+
+    public Tunnel getCurrentTunnel() {
+        return currentTunnel;
+    }
+
+    public void setColor(Color color) {
+        this.color = color;
+    }
+
+    public Color getColor() {
+        return color;
+    }
+
     private void updateSpeed(float deltaSeconds) {
         float baseSpeed = trainType.getSpeed();
 
@@ -216,6 +228,11 @@ public class Train extends GameObject {
 
         updatePositionFromPathProgress();
     }
+
+    public float getPathProgress() {
+        return pathProgress;
+    }
+
     private boolean isApproachingStation(float totalPathLength) {
         if (currentTunnel == null) return false;
 
@@ -301,7 +318,7 @@ public class Train extends GameObject {
         return totalLength;
     }
 
-    private void updatePositionFromPathProgress() {
+    public void updatePositionFromPathProgress() {
         if (currentPath == null || currentPath.size() < 2) return;
 
         float targetDistance = pathProgress * calculateTotalPathLength();
@@ -747,6 +764,93 @@ public class Train extends GameObject {
     public boolean isAtStation() {
         return currentStation != null;
     }
+    public TrainState getState() {
+        if (currentTunnel != null) return TrainState.MOVING;
+        if (currentStation != null) return TrainState.STOPPED;
+        return TrainState.IDLE;
+    }
 
+    public void setState(TrainState state) {
+        // Это в основном для загрузки, чтобы восстановить состояние
+    }
+
+    public void setProgress(float progress) {
+        this.pathProgress = progress;
+    }
+
+    public float getProgress() {
+        return pathProgress;
+    }
+
+    public void setMovingForward(boolean movingForward) {
+        this.movingForward = movingForward;
+    }
+
+    public boolean isMovingForward() {
+        return movingForward;
+    }
+
+    public void setWaitTimer(float waitTimer) {
+        this.waitTimer = waitTimer;
+    }
+
+    public float getWaitTimer() {
+        return waitTimer;
+    }
+
+    public void setHasPaidAtCurrentStation(boolean hasPaid) {
+        this.hasPaidAtCurrentStation = hasPaid;
+    }
+
+    public boolean hasPaidAtCurrentStation() {
+        return hasPaidAtCurrentStation;
+    }
+
+    public void setCurrentSpeed(float speed) {
+        this.currentSpeed = speed;
+    }
+
+    public void setTargetSpeed(float speed) {
+        this.targetSpeed = speed;
+    }
+
+    public void setAccelerating(boolean accelerating) {
+        this.isAccelerating = accelerating;
+    }
+
+    public void setBraking(boolean braking) {
+        this.isBraking = braking;
+    }
+
+    public void setDirection(Direction direction) {
+        this.direction = direction;
+    }
+
+    public Direction getDirection() {
+        return direction;
+    }
+
+    public void setPreviousTunnel(Tunnel tunnel) {
+        this.previousTunnel = tunnel;
+    }
+
+    public Tunnel getPreviousTunnel() {
+        return previousTunnel;
+    }
+
+    public void setCurrentTunnel(Tunnel tunnel) {
+        this.currentTunnel = tunnel;
+        if (tunnel != null) {
+            this.currentPath = tunnel.getPath();
+        }
+    }
+
+    public void setCurrentStation(Station station) {
+        this.currentStation = station;
+        if (station != null) {
+            this.currentX = station.getX();
+            this.currentY = station.getY();
+        }
+    }
 
 }
