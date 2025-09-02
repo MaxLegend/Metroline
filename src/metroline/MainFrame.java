@@ -19,8 +19,8 @@ import java.util.ArrayList;
 
 /**
  * Main application frame that contains all game screens and toolbar
- * TODO: Деньги сохраняются некорректно
- * TODO:  Не очищается мапа станций которые строились (и наверное тех что разрушаются - тоже)
+ * FIXME: Деньги сохраняются некорректно
+ * FIXME:  Не очищается мапа станций которые строились (и наверное тех что разрушаются - тоже)
  * @author Tesmio
  */
 public class MainFrame extends JFrame {

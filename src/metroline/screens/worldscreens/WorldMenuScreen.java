@@ -16,7 +16,7 @@ import java.awt.*;
 
 import static metroline.util.ImageUtil.*;
 
-//TODO разобраться с центровкой
+//FIXME разобраться с центровкой
 public class WorldMenuScreen extends GameScreen implements CachedBackgroundScreen {
     private Image backgroundImage;
     private boolean backgroundLoaded = false;

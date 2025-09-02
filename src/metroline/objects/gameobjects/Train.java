@@ -10,6 +10,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.util.List;
 import java.util.stream.Collectors;
+//FIXME меню выбора поездов накладывается поверх тултайпа когда всплывающая панель выходит за рамки окна
 
 public class Train extends GameObject {
     private Station currentStation;
@@ -673,7 +674,8 @@ public class Train extends GameObject {
         g2d.setColor(color);
         g2d.fillRect(-trainWidth/2, -trainHeight/2, trainWidth, trainHeight);
 
-
+        // 3. Рисуем отличительные знаки в зависимости от типа поезда
+        drawTrainTypeFeatures(g2d, trainWidth, trainHeight, zoom);
 
         g2d.dispose();
 
@@ -682,6 +684,108 @@ public class Train extends GameObject {
         cachedTrainType = trainType;
         cachedZoom = zoom;
     }
+    private void drawTrainTypeFeatures(Graphics2D g2d, int trainWidth, int trainHeight, float zoom) {
+        //     Color featureColor = color.darker();
+        Color featureColor = new Color(210, 182, 20, 200);
+        g2d.setColor(featureColor);
+
+        int padding = (int)(4 * zoom); // отступ от краев
+        int stripeWidth = (int)(3 * zoom); // одинаковая толщина для всех полосок
+        int stripeLength = trainWidth - 2 * padding;
+
+        switch (trainType) {
+            case FIRST:
+                // Оставляем как есть - без дополнительных элементов
+                break;
+
+            case OLD:
+                // Одна продольная полоска по центру
+                g2d.fillRect(-stripeLength / 2, -stripeWidth / 2, stripeLength, stripeWidth);
+                break;
+
+            case CLASSIC:
+                // Две продольные полоски - делим высоту на 3 равные части
+                int classicSectionHeight = trainHeight / 3;
+                int classicY1 = -trainHeight / 2 + classicSectionHeight - stripeWidth / 2;
+                int classicY2 = -trainHeight / 2 + 2 * classicSectionHeight - stripeWidth / 2;
+
+                g2d.fillRect(-stripeLength / 2, classicY1, stripeLength, stripeWidth);
+                g2d.fillRect(-stripeLength / 2, classicY2, stripeLength, stripeWidth);
+                break;
+
+            case MODERN:
+                // Три продольные полоски - делим высоту на 4 равные части
+                int modernSectionHeight = trainHeight / 4;
+                int modernY1 = -trainHeight / 2 + modernSectionHeight - stripeWidth / 2;
+                int modernY2 = -trainHeight / 2 + 2 * modernSectionHeight - stripeWidth / 2;
+                int modernY3 = -trainHeight / 2 + 3 * modernSectionHeight - stripeWidth / 2;
+
+                g2d.fillRect(-stripeLength / 2, modernY1, stripeLength, stripeWidth);
+                g2d.fillRect(-stripeLength / 2, modernY2, stripeLength, stripeWidth);
+                g2d.fillRect(-stripeLength / 2, modernY3, stripeLength, stripeWidth);
+                break;
+
+            case NEW:
+                // Один круг в центре (больше)
+                int newCircleSize = (int) (8 * zoom);
+                g2d.fillOval(-newCircleSize / 2, -newCircleSize / 2, newCircleSize, newCircleSize);
+                break;
+
+            case NEWEST:
+                // Два круга симметрично (больше)
+                int newestCircleSize = (int) (6 * zoom);
+                int newestCircleSpacing = (int) (8 * zoom);
+
+                g2d.fillOval(-newestCircleSpacing - newestCircleSize / 2, -newestCircleSize / 2,
+                        newestCircleSize, newestCircleSize);
+                g2d.fillOval(newestCircleSpacing - newestCircleSize / 2, -newestCircleSize / 2,
+                        newestCircleSize, newestCircleSize);
+                break;
+
+            case FUTURISTIC:
+                // Три круга
+                int futuristicCircleSize = (int) (6 * zoom);
+                int futuristicCircleSpacing = (int) (8 * zoom);
+
+                // Центральный круг
+                g2d.fillOval(-futuristicCircleSize / 2, -futuristicCircleSize / 2,
+                        futuristicCircleSize, futuristicCircleSize);
+                // Левый круг
+                g2d.fillOval(-futuristicCircleSpacing - futuristicCircleSize / 2, -futuristicCircleSize / 2,
+                        futuristicCircleSize, futuristicCircleSize);
+                // Правый круг
+                g2d.fillOval(futuristicCircleSpacing - futuristicCircleSize / 2, -futuristicCircleSize / 2,
+                        futuristicCircleSize, futuristicCircleSize);
+                break;
+
+            case FAR_FUTURISTIC:
+                // Треугольник, направленный вперед
+                int triangleWidth = (int)(12 * zoom);   // ширина основания треугольника
+                int triangleHeight = (int)(10 * zoom);  // высота треугольника
+                int triangleOffset = (int)(4 * zoom);   // отступ от переднего края
+
+                // Вершины треугольника (острие направлено вперед - вправо по оси X)
+                int[] xPoints = {
+                        trainWidth/2 - triangleOffset,                    // острие (правая точка)
+                        trainWidth/2 - triangleOffset - triangleHeight,   // левая верхняя
+                        trainWidth/2 - triangleOffset - triangleHeight    // левая нижняя
+                };
+                int[] yPoints = {
+                        0,                                              // центр по Y
+                        -triangleWidth/2,                               // верх
+                        triangleWidth/2                                 // низ
+                };
+
+                // Смещаем координаты в систему отсчета центра поезда
+                for (int i = 0; i < xPoints.length; i++) {
+                    xPoints[i] -= trainWidth/2 - 2;
+                }
+
+                g2d.fillPolygon(xPoints, yPoints, 3);
+                break;
+        }
+    }
+
     private void drawDynamic(Graphics2D g2d, int offsetX, int offsetY, float zoom) {
         if (getWorld() == null) return;
 
@@ -690,7 +794,7 @@ public class Train extends GameObject {
 
         int trainWidth = (int)(24 * zoom);
         int trainHeight = (int)(18 * zoom);
-        int shadowSizeIncrease = (int)(2 * zoom); // Увеличение размера для тени
+        int shadowSizeIncrease = (int)(2 * zoom);
 
         AffineTransform oldTransform = g2d.getTransform();
 
@@ -701,11 +805,10 @@ public class Train extends GameObject {
         // Включаем сглаживание
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        // 1. Размытая тень - рисуем несколько полупрозрачных прямоугольников
+        // 1. Размытая тень
         g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.25f));
         g2d.setColor(new Color(0, 0, 0, 60));
 
-        // Рисуем несколько слоев для эффекта размытия
         for (int i = 0; i < 3; i++) {
             int currentIncrease = shadowSizeIncrease + i * 2;
             float alpha = 0.15f - i * 0.04f;
@@ -726,8 +829,13 @@ public class Train extends GameObject {
 
         // 3. Основная обводка
         g2d.setColor(color.darker());
-        g2d.setStroke(new BasicStroke( zoom));
+        g2d.setStroke(new BasicStroke(zoom));
         g2d.drawRect(0, 0, trainWidth, trainHeight);
+
+        // 4. Рисуем отличительные знаки
+        g2d.translate(trainWidth/2, trainHeight/2); // Переходим в центр поезда
+        drawTrainTypeFeatures(g2d, trainWidth, trainHeight, zoom);
+        g2d.translate(-trainWidth/2, -trainHeight/2); // Возвращаем обратно
 
         // Восстанавливаем оригинальные настройки
         g2d.setTransform(oldTransform);

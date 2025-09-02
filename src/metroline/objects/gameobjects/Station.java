@@ -23,13 +23,10 @@ import java.util.Random;
 public class Station extends GameObject {
 
     private long constructionDate; // дата постройки в миллисекундах
-
     private float wearLevel = 0f; // степень износа (0..1)
     private boolean wasRepaired = false; // была ли станция отремонтирована
 
     private Map<Direction, Station> connections = new EnumMap<>(Direction.class);
-
-
     private StationColors color;
     private StationType type;
 
