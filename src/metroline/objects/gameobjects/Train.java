@@ -4,6 +4,7 @@ import metroline.core.world.GameWorld;
 import metroline.core.world.World;
 import metroline.input.selection.SelectionManager;
 import metroline.objects.enums.*;
+import metroline.util.MetroLogger;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
@@ -359,20 +360,14 @@ public class Train extends GameObject {
             hasPaidAtCurrentStation = true;
         }
 
-        waitTimer -= deltaSeconds;
-
         // Если время стоянки закончилось, пытаемся найти следующий туннель
-        if (waitTimer <= 0) {
-            Station nextStation = getNextStation();
+        if (waitTimer > 0) {
+            waitTimer -= deltaSeconds;
+        }
 
-            // Проверяем, свободна ли следующая станция
-            if (nextStation != null && isNextStationOccupied(nextStation)) {
-                // Станция занята - ждем еще
-                waitTimer = 1.0f; // Ждем дополнительное короткое время
-            } else {
-                // Станция свободна или следующая станция не определена - едем
-                findNextTunnel();
-            }
+        // Когда время ожидания истекло ИЛИ мы на невалидной станции (waitTimer = 0)
+        if (waitTimer <= 0) {
+            findNextTunnel(); // Будет вызываться каждый кадр, пока не найдет свободный путь
         }
     }
 
@@ -401,49 +396,7 @@ public class Train extends GameObject {
     public float getCurrentY() {
         return currentY;
     }
-    private Station getNextStation() {
-        if (currentStation == null) return null;
 
-        List<Tunnel> connectedTunnels = getWorld().getTunnels().stream()
-                                                  .filter(t -> t.getType() == TunnelType.ACTIVE)
-                                                  .filter(t -> t.getStart() == currentStation || t.getEnd() == currentStation)
-                                                  .collect(Collectors.toList());
-
-        if (connectedTunnels.isEmpty()) return null;
-
-        // Выбираем следующий туннель (аналогично логике findNextTunnel)
-        List<Tunnel> availableTunnels;
-
-        switch (currentStation.getType()) {
-            case TERMINAL:
-                availableTunnels = connectedTunnels.stream()
-                                                   .filter(t -> t == previousTunnel)
-                                                   .collect(Collectors.toList());
-                break;
-
-            case TRANSFER:
-            case TRANSIT:
-                availableTunnels = connectedTunnels.stream()
-                                                   .filter(t -> t != previousTunnel)
-                                                   .collect(Collectors.toList());
-                break;
-
-            default:
-                availableTunnels = connectedTunnels;
-                break;
-        }
-
-        if (availableTunnels.isEmpty()) {
-            availableTunnels = connectedTunnels;
-        }
-
-        if (availableTunnels.isEmpty()) return null;
-
-        Tunnel nextTunnel = availableTunnels.get((int)(Math.random() * availableTunnels.size()));
-        boolean movingForward = nextTunnel.getStart() == currentStation;
-
-        return movingForward ? nextTunnel.getEnd() : nextTunnel.getStart();
-    }
 
     private void addTrainOnStationRevenue() {
         if (currentStation != null) {
@@ -492,11 +445,20 @@ public class Train extends GameObject {
         currentStation = reachedStation;
         currentTunnel = null;
         currentPath = null;
-        waitTimer = STATION_WAIT_TIME;
-        pathProgress = movingForward ? 1.0f : 0.0f;
-        hasPaidAtCurrentStation = false;
 
-        // Полная остановка на станции
+        if (reachedStation.getType() == StationType.TRANSIT || reachedStation.getType() == StationType.TRANSFER ||
+        reachedStation.getType() == StationType.TERMINAL  ) {
+            waitTimer = STATION_WAIT_TIME; // Нормальное время ожидания для валидных станций
+            hasPaidAtCurrentStation = false;
+            MetroLogger.logInfo("Train " + name + " arrived at VALID station: " + reachedStation.getName());
+        } else {
+            waitTimer = 0; // Нулевое время ожидания для невалидных станций
+            hasPaidAtCurrentStation = true;
+            MetroLogger.logWarning("Train " + name + " arrived at INVALID station: " + reachedStation.getName() + " - will pass through");
+            // Не вызываем findNextTunnel() здесь - он вызовется в handleStationWait()
+        }
+
+        pathProgress = movingForward ? 1.0f : 0.0f;
         currentSpeed = 0.0f;
         targetSpeed = 0.0f;
         isAccelerating = false;
@@ -512,7 +474,7 @@ public class Train extends GameObject {
                                                   .collect(Collectors.toList());
 
         if (connectedTunnels.isEmpty()) {
-            waitTimer = 1.0f;
+            waitTimer = 1.0f; // Ждем, если нет подключенных туннелей
             return;
         }
 
@@ -520,6 +482,7 @@ public class Train extends GameObject {
 
         switch (currentStation.getType()) {
             case TERMINAL:
+                // Для терминалов используем только предыдущий туннель (возвращаемся назад)
                 availableTunnels = connectedTunnels.stream()
                                                    .filter(t -> t == previousTunnel)
                                                    .collect(Collectors.toList());
@@ -527,18 +490,29 @@ public class Train extends GameObject {
 
             case TRANSFER:
             case TRANSIT:
+                // Для транзитных станций исключаем предыдущий туннель (двигаемся вперед)
                 availableTunnels = connectedTunnels.stream()
                                                    .filter(t -> t != previousTunnel)
                                                    .collect(Collectors.toList());
                 break;
 
+            case REGULAR:
             default:
-                availableTunnels = connectedTunnels;
+                // Для обычных станций исключаем предыдущий туннель, если есть другие варианты
+                List<Tunnel> forwardTunnels = connectedTunnels.stream()
+                                                              .filter(t -> t != previousTunnel)
+                                                              .collect(Collectors.toList());
+
+                if (!forwardTunnels.isEmpty()) {
+                    availableTunnels = forwardTunnels; // Используем туннели вперед
+                } else {
+                    availableTunnels = connectedTunnels; // Если нет других вариантов, используем все
+                }
                 break;
         }
 
         if (availableTunnels.isEmpty()) {
-            availableTunnels = connectedTunnels;
+            availableTunnels = connectedTunnels; // Fallback: если нет доступных туннелей, используем все
         }
 
         // Выбираем туннель и проверяем, свободна ли следующая станция
@@ -546,9 +520,9 @@ public class Train extends GameObject {
         boolean movingForward = selectedTunnel.getStart() == currentStation;
         Station nextStation = movingForward ? selectedTunnel.getEnd() : selectedTunnel.getStart();
 
-        // Дополнительная проверка: если следующая станция занята, ждем
+        // Ждем до тех пор, пока станция не освободится
         if (isNextStationOccupied(nextStation)) {
-            waitTimer = 1.0f; // Ждем дополнительное короткое время
+            MetroLogger.logInfo("Train " + name + " waiting for station " + nextStation.getName() + " to become free");
             return;
         }
 
@@ -560,6 +534,9 @@ public class Train extends GameObject {
 
         currentStation = null;
         updatePositionFromPathProgress();
+
+        MetroLogger.logInfo("Train " + name + " starting movement to " + nextStation.getName() +
+                " (avoided previous tunnel: " + (previousTunnel != null) + ")");
     }
 
     // Метод для получения информации о скорости для отладки

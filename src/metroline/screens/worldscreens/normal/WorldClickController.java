@@ -522,7 +522,7 @@ public class WorldClickController {
             } else {
                 // Обычный ПКМ - добавление поезда (только не для депо)
                 if(station.getType() == StationType.DEPO) {
-                    showDepotMenu(station, x, y); //TODO разобраться почему остается висеть попап-меню если выбрать поезд без выхода из зоны панельки покупки
+                    showDepotMenu(station, x, y);
 
                 }
             }

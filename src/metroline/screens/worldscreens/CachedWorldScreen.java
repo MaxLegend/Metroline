@@ -22,7 +22,7 @@ import java.util.List;
 
 
 // TODO Добавить еще слоев. Убрать множество окон для одного объекта
-public abstract class CachedWorldScreen extends WorldScreen {
+public class CachedWorldScreen extends WorldScreen {
     protected static final int TILE_SIZE = 32;
     protected static final int CACHE_SCALE = 2;
 
@@ -168,12 +168,7 @@ public abstract class CachedWorldScreen extends WorldScreen {
         // Освобождаем сжатые кэши при инвалидации
         flushCompressedCaches();
     }
-//    public void invalidateCache() {
-//            staticCacheValid = false;
-//            paymentZonesCacheValid = false;
-//            passengerZonesCacheValid = false;
-//            worldChanged = true;
-//    }
+
     public void invalidateZonesCache() {
         paymentZonesCacheValid = false;
         passengerZonesCacheValid = false;
@@ -215,7 +210,6 @@ public abstract class CachedWorldScreen extends WorldScreen {
                 g.dispose();
             }
 
-            // 🔁 Сжимаем ТОЛЬКО если изображение было перерисовано
             updateCompressedStaticCache();
         }
 
