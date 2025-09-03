@@ -356,7 +356,7 @@ public class Train extends GameObject {
     private void handleStationWait(float deltaSeconds) {
         // Добавляем доход при прибытии на станцию (только один раз)
         if (!hasPaidAtCurrentStation) {
-            addTrainOnStationRevenue();
+      //      addTrainOnStationRevenue();
             hasPaidAtCurrentStation = true;
         }
 
@@ -397,30 +397,36 @@ public class Train extends GameObject {
         return currentY;
     }
 
-
-    private void addTrainOnStationRevenue() {
-        if (currentStation != null) {
-            // Получаем игровую экономику и добавляем доход
-            int revenue = calculateRevenue();
-            if(currentStation.getWorld() instanceof GameWorld w) {
-                w.addMoney(revenue);
-            }
-        }
+    public boolean isStationValid(Station station) {
+        if(station.getType() == StationType.TRANSFER || station.getType() == StationType.REGULAR  || station.getType() == StationType.TRANSIT
+        || station.getType() == StationType.TERMINAL) return true; //!isNextStationOccupied(station);
+        else return false;
     }
 
-    private int calculateRevenue() {
-        // Базовая стоимость + бонусы в зависимости от типа станции
-        int baseRevenue = 10;
-
-        if (currentStation.getType() == StationType.TRANSFER) {
-            baseRevenue += 5; // Бонус за пересадочную станцию
-        } else if (currentStation.getType() == StationType.TERMINAL) {
-            baseRevenue += 3; // Бонус за конечную станцию
-        }
-
-        // Можно добавить другие модификаторы (уровень станции, подключенные линии и т.д.)
-        return baseRevenue;
-    }
+//    private void addTrainOnStationRevenue() {
+//        if (currentStation != null && isStationValid(currentStation)) {
+//            // Добавляем доход в станцию
+//            float revenue = currentStation.addTrainRevenue(trainType);
+//
+//            // Можно добавить логирование для отладки
+//            if (revenue > 0) {
+//                MetroLogger.logInfo("Train " + name + " added " + revenue + " revenue to station " + currentStation.getName());
+//            }
+//        }
+//    }
+//    private int calculateRevenue() {
+//        // Базовая стоимость + бонусы в зависимости от типа станции
+//        int baseRevenue = 10;
+//
+//        if (currentStation.getType() == StationType.TRANSFER) {
+//            baseRevenue += 5; // Бонус за пересадочную станцию
+//        } else if (currentStation.getType() == StationType.TERMINAL) {
+//            baseRevenue += 3; // Бонус за конечную станцию
+//        }
+//
+//        // Можно добавить другие модификаторы (уровень станции, подключенные линии и т.д.)
+//        return baseRevenue;
+//    }
 
     private void updateDirection(PathPoint from, PathPoint to) {
         int dx = to.getX() - from.getX();
@@ -450,12 +456,11 @@ public class Train extends GameObject {
         reachedStation.getType() == StationType.TERMINAL  ) {
             waitTimer = STATION_WAIT_TIME; // Нормальное время ожидания для валидных станций
             hasPaidAtCurrentStation = false;
-            MetroLogger.logInfo("Train " + name + " arrived at VALID station: " + reachedStation.getName());
+
         } else {
             waitTimer = 0; // Нулевое время ожидания для невалидных станций
             hasPaidAtCurrentStation = true;
-            MetroLogger.logWarning("Train " + name + " arrived at INVALID station: " + reachedStation.getName() + " - will pass through");
-            // Не вызываем findNextTunnel() здесь - он вызовется в handleStationWait()
+
         }
 
         pathProgress = movingForward ? 1.0f : 0.0f;
@@ -522,7 +527,6 @@ public class Train extends GameObject {
 
         // Ждем до тех пор, пока станция не освободится
         if (isNextStationOccupied(nextStation)) {
-            MetroLogger.logInfo("Train " + name + " waiting for station " + nextStation.getName() + " to become free");
             return;
         }
 
@@ -535,8 +539,7 @@ public class Train extends GameObject {
         currentStation = null;
         updatePositionFromPathProgress();
 
-        MetroLogger.logInfo("Train " + name + " starting movement to " + nextStation.getName() +
-                " (avoided previous tunnel: " + (previousTunnel != null) + ")");
+
     }
 
     // Метод для получения информации о скорости для отладки

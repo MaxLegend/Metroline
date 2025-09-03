@@ -2,7 +2,9 @@ package metroline.screens.panel;
 
 import metroline.MainFrame;
 
+import metroline.core.time.ConstructionTimeProcessor;
 import metroline.core.time.GameTime;
+import metroline.core.world.economic.EconomyManager;
 import metroline.objects.gameobjects.*;
 import metroline.objects.gameobjects.StationLabel;
 import metroline.screens.worldscreens.normal.GameWorldScreen;
@@ -20,6 +22,8 @@ import metroline.core.world.GameWorld;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * TODO При определенных, пока неустановленных условиях активированное окно для ввода может повесить игру
@@ -41,6 +45,7 @@ public class InfoWindow extends JWindow {
     private JButton repairButton;
     private JLabel wearInfoLabel;
 
+    private static final Map<Object, InfoWindow> openWindows = new HashMap<>();
     public InfoWindow(Window owner) {
         super(owner); // Создаем окно без владельца
 
@@ -102,7 +107,7 @@ public class InfoWindow extends JWindow {
         repairButton.setBorderPainted(false);
         repairButton.setFocusPainted(false);
         repairButton.setMargin(new Insets(0, 0, 0, 0));
-        repairButton.addActionListener(e -> repairStation());
+   //     repairButton.addActionListener(e -> repairStation());
 
         // Основная информация
         infoLabel = new JLabel();
@@ -392,6 +397,12 @@ public class InfoWindow extends JWindow {
     }
 
     public void displayStationInfo(Station station, Point location) {
+        if (openWindows.containsKey(station)) {
+            InfoWindow existingWindow = openWindows.get(station);
+            existingWindow.hideWindow();
+            return;
+        }
+
         this.currentObject = station;
         if (editNamePanel.isVisible()) {
             saveStationName();
@@ -430,19 +441,28 @@ public class InfoWindow extends JWindow {
 
 
     public void updateInfo() {
+        // Получаем экран мира (может быть GameWorldScreen или SandboxWorldScreen)
+        WorldScreen worldScreen = null;
+        if (getOwner() instanceof MainFrame) {
+            MainFrame frame = (MainFrame) getOwner();
+            if (frame.getCurrentScreen() instanceof WorldScreen) {
+                worldScreen = (WorldScreen) frame.getCurrentScreen();
+            }
+        }
 
-        GameWorld world = (GameWorld) GameWorldScreen.getInstance().getWorld();
+        if (worldScreen == null || !(worldScreen.getWorld() instanceof GameWorld)) {
+            return;
+        }
 
+        GameWorld world = (GameWorld) worldScreen.getWorld();
+        EconomyManager economyManager = world.getEconomyManager();
 
         if (currentObject instanceof Station) {
             Station station = (Station) currentObject;
-
             GameTime gameTime = world.getGameTime();
             long constructionDate = station.getConstructionDate();
             long currentTime = gameTime.getCurrentTimeMillis();
             long age = currentTime - constructionDate;
-
-
 
             Color stationColor = station.getStationColor().getColor();
             titleLabel.setText("<html><font color='" +
@@ -452,85 +472,94 @@ public class InfoWindow extends JWindow {
             StringBuilder info = new StringBuilder("<html>");
             info.append(LngUtil.translatable("infoWnd.position") + " ").append(station.getX()).append(", ").append(station.getY()).append("<br>");
             info.append(LngUtil.translatable("infoWnd.type") + " ").append(station.getType().getLocalizedName()).append("<br>");
-            info.append(LngUtil.translatable("infoWnd.color") + " ").append(station.getStationColor().getLocalizedName()).append("<br>");
-            info.append(LngUtil.translatable("infoWnd.abilityPay") + " ").append("" + MathUtil.round(world.getWorldTile(station.getX(), station.getY()).getAbilityPay(), 2)).append("<br>");
-            info.append(LngUtil.translatable("infoWnd.passengerCount") + " ").append("" + world.getWorldTile(station.getX(), station.getY()).getPassengerCount()).append("<br>");
+        //    info.append(LngUtil.translatable("infoWnd.color") + " ").append(station.getStationColor().getLocalizedName()).append("<br>");
+            //        info.append(LngUtil.translatable("infoWnd.abilityPay") + " ").append("" + MathUtil.round(world.getWorldTile(station.getX(), station.getY()).getAbilityPay(), 2)).append("<br>");
+         //   info.append(LngUtil.translatable("infoWnd.passengerCount") + " ").append("" + world.getWorldTile(station.getX(), station.getY()).getPassengerCount()).append("<br>");
 
+            // Используем EconomyManager для расчета дохода
+            float revenue = economyManager.calculateStationDisplayRevenue(station);
             info.append(LngUtil.translatable("infoWnd.revenue") + " ")
-                .append(MathUtil.round(world.calculateStationRevenue(station), 2))
+                .append(MathUtil.round(revenue, 2))
                 .append(" M (")
                 .append(MathUtil.round((1 - station.getWearLevel()) * 100, 0))
                 .append("%)<br>");
-            info.append(LngUtil.translatable("infoWnd.cost") + " ").append(MathUtil.round(GameConstants.STATION_BASE_COST* GameWorldScreen.getInstance().getWorld().getWorldTile(station.getX(), station.getY()).getPerm(),2)).append(" M").append("<br>");
 
-            info.append(LngUtil.translatable("infoWnd.upkeep") + " ").append(MathUtil.round(station.calculateUpkeepCost(),4)).append(" M").append("<br>");
+            // Используем EconomyManager для расчета стоимости строительства
+            float constructionCost = economyManager.calculateStationConstructionCost(station.getX(), station.getY());
+            info.append(LngUtil.translatable("infoWnd.cost") + " ").append(MathUtil.round(constructionCost, 2)).append(" M").append("<br>");
+
+            // Используем EconomyManager для расчета содержания
+            float upkeep = economyManager.calculateStationUpkeep(station);
+            info.append(LngUtil.translatable("infoWnd.upkeep") + " ").append(MathUtil.round(upkeep, 4)).append(" M").append("<br>");
 
             info.append(String.format("<html>%s: %s<br>%s: %s</html>",
                     LngUtil.translatable("station.build_date"),
                     gameTime.formatDate(constructionDate),
                     LngUtil.translatable("station.wear_level"),
                     String.format("%.0f%%", station.getWearLevel() * 100)));
+
             infoLabel.setText(info.toString());
-            updateProgress();
+            updateProgress(world);
+
         } else if (currentObject instanceof Train) {
-
             Train train = (Train) currentObject;
-
-
-
-
             titleLabel.setText(LngUtil.translatable("train.cost." + train.getTrainType().name().toLowerCase()));
+
             StringBuilder info = new StringBuilder("<html>");
-            info.append(LngUtil.translatable("infoWnd.position") + " ").append(MathUtil.round(train.getCurrentX(),2)).append(", ").append(MathUtil.round(train.getCurrentY(),2)).append("<br>");
+            info.append(LngUtil.translatable("infoWnd.position") + " ").append(MathUtil.round(train.getCurrentX(), 2)).append(", ").append(MathUtil.round(train.getCurrentY(), 2)).append("<br>");
             info.append(LngUtil.translatable("infoWnd.speed") + " ").append(train.getNormalizedSpeed()).append("<br>");
             infoLabel.setText(info.toString());
-        }
 
-        else if (currentObject instanceof Tunnel) {
+        } else if (currentObject instanceof Tunnel) {
             Tunnel tunnel = (Tunnel) currentObject;
             titleLabel.setText(LngUtil.translatable("infoWnd.tunnel_title"));
 
             StringBuilder info = new StringBuilder("<html>");
-            info.append(LngUtil.translatable("infoWnd.tunnel_from")+ " ").append(tunnel.getStart().getName()).append("<br>");
-            info.append(LngUtil.translatable("infoWnd.tunnel_to")+ " ").append(tunnel.getEnd().getName()).append("<br>");
-            info.append(LngUtil.translatable("infoWnd.tunnel_length")+ " ").append(tunnel.getLength()).append( " " + LngUtil.translatable("infoWnd.tunnel_segments") + " <br>");
-            info.append(LngUtil.translatable("infoWnd.tunnel_type")+ " ").append(tunnel.getType().getLocalizedName()+ "<br>");
-            float cost = tunnel.getLength() * GameConstants.TUNNEL_COST_PER_SEGMENT * GameWorldScreen.getInstance().getWorld().getWorldTile(tunnel.getX(), tunnel.getY()).getPerm();
-            info.append(LngUtil.translatable("infoWnd.tunnel_cost")+ " ").append(MathUtil.round(cost,2)).append(" M" + " <br>");
+            info.append(LngUtil.translatable("infoWnd.tunnel_from") + " ").append(tunnel.getStart().getName()).append("<br>");
+            info.append(LngUtil.translatable("infoWnd.tunnel_to") + " ").append(tunnel.getEnd().getName()).append("<br>");
+            info.append(LngUtil.translatable("infoWnd.tunnel_length") + " ").append(tunnel.getLength()).append(" " + LngUtil.translatable("infoWnd.tunnel_segments") + " <br>");
+            info.append(LngUtil.translatable("infoWnd.tunnel_type") + " ").append(tunnel.getType().getLocalizedName() + "<br>");
 
-            info.append(LngUtil.translatable("infoWnd.upkeep") + " ").append(MathUtil.round(tunnel.calculateTunnelsUpkeep(),4)).append(" M").append("<br>");
+            // Используем EconomyManager для расчета стоимости строительства
+            float cost = economyManager.calculateTunnelConstructionCost(tunnel);
+            info.append(LngUtil.translatable("infoWnd.tunnel_cost") + " ").append(MathUtil.round(cost, 2)).append(" M" + " <br>");
+
+            // Используем EconomyManager для расчета содержания
+            float upkeep = economyManager.calculateTunnelUpkeep(tunnel);
+            info.append(LngUtil.translatable("infoWnd.upkeep") + " ").append(MathUtil.round(upkeep, 4)).append(" M").append("<br>");
 
             infoLabel.setText(info.toString());
-            updateProgress();
-        }
-        else if (currentObject instanceof GameplayUnits) {
+            updateProgress(world);
+
+        } else if (currentObject instanceof GameplayUnits) {
             GameplayUnits gUnits = (GameplayUnits) currentObject;
             titleLabel.setText(LngUtil.translatable(gUnits.getType().getLocalizedName()));
+
             StringBuilder info = new StringBuilder("<html>");
-            info.append(LngUtil.translatable("infoWnd.gUnits")+ " ").append(gUnits.getType().getIncomeMultiplier()).append("<br>");
+            info.append(LngUtil.translatable("infoWnd.gUnits") + " ").append(gUnits.getType().getIncomeMultiplier()).append("<br>");
             info.append(LngUtil.translatable("infoWnd.position") + " ").append(gUnits.getX()).append(", ").append(gUnits.getY()).append("<br>");
             info.append(LngUtil.translatable("infoWnd.condition") + " ").append(gUnits.getCondition()).append("<br>");
             info.append(LngUtil.translatable("infoWnd.isAbandoned") + " ").append(gUnits.isAbandoned()).append("<br>");
             infoLabel.setText(info.toString());
-        }
 
-        else if (currentObject instanceof StationLabel) {
+        } else if (currentObject instanceof StationLabel) {
             StationLabel stationLabel = (StationLabel) currentObject;
             titleLabel.setText(LngUtil.translatable(stationLabel.getText()));
+
             StringBuilder info = new StringBuilder("<html>");
-            info.append(LngUtil.translatable("infoWnd.label")+ " ").append(stationLabel.getText()).append("<br>");
+            info.append(LngUtil.translatable("infoWnd.label") + " ").append(stationLabel.getText()).append("<br>");
             infoLabel.setText(info.toString());
         }
 
-
         pack(); // Подгоняем размер окна под содержимое
-
     }
 
-    private void updateProgress() {
+    private void updateProgress(GameWorld world) {
+        ConstructionTimeProcessor processor = world.getConstructionProcessor();
+
         if (currentObject instanceof Station) {
             Station station = (Station) currentObject;
-            float progress = ((GameWorld) GameWorldScreen.getInstance().getWorld()).getConstructionProcessor().getStationConstructionProgress(station);
+            float progress = processor.getStationConstructionProgress(station);
             if (progress > 0 && progress < 1) {
                 progressBar.setVisible(true);
                 progressBar.setValue((int)(progress * 100));
@@ -540,7 +569,7 @@ public class InfoWindow extends JWindow {
             }
         } else if (currentObject instanceof Tunnel) {
             Tunnel tunnel = (Tunnel) currentObject;
-            float progress = ((GameWorld) GameWorldScreen.getInstance().getWorld()).getConstructionProcessor().getTunnelConstructionProgress(tunnel);
+            float progress = processor.getTunnelConstructionProgress(tunnel);
             if (progress > 0 && progress < 1) {
                 progressBar.setVisible(true);
                 progressBar.setValue((int)(progress * 100));
@@ -555,6 +584,11 @@ public class InfoWindow extends JWindow {
         if (editNamePanel.isVisible()) {
             saveStationName();
         }
+        // Удаляем из хранилища открытых окон
+        if (currentObject != null) {
+            openWindows.remove(currentObject);
+        }
+
         currentObject = null;
         setVisible(false);
         if (getOwner() instanceof MainFrame) {
@@ -578,34 +612,43 @@ public class InfoWindow extends JWindow {
 
 
 
-    private void repairStation() {
-        if (currentObject instanceof Station) {
-            Station station = (Station) currentObject;
-            GameWorld world = (GameWorld) GameWorldScreen.getInstance().getWorld();
-
-            // Проверяем, что станция требует ремонта
-            if (station.getWearLevel() <= 0) {
-                JOptionPane.showMessageDialog(this,
-                        LngUtil.translatable("station.no_need_repair"),
-                        LngUtil.translatable("info"),
-                        JOptionPane.INFORMATION_MESSAGE);
-                return;
-            }
-
-            // Рассчитываем стоимость ремонта
-            float repairCost = station.calculateRepairCost(station);
-
-            if (world.canAfford(repairCost)) {
-                world.removeMoney(repairCost);
-                station.repair();
-                updateInfo();
-                GameWorldScreen.getInstance().repaint();
-
-            } else {
-                UserInterfaceUtil.showTimedMessage("station.not_enough_money", false, 2000);
-            }
-        }
-    }
-
+//    private void repairStation() {
+//        if (currentObject instanceof Station) {
+//            Station station = (Station) currentObject;
+//            GameWorld world = (GameWorld) GameWorldScreen.getInstance().getWorld();
+//
+//            // Проверяем, можно ли ремонтировать эту станцию
+//            if (!station.canRepair()) {
+//                JOptionPane.showMessageDialog(this,
+//                        LngUtil.translatable("station.cannot_repair"),
+//                        LngUtil.translatable("info"),
+//                        JOptionPane.INFORMATION_MESSAGE);
+//                return;
+//            }
+//
+//            // Рассчитываем стоимость ремонта
+//            float repairCost = station.calculateRepairCost(station);
+//
+//            if (world.canAfford(repairCost)) {
+//                int choice = JOptionPane.showConfirmDialog(this,
+//                        LngUtil.translatable("station.repair_confirm")
+//                               .replace("{cost}", String.format("%.2f", repairCost))
+//                               .replace("{wear}", String.format("%.0f%%", station.getWearLevel() * 100)),
+//                        LngUtil.translatable("station.repair_title"),
+//                        JOptionPane.YES_NO_OPTION);
+//
+//                if (choice == JOptionPane.YES_OPTION) {
+//                    world.removeMoney(repairCost);
+//                    station.repair();
+//                    updateInfo();
+//                    GameWorldScreen.getInstance().repaint();
+//
+//                    UserInterfaceUtil.showTimedMessage("station.repaired", true, 2000);
+//                }
+//            } else {
+//                UserInterfaceUtil.showTimedMessage("station.not_enough_money_repair", false, 2000);
+//            }
+//        }
+//    }
 
 }

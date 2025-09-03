@@ -393,36 +393,36 @@ public class Tunnel extends GameObject {
         g2d.draw(tunnelPath);
     }
 
-    public float calculateTunnelsUpkeep() {
-
-        if (this.getType() != TunnelType.ACTIVE) {
-            return 0;
-        }
-
-        float tunnelUpkeep = 0; // Стоимость текущего туннеля
-        int segmentCount = this.getPath().size();
-        float baseSegmentCost = GameConstants.BASE_TUNNEL_UPKEEP_PER_SEGMENT;
-        float lengthDiscount = 1 - Math.min(0.2f, segmentCount * 0.005f);
-
-        // Обрабатываем все сегменты туннеля
-        for (PathPoint point : this.getPath()) {
-            WorldTile tile = getWorld().getWorldTile(point.getX(), point.getY());
-            if (tile == null) continue;
-
-            float perm = tile.getPerm();
-            float segmentCost = baseSegmentCost * (1 + perm * 1.8f);
-
-            if (tile.isWater()) {
-                segmentCost *= 3.4f; // Штраф за воду
-            }
-
-            segmentCost *= lengthDiscount;
-            tunnelUpkeep += segmentCost; // НЕ делим на segmentCost!
-        }
-
-
-        return tunnelUpkeep;
-
-    }
+//    public float calculateTunnelsUpkeep() {
+//
+//        if (this.getType() != TunnelType.ACTIVE) {
+//            return 0;
+//        }
+//
+//        float tunnelUpkeep = 0; // Стоимость текущего туннеля
+//        int segmentCount = this.getPath().size();
+//        float baseSegmentCost = GameConstants.BASE_TUNNEL_UPKEEP_PER_SEGMENT;
+//        float lengthDiscount = 1 - Math.min(0.2f, segmentCount * 0.005f);
+//
+//        // Обрабатываем все сегменты туннеля
+//        for (PathPoint point : this.getPath()) {
+//            WorldTile tile = getWorld().getWorldTile(point.getX(), point.getY());
+//            if (tile == null) continue;
+//
+//            float perm = tile.getPerm();
+//            float segmentCost = baseSegmentCost * (1 + perm * 1.8f);
+//
+//            if (tile.isWater()) {
+//                segmentCost *= 3.4f; // Штраф за воду
+//            }
+//
+//            segmentCost *= lengthDiscount;
+//            tunnelUpkeep += segmentCost; // НЕ делим на segmentCost!
+//        }
+//
+//
+//        return tunnelUpkeep;
+//
+//    }
 }
 

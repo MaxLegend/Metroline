@@ -4,6 +4,7 @@ import metroline.MainFrame;
 import metroline.core.time.ConstructionTimeProcessor;
 import metroline.core.time.GameTime;
 import metroline.core.world.cities.CityManager;
+import metroline.core.world.economic.EconomyManager;
 import metroline.core.world.tiles.GameTile;
 import metroline.core.world.tiles.WorldTile;
 import metroline.objects.enums.*;
@@ -42,6 +43,7 @@ public class GameWorld extends World {
     public long lastTrainsUpdateTime;
 
     private CityManager cityManager;
+    private transient EconomyManager economyManager;
 
     public transient LinesLegendWindow legendWindow;
     public GameWorld() {
@@ -57,6 +59,7 @@ public class GameWorld extends World {
         processor = new ConstructionTimeProcessor(gameTime, this);
         processor.initTransientFields();
 
+        this.economyManager = new EconomyManager(this);
         generateWorld(hasPassengerCount, hasAbilityPay, hasLandscape, hasRivers, worldColor);
         this.cityManager = new CityManager(this);
         this.lastTrainsUpdateTime = System.nanoTime();
@@ -76,6 +79,8 @@ public class GameWorld extends World {
         processor = new ConstructionTimeProcessor(gameTime, this);
         processor.initTransientFields(); // Инициализируем transient поля
         worldSerializer = new MetroSerializer();
+        this.economyManager = new EconomyManager(this);
+
 
         worldSerializer.recreateWorld(reader, this);
 
@@ -167,11 +172,37 @@ public class GameWorld extends World {
         MetroLogger.logInfo("World successfully created!");
     }
 
+    public void update() {
+
+        economyManager.updateStationsWear(); // Обновляем износ
+        economyManager.processMaintenance(); // Обрабатываем содержание
+        float collectedRevenue = economyManager.collectAllRevenue(); // Собираем доход
+        MetroLogger.logInfo("Collected " + collectedRevenue + " from stations");
+        if (collectedRevenue > 0) {
+
+            addMoney(collectedRevenue);
+        }
+
+        updateCities();
+    }
+
+    public EconomyManager getEconomyManager() {
+        return economyManager;
+    }
+
     public void addTrainToStation(Station station, TrainType trainType) {
         if (station == null) return;
 
-        Train train = new Train(this,station, trainType);
+        Train train = new Train(this, station, trainType);
         trains.add(train);
+
+        // Используем EconomyManager для расчета дохода
+        float revenue = economyManager.calculateStationRevenue(station, trainType);
+        if (revenue > 0) {
+            // Доход будет добавлен в аккумулятор EconomyManager
+            MetroLogger.logInfo("Revenue " + revenue + " accumulated from train at station " + station.getName());
+        }
+
         MetroLogger.logInfo("Train added to station: " + station.getName());
     }
 
@@ -309,51 +340,58 @@ public class GameWorld extends World {
     @Override
     public void addStation(Station station) {
         super.addStation(station);
-    //    if(screen!=null)  ((GameWorldScreen)screen).notifyStationsChanged();
+
+        // Используем EconomyManager для расчета стоимости строительства
+        float constructionCost = economyManager.calculateStationConstructionCost(station.getX(), station.getY());
+        if (!removeMoney(constructionCost)) {
+            MetroLogger.logInfo("Cannot afford station construction: " + constructionCost);
+            return;
+        }
 
         if (station.getType() == StationType.BUILDING) {
-            // Проверяем, не добавлена ли уже станция
             if (!getConstructionProcessor().getStationBuildStartTimes().containsKey(station)) {
                 long startTime = gameTime.getCurrentTimeMillis();
                 getConstructionProcessor().getStationBuildStartTimes().put(station, startTime);
-                getConstructionProcessor().getStationBuildDurations().put(station, (long) (getConstructionProcessor().getStationBuildTime()*(1+this.getWorldTile(station.getX(), station.getY()).getPerm())));
 
-            } else {
-                MetroLogger.logWarning("Station already in construction: " + station.getName());
+                // Используем константы из EconomyManager
+                long buildTime = (long) (getConstructionProcessor().getStationBuildTime() *
+                        (1 + this.getWorldTile(station.getX(), station.getY()).getPerm()));
+                getConstructionProcessor().getStationBuildDurations().put(station, buildTime);
             }
         }
-
-
     }
     @Override
     public void addTunnel(Tunnel tunnel) {
+        super.addTunnel(tunnel);
 
-
-        // Вызываем родительский метод
-            super.addTunnel(tunnel);
-     //       if(screen!=null) ((GameWorldScreen)screen).notifyTunnelsChanged();
-        // Инициализируем карты, если они null
-        if (getConstructionProcessor().getTunnelBuildStartTimes() == null) {
-
-            getConstructionProcessor().setTunnelBuildStartTimes(new HashMap<>());
+        // Используем EconomyManager для расчета стоимости строительства
+        float constructionCost = economyManager.calculateTunnelConstructionCost(tunnel);
+        if (!removeMoney(constructionCost)) {
+            MetroLogger.logInfo("Cannot afford tunnel construction: " + constructionCost);
+            return;
         }
-        if (getConstructionProcessor().getTunnelBuildDurations() == null) {
 
-            getConstructionProcessor().setTunnelBuildDurations(new HashMap<>());
+        if (getConstructionProcessor().getTunnelBuildStartTimes() == null) {
+            getConstructionProcessor().setTunnelBuildStartTimes(new HashMap<>());
         }
 
         if (tunnel.getType() == TunnelType.BUILDING) {
-
             long startTime = gameTime.getCurrentTimeMillis();
             getConstructionProcessor().getTunnelBuildStartTimes().put(tunnel, startTime);
-            getConstructionProcessor().getTunnelBuildDurations().put(tunnel, getConstructionProcessor().getTunnelBuildTime());
 
-            // Устанавливаем стоимость строительства в зависимости от длины
-            int lengthBasedCost = tunnel.getLength() * 10; // Например, 10 за сегмент
-            getConstructionProcessor().setTunnelBuildTime(Math.max(50000, lengthBasedCost * 1000)); // Минимум 50 секунд
-
+            // Используем EconomyManager для расчета времени строительства
+            long buildTime = (long) (economyManager.calculateTunnelConstructionCost(tunnel) / 10); // Примерная формула
+            getConstructionProcessor().getTunnelBuildDurations().put(tunnel, buildTime);
         }
+    }
+    public float getDemolitionCost(Station station) {
+        // Используем EconomyManager для расчета стоимости сноса
+        return economyManager.calculateStationRepairCost(station) * 0.5f; // Снос дешевле ремонта
+    }
 
+    public float getRepairCost(Station station) {
+        // Используем EconomyManager для расчета стоимости ремонта
+        return economyManager.calculateStationRepairCost(station);
     }
     public GameplayUnits getGameplayUnitsAt(int x, int y) {
         if (x < 0 || x >= width || y < 0 || y >= height) return null;
@@ -449,21 +487,21 @@ public class GameWorld extends World {
     public ConstructionTimeProcessor getConstructionProcessor() {
         return processor;
     }
-    public float calculateStationsUpkeep() {
-        float totalUpkeep = 0;
-        for (Station station : getStations()) {
-            totalUpkeep += station.calculateUpkeepCost();
-        }
-        return totalUpkeep;
-    }
-    public float calculateTunnelsUpkeep() {
-        float totalUpkeep = 0;
-        for (Tunnel t : getTunnels()) {
-            totalUpkeep = t.calculateTunnelsUpkeep();
-
-        }
-        return totalUpkeep;
-    }
+//    public float calculateStationsUpkeep() {
+//        float totalUpkeep = 0;
+//        for (Station station : getStations()) {
+//            totalUpkeep += station.calculateUpkeepCost();
+//        }
+//        return totalUpkeep;
+//    }
+//    public float calculateTunnelsUpkeep() {
+//        float totalUpkeep = 0;
+//        for (Tunnel t : getTunnels()) {
+//            totalUpkeep = t.calculateTunnelsUpkeep();
+//
+//        }
+//        return totalUpkeep;
+//    }
     /*********************
      * ECONOMIC SECTION
      *********************/
@@ -516,34 +554,34 @@ public class GameWorld extends World {
         }
         return revenue * gameplayUnitsMultiplier * wearModifier;
     }
-    public float getDemolitionCost(Station station) {
-        float baseCost = GameConstants.BASE_STATION_DEMOLITION_COST;
-
-        if (station.getType() == StationType.RUINED ||
-                station.getType() == StationType.ABANDONED) {
-            return baseCost * (1 + station.getWearLevel()) * 3f; // В 3 раза дороже
-        }
-
-        return baseCost * (1 + station.getWearLevel());
-    }
-    public void updateStationsWear() {
-        for (Station station : stations) {
-            station.updateWear();
-        }
-    }
-    public void updateStationsRevenue() {
-        for (Station station : stations) {
-            // Пропускаем станции, которые строятся или разрушаются
-            if (station.isLowIncomeStations()) {
-                addMoney(0);
-                return;
-            }
-
-            float revenue = calculateStationRevenue(station);
-            addMoney(revenue);
-
-        }
-    }
+//    public float getDemolitionCost(Station station) {
+//        float baseCost = GameConstants.BASE_STATION_DEMOLITION_COST;
+//
+//        if (station.getType() == StationType.RUINED ||
+//                station.getType() == StationType.ABANDONED) {
+//            return baseCost * (1 + station.getWearLevel()) * 3f; // В 3 раза дороже
+//        }
+//
+//        return baseCost * (1 + station.getWearLevel());
+//    }
+//    public void updateStationsWear() {
+//        for (Station station : stations) {
+//            station.updateWear();
+//        }
+//    }
+//    public void updateStationsRevenue() {
+//        for (Station station : stations) {
+//            // Пропускаем станции, которые строятся или разрушаются
+//            if (station.isLowIncomeStations()) {
+//                addMoney(0);
+//                return;
+//            }
+//
+//            float revenue = calculateStationRevenue(station);
+//            addMoney(revenue);
+//
+//        }
+//    }
     @Override
     public void removeStation(Station station) {
         super.removeStation(station);
@@ -824,6 +862,7 @@ public class GameWorld extends World {
             getConstructionProcessor().tunnelDestructionStartTimes = new HashMap<>(loadedWorld.getConstructionProcessor().tunnelDestructionStartTimes);
             getConstructionProcessor().tunnelDestructionDurations = new HashMap<>(loadedWorld.getConstructionProcessor().tunnelDestructionDurations);
 
+            this.economyManager = new EconomyManager(this);
             // Восстанавливаем связи между объектами
             restoreStationConnections();
 
@@ -853,5 +892,18 @@ public class GameWorld extends World {
         return false;
     }
 
+    public float getStationDisplayRevenue(Station station) {
+        return economyManager.calculateStationDisplayRevenue(station);
+    }
+
+    // Метод для получения содержания станции для отображения в UI
+    public float getStationUpkeep(Station station) {
+        return economyManager.calculateStationUpkeep(station);
+    }
+
+    // Метод для получения содержания туннеля для отображения в UI
+    public float getTunnelUpkeep(Tunnel tunnel) {
+        return economyManager.calculateTunnelUpkeep(tunnel);
+    }
 
 }

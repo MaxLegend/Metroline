@@ -449,12 +449,7 @@ public class MainFrameUI {
                 GameTime gameTime = world.getGameTime();
 
                 if (gameTime != null && gameTime.checkHourPassed()) {
-                    world.updateStationsRevenue();
-                    world.updateStationsWear();
-                    world.calculateStationsUpkeep();
-                    world.calculateTunnelsUpkeep();
-
-                    world.updateCities();
+                    world.update();
                 }
                 //
 

@@ -8,9 +8,9 @@ import java.util.concurrent.TimeUnit;
 
 public class GameConstants {
 
-    static final long MAX_LIFETIME = TimeUnit.DAYS.toMillis(20 * 365);
-    static final long REPAIR_THRESHOLD = TimeUnit.DAYS.toMillis(15 * 365);
-    static final long ABANDONED_THRESHOLD = TimeUnit.DAYS.toMillis(11 * 365);
+    public static final long MAX_LIFETIME = TimeUnit.DAYS.toMillis(20 * 365);
+    public static final long REPAIR_THRESHOLD = TimeUnit.DAYS.toMillis(15 * 365);
+    public static final long ABANDONED_THRESHOLD = TimeUnit.DAYS.toMillis(11 * 365);
 
 //    public static  long STATION_DESTROY_TIME = 6048000000l;
 //    public static  long TUNNEL_DESTROY_TIME = 6048000000l;
@@ -36,6 +36,15 @@ public class GameConstants {
     public static  float BASE_STATION_DEMOLITION_COST = 10;
     public static  float STATION_REPAIR_BASE_COST = 10;
 
+    // Мультипликаторы дохода для разных типов поездов
+    public static final float TRAIN_REVENUE_MULTIPLIER_FIRST = 0.8f;
+    public static final float TRAIN_REVENUE_MULTIPLIER_OLD = 1.0f;
+    public static final float TRAIN_REVENUE_MULTIPLIER_CLASSIC = 1.2f;
+    public static final float TRAIN_REVENUE_MULTIPLIER_MODERN = 1.5f;
+    public static final float TRAIN_REVENUE_MULTIPLIER_NEW = 1.8f;
+    public static final float TRAIN_REVENUE_MULTIPLIER_NEWEST = 2.0f;
+    public static final float TRAIN_REVENUE_MULTIPLIER_FUTURISTIC = 2.5f;
+    public static final float TRAIN_REVENUE_MULTIPLIER_FAR_FUTURISTIC = 3.0f;
 
     public static final String[] NAME_PARTS = {
             LngUtil.translatable("st_name_1"),
