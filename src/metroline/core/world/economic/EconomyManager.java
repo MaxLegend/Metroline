@@ -51,6 +51,23 @@ public class EconomyManager {
     public int getAccumulatorSize() {
         return stationRevenueAccumulator.size();
     }
+    public float calculateSimplyStationRevenue(Station station) {
+        WorldTile tile = world.getWorldTile(station.getX(), station.getY());
+        if (tile == null) {
+            return 0f;
+        }
+        float revenue = BASE_STATION_REVENUE;
+        revenue *= getSafeMultiplier(tile.getPassengerCount(), 1.0f); // Пассажиропоток как множитель
+        revenue *= getSafeMultiplier(tile.getAbilityPay(), 1.0f);     // Платежеспособность как множитель
+        revenue *= getStationTypeMultiplier(station.getType());
+        revenue *= (1 - station.getWearLevel()); // Износ снижает доход
+        revenue *= getSafeMultiplier(tile.getPerm(), 1.0f); // Множитель местности
+
+        if (tile.isWater() || hasWaterNeighbor(station)) {
+            revenue *= 1.8f;
+        }
+        return revenue;
+}
     /**
      * Рассчитывает доход от станции при остановке поезда
      * @param station станция

@@ -16,7 +16,7 @@ public class WorldTile extends Tile {
     private float grassValue;
     private boolean isWater; // Новая переменная для воды
     private float abilityPay; // Платежеспособность
-    private int passengerCount; // Количество пассажиров
+    private float passengerCount; // Количество пассажиров
 
     private float waterDepth; // 0 (край реки) - 1 (центр)
 
@@ -121,8 +121,8 @@ public class WorldTile extends Tile {
     public float getAbilityPay() { return abilityPay; }
     public void setAbilityPay(float abilityPay) { this.abilityPay = abilityPay; }
 
-    public int getPassengerCount() { return passengerCount; }
-    public void setPassengerCount(int passengerCount) { this.passengerCount = passengerCount; }
+    public float getPassengerCount() { return passengerCount; }
+    public void setPassengerCount(float passengerCount) { this.passengerCount = passengerCount; }
     public float getGrassValue() {
         return grassValue;
     }

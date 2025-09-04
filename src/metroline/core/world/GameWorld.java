@@ -491,7 +491,7 @@ public class GameWorld extends World {
 
         float abilityPayModifier = 1 + (tile.getAbilityPay());
 
-        float passengerModifier = 1 + (float) tile.getPassengerCount() / 2000;
+        float passengerModifier = 1 + tile.getPassengerCount();
 
         // Итоговый расчет
         revenue = revenue * permModifier * abilityPayModifier * passengerModifier;
@@ -627,7 +627,6 @@ public class GameWorld extends World {
         return false;
     }
     public void generateGrassLandscape() {
-        System.out.println("Starting high-contrast grass generation...");
 
         PerlinNoise perlin = new PerlinNoise(System.currentTimeMillis());
         VoronoiNoise voronoi = new VoronoiNoise(System.currentTimeMillis() + 1);
@@ -680,12 +679,12 @@ public class GameWorld extends World {
     }
 
     private float enhanceContrast(float value, float contrast) {
-        // Функция увеличения контраста
-        return (float) Math.tanh((value - 0.5f) * contrast * 2) * 0.5f + 0.5f;
+        // Более мягкая функция контраста
+        return (float) Math.tanh((value - 0.5f) * contrast * 1.5f) * 0.5f + 0.5f;
     }
 
     private void smoothGrassLandscapeHighContrast() {
-        // Gaussian blur 5x5 для плавности, но с сохранением контраста
+        // Увеличиваем влияние сглаживания для большей мягкости
         for (int y = 2; y < getHeight() - 2; y++) {
             for (int x = 2; x < getWidth() - 2; x++) {
                 WorldTile tile = getWorldTile(x, y);
@@ -693,13 +692,13 @@ public class GameWorld extends World {
                     float sum = 0;
                     float totalWeight = 0;
 
-                    // Gaussian kernel 5x5
+                    // Gaussian kernel 5x5 (более мягкий)
                     float[][] weights = {
-                            {0.003f, 0.013f, 0.022f, 0.013f, 0.003f},
-                            {0.013f, 0.059f, 0.097f, 0.059f, 0.013f},
-                            {0.022f, 0.097f, 0.159f, 0.097f, 0.022f},
-                            {0.013f, 0.059f, 0.097f, 0.059f, 0.013f},
-                            {0.003f, 0.013f, 0.022f, 0.013f, 0.003f}
+                            {0.005f, 0.02f, 0.03f, 0.02f, 0.005f},
+                            {0.02f, 0.08f, 0.12f, 0.08f, 0.02f},
+                            {0.03f, 0.12f, 0.18f, 0.12f, 0.03f},
+                            {0.02f, 0.08f, 0.12f, 0.08f, 0.02f},
+                            {0.005f, 0.02f, 0.03f, 0.02f, 0.005f}
                     };
 
                     for (int dy = -2; dy <= 2; dy++) {
@@ -714,8 +713,8 @@ public class GameWorld extends World {
                     }
 
                     if (totalWeight > 0) {
-                        // Сохраняем больше оригинальной текстуры для контраста
-                        float smoothed = (tile.getGrassValue() * 0.7f) + (sum / totalWeight * 0.3f);
+                        // Больше сглаживания, меньше оригинальной текстуры
+                        float smoothed = (tile.getGrassValue() * 0.5f) + (sum / totalWeight * 0.5f);
                         tile.setGrassValue(smoothed);
                     }
                 }

@@ -83,21 +83,15 @@ public class GameWorldScreen extends CachedWorldScreen {
     public void createNewWorld(short width, short height, boolean hasPassengerCount,
             boolean hasAbilityPay, boolean hasLandscape,
             boolean hasRivers, int worldColor, int money) {
-   //     stopRepaintTimer();
+
         setupGameTimer();
         widthWorld = width;
         heightWorld = height;
-        setWorld(new GameWorld(width, height, hasPassengerCount, hasAbilityPay,
-                hasLandscape, hasRivers, worldColor, money));
+        setWorld(new GameWorld(width, height, hasPassengerCount, hasAbilityPay, hasLandscape, hasRivers, worldColor, money));
 
         worldClickController = new WorldClickController(this);
         setupGameTimer();
-
-     //   ((GameWorld)getWorld()).generateRandomGameplayUnits((int)GameConstants.GAMEPLAY_UNITS_COUNT);
-
         invalidateCache();
-
-     //   stopGameTimer();
         repaint();
 
     }

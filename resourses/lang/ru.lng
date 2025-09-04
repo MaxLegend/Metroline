@@ -192,7 +192,7 @@ infoWnd.tunnel_cost=Стоимость:
 infoWnd.tunnel_title=Перегон
 infoWnd.abilityPay=Платежеспособность:
 infoWnd.passengerCount=Пассажиропоток:
-infoWnd.revenue:Последний доход:
+infoWnd.revenue:Доход:
 infoWnd.gUnits=Множитель доходности:
 infoWnd.stationLabel=Метка
 infoWnd.upkeep:Расходы содержания:

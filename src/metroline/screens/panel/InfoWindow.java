@@ -603,7 +603,7 @@ public class InfoWindow extends JWindow {
                 revenue = economyManager.calculateStationRevenue(station, station.getCurrentTrain().getTrainType());
                 lastRevenue = revenue;
             } else {
-                revenue = lastRevenue;
+                revenue = economyManager.calculateSimplyStationRevenue(station);
             }
                 info.append(LngUtil.translatable("infoWnd.revenue") + " ")
                     .append(MathUtil.round(revenue, 2))

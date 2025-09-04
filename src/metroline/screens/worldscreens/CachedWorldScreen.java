@@ -40,7 +40,7 @@ public class CachedWorldScreen extends WorldScreen {
 
 
     private float cachedMaxAbilityPay = -1;
-    private int cachedMaxPassengerCount = -1;
+    private float cachedMaxPassengerCount = -1;
     private long lastCacheUpdate = 0;
 
     protected Font debugFont = new Font("Monospaced", Font.PLAIN, 12);
@@ -244,7 +244,7 @@ public class CachedWorldScreen extends WorldScreen {
             grassZonesCache = createCompatibleVolatileImage(width * TILE_SIZE, height * TILE_SIZE);
         }
 
-        if (validateResult != VolatileImage.IMAGE_OK) {
+
             Graphics2D g = grassZonesCache.createGraphics();
             try {
                 clearImage(g, grassZonesCache);
@@ -253,17 +253,17 @@ public class CachedWorldScreen extends WorldScreen {
             } finally {
                 g.dispose();
             }
-        }
+
         grassZonesCacheValid = true;
     }
     // Метод для отрисовки зон травы в кэш
     protected void drawGrassZonesToCache(Graphics2D g) {
-        int tileSize = TILE_SIZE/2;
+        int tileSize = TILE_SIZE / 2;
 
         for (int y = 0; y < getWorld().getHeight(); y++) {
             for (int x = 0; x < getWorld().getWidth(); x++) {
                 WorldTile tile = getWorld().getWorldTile(x, y);
-                if (tile != null) {
+                if (tile != null && !tile.isWater()) {
                     int drawX = x * tileSize;
                     int drawY = y * tileSize;
 
@@ -271,38 +271,113 @@ public class CachedWorldScreen extends WorldScreen {
                     float grassValue = tile.getGrassValue();
                     Color grassColor = getGrassZoneColor(grassValue);
 
-                    // Полупрозрачная заливка
-                    g.setColor(new Color(grassColor.getRed(), grassColor.getGreen(),
-                            grassColor.getBlue(), 250)); // 60% прозрачность
-                    g.fillRect(drawX, drawY, tileSize, tileSize);
+                    // Применяем затемнение если есть соседняя вода
+                    grassColor = applyWaterDarkening(grassColor, x, y);
 
+                    // Мягкая полупрозрачная заливка
+                    g.setColor(new Color(grassColor.getRed(), grassColor.getGreen(),
+                            grassColor.getBlue(), 180));
+                    g.fillRect(drawX, drawY, tileSize, tileSize);
                 }
             }
         }
     }
+    private Color applyWaterDarkening(Color originalColor, int x, int y) {
+        float minDistanceToWater = getMinDistanceToWater(x, y);
+        if (minDistanceToWater > 3) {
+            return originalColor; // Слишком далеко от воды
+        }
 
+        // Затемнение зависит от расстояния до воды
+        float darkenFactor = 0.8f + (minDistanceToWater * 0.06f); // 0.8-0.98
+        float blueTint = 1.0f + (0.1f / (minDistanceToWater + 1)); // +10%-0% синего
+
+        int r = (int) (originalColor.getRed() * darkenFactor);
+        int g = (int) (originalColor.getGreen() * darkenFactor);
+        int b = (int) (originalColor.getBlue() * blueTint);
+
+        r = Math.max(0, Math.min(255, r));
+        g = Math.max(0, Math.min(255, g));
+        b = Math.max(0, Math.min(255, b));
+
+        return new Color(r, g, b);
+    }
+    private float getMinDistanceToWater(int x, int y) {
+        float minDistance = Float.MAX_VALUE;
+
+        // Проверяем область 5x5 вокруг клетки
+        for (int dy = -2; dy <= 2; dy++) {
+            for (int dx = -2; dx <= 2; dx++) {
+                int nx = x + dx;
+                int ny = y + dy;
+
+                if (nx >= 0 && nx < getWorld().getWidth() &&
+                        ny >= 0 && ny < getWorld().getHeight()) {
+                    WorldTile neighbor = getWorld().getWorldTile(nx, ny);
+                    if (neighbor != null && neighbor.isWater()) {
+                        float distance = (float) Math.sqrt(dx * dx + dy * dy);
+                        minDistance = Math.min(minDistance, distance);
+                    }
+                }
+            }
+        }
+
+        return minDistance == Float.MAX_VALUE ? 999 : minDistance;
+    }
+    private int countWaterNeighbors(int x, int y) {
+        int waterCount = 0;
+
+        // Проверяем все 8 соседних клеток (включая диагонали)
+        for (int dy = -1; dy <= 1; dy++) {
+            for (int dx = -1; dx <= 1; dx++) {
+                if (dx == 0 && dy == 0) continue; // Пропускаем центральную клетку
+
+                int nx = x + dx;
+                int ny = y + dy;
+
+                if (nx >= 0 && nx < getWorld().getWidth() &&
+                        ny >= 0 && ny < getWorld().getHeight()) {
+                    WorldTile neighbor = getWorld().getWorldTile(nx, ny);
+                    if (neighbor != null && neighbor.isWater()) {
+                        waterCount++;
+                    }
+                }
+            }
+        }
+
+        return waterCount;
+    }
     private Color getGrassZoneColor(float grassValue) {
-        // Высококонтрастная палитра от темно-зеленого к ярко-зеленому
-        if (grassValue < 0.4f) {
-            // Темно-зеленые тона
+        // Мягкая палитра от светло-салатового к насыщенному зеленому
+        // Убраны темные тона, только светлые и средние оттенки
+
+        if (grassValue < 0.3f) {
+            // Очень светлые салатовые тона
             float t = grassValue / 0.3f;
-            int r = (int) (20 + t * (60 - 20));
-            int g = (int) (60 + t * (140 - 60));
-            int b = (int) (20 + t * (50 - 20));
+            int r = (int) (220 - t * 30);   // 220 -> 190
+            int g = (int) (245 - t * 25);   // 245 -> 220
+            int b = (int) (200 - t * 40);   // 200 -> 160
             return new Color(r, g, b);
-        } else if (grassValue < 0.5f) {
-            // Средне-зеленые тона
-            float t = (grassValue - 0.3f) / 0.4f;
-            int r = (int) (60 + t * (120 - 60));
-            int g = (int) (140 + t * (200 - 140));
-            int b = (int) (50 + t * (100 - 50));
+        } else if (grassValue < 0.6f) {
+            // Плавный переход к зеленому
+            float t = (grassValue - 0.3f) / 0.3f;
+            int r = (int) (190 - t * 50);   // 190 -> 140
+            int g = (int) (220 + t * 15);   // 220 -> 235
+            int b = (int) (160 - t * 40);   // 160 -> 120
+            return new Color(r, g, b);
+        } else if (grassValue < 0.9f) {
+            // Насыщенные зеленые тона
+            float t = (grassValue - 0.6f) / 0.3f;
+            int r = (int) (140 - t * 30);   // 140 -> 110
+            int g = (int) (235 - t * 25);   // 235 -> 210
+            int b = (int) (120 - t * 30);   // 120 -> 90
             return new Color(r, g, b);
         } else {
-            // Ярко-зеленые тона
-            float t = (grassValue - 0.7f) / 0.3f;
-            int r = (int) (120 + t * (180 - 120));
-            int g = (int) (200 + t * (255 - 200));
-            int b = (int) (100 + t * (150 - 100));
+            // Самые насыщенные зеленые (но не темные)
+            float t = (grassValue - 0.9f) / 0.1f;
+            int r = (int) (110 - t * 20);   // 110 -> 90
+            int g = (int) (210 - t * 10);   // 210 -> 200
+            int b = (int) (90 - t * 20);    // 90 -> 70
             return new Color(r, g, b);
         }
     }
@@ -567,8 +642,8 @@ public class CachedWorldScreen extends WorldScreen {
         return max > 0 ? max : 1;
     }
 
-    private int calculateMaxPassengerCount() {
-        int max = 0;
+    private float calculateMaxPassengerCount() {
+        float max = 0;
         for (int y = 0; y < getWorld().getHeight(); y++) {
             for (int x = 0; x < getWorld().getWidth(); x++) {
                 WorldTile tile = getWorld().getWorldTile(x, y);
