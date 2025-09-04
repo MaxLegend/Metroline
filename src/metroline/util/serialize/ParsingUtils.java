@@ -322,6 +322,7 @@ public class ParsingUtils {
         Station station = new Station(world, x, y, StationColors.fromColor(color), type);
         station.setName(name);
         station.setConstructionDate(constructionDate); // Устанавливаем дату постройки
+        station.setSkipTypeUpdate(true);
         if (id != -1) {
             station.setUniqueId(id); // Устанавливаем сохраненный ID
         }

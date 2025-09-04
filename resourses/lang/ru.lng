@@ -85,6 +85,7 @@ toolbar.destroy=✕
 toolbar.destroy_desc=Разрушить станцию
 timebar.pause=Пауза
 timebar.timespeed=Скорость времени:
+timebar.timespeed_desc=Двойной ЛКМ чтобы изменить
 
 -------------------------------
 # Station and Tunnels
@@ -191,7 +192,7 @@ infoWnd.tunnel_cost=Стоимость:
 infoWnd.tunnel_title=Перегон
 infoWnd.abilityPay=Платежеспособность:
 infoWnd.passengerCount=Пассажиропоток:
-infoWnd.revenue:Доход в сутки:
+infoWnd.revenue:Последний доход:
 infoWnd.gUnits=Множитель доходности:
 infoWnd.stationLabel=Метка
 infoWnd.upkeep:Расходы содержания:

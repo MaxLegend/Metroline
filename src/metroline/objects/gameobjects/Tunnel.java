@@ -5,6 +5,7 @@ import metroline.core.world.tiles.WorldTile;
 import metroline.input.selection.SelectionManager;
 import metroline.objects.enums.TunnelType;
 import metroline.screens.render.StationRender;
+import metroline.util.MetroLogger;
 
 import java.awt.*;
 import java.awt.geom.Area;
@@ -25,6 +26,7 @@ public class Tunnel extends GameObject {
     private Color tunnelColor;
     private float maintenanceCost; // Кэшированная стоимость обслуживания
     private boolean costDirty = true; // Флаг необходимости перерасчета
+    private Train currentTrain;
 
     public Tunnel() {
         super(0, 0);
@@ -340,17 +342,7 @@ public class Tunnel extends GameObject {
                 drawTunnelPath(g2d, offsetX, offsetY, zoom);
         }
 
-        // Debug-отрисовка контрольных точек
-//        if(SandboxWorldScreen.getInstance() != null || GameWorldScreen.getInstance() != null) {
-//        if (SandboxWorldScreen.getInstance().debugMode && (selected || pathPoint != null)) {
-//            g2d.setColor(Color.LIGHT_GRAY);
-//            for (PathPoint p : path) {
-//                int x = (int) ((p.getX() * 32 + offsetX + 16) * zoom);
-//                int y = (int) ((p.getY() * 32 + offsetY + 16) * zoom);
-//                g2d.fillOval(x - 3, y - 3, 6, 6);
-//            }
-//        }
-//        }
+
     }
 
     public PathPoint getPathPoint() {
@@ -392,37 +384,43 @@ public class Tunnel extends GameObject {
 
         g2d.draw(tunnelPath);
     }
+    /**
+     * Устанавливает поезд, который въехал в туннель
+     * @param train поезд, который движется по туннелю
+     */
+    public void setCurrentTrain(Train train) {
+        this.currentTrain = train;
+    }
 
-//    public float calculateTunnelsUpkeep() {
-//
-//        if (this.getType() != TunnelType.ACTIVE) {
-//            return 0;
-//        }
-//
-//        float tunnelUpkeep = 0; // Стоимость текущего туннеля
-//        int segmentCount = this.getPath().size();
-//        float baseSegmentCost = GameConstants.BASE_TUNNEL_UPKEEP_PER_SEGMENT;
-//        float lengthDiscount = 1 - Math.min(0.2f, segmentCount * 0.005f);
-//
-//        // Обрабатываем все сегменты туннеля
-//        for (PathPoint point : this.getPath()) {
-//            WorldTile tile = getWorld().getWorldTile(point.getX(), point.getY());
-//            if (tile == null) continue;
-//
-//            float perm = tile.getPerm();
-//            float segmentCost = baseSegmentCost * (1 + perm * 1.8f);
-//
-//            if (tile.isWater()) {
-//                segmentCost *= 3.4f; // Штраф за воду
-//            }
-//
-//            segmentCost *= lengthDiscount;
-//            tunnelUpkeep += segmentCost; // НЕ делим на segmentCost!
-//        }
-//
-//
-//        return tunnelUpkeep;
-//
-//    }
+    /**
+     * Получает поезд, который в данный момент в туннеле
+     * @return поезд в туннеле или null, если туннель свободен
+     */
+    public Train getCurrentTrain() {
+        return currentTrain;
+    }
+
+    /**
+     * Проверяет, есть ли поезд в туннеле
+     * @return true если в туннеле есть поезд, false если туннель свободен
+     */
+    public boolean hasTrain() {
+        return currentTrain != null;
+    }
+
+    /**
+     * Освобождает туннель
+     */
+    public void clearTrain() {
+        this.currentTrain = null;
+    }
+
+    /**
+     * Проверяет, может ли поезд въехать в туннель
+     * @return true если туннель свободен и готов принять поезд
+     */
+    public boolean canAcceptTrain() {
+        return currentTrain == null && type == TunnelType.ACTIVE;
+    }
 }
 

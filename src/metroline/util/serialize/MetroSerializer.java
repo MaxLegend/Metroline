@@ -415,6 +415,9 @@ public class MetroSerializer {
                 while (!(line = reader.readLine()).equals("]")) {
                     ParsingUtils.parseConnection(line, gameWorld, stationIdMap); // Используем вспомогательный метод
                 }
+                for (Station station : stationIdMap.values()) {
+                    station.setSkipTypeUpdate(false);
+                }
                 continue;
             }
 

@@ -84,6 +84,7 @@ toolbar.destroy=✕
 toolbar.destroy_desc=Destroy station
 timebar.pause=Pause
 timebar.timespeed=Time speed:
+timebar.timespeed_desc=Double LM Click for change
 
 -------------------------------
 # Station and Tunnels
@@ -190,7 +191,7 @@ infoWnd.tunnel_cost=Cost:
 infoWnd.tunnel_title=Tunnel
 infoWnd.abilityPay=Affordability:
 infoWnd.passengerCount=Passenger Traffic:
-infoWnd.revenue:Daily Revenue:
+infoWnd.revenue:Last revenue:
 infoWnd.gUnits=Revenue Multiplier:
 infoWnd.stationLabel=Label
 infoWnd.upkeep:Maintenance Costs:

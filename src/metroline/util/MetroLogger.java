@@ -70,7 +70,9 @@ public class MetroLogger {
     public static void logError(String message, Throwable thrown) {
         LOGGER.log(Level.SEVERE, message, thrown);
     }
-
+    public static void logError(String message) {
+        LOGGER.log(Level.SEVERE, message);
+    }
     public static void close() {
         if (fileHandler != null) {
             fileHandler.close();

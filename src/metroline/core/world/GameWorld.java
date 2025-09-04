@@ -25,6 +25,8 @@ import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ThreadLocalRandom;
 
+import static metroline.core.world.economic.EconomyManager.stationRevenueAccumulator;
+
 /**
  *
  */
@@ -43,7 +45,7 @@ public class GameWorld extends World {
     public long lastTrainsUpdateTime;
 
     private CityManager cityManager;
-    private transient EconomyManager economyManager;
+    private EconomyManager economyManager;
 
     public transient LinesLegendWindow legendWindow;
     public GameWorld() {
@@ -169,17 +171,20 @@ public class GameWorld extends World {
         }
 
         applyGradient();
-        MetroLogger.logInfo("World successfully created!");
+
     }
 
     public void update() {
 
-        economyManager.updateStationsWear(); // Обновляем износ
-        economyManager.processMaintenance(); // Обрабатываем содержание
-        float collectedRevenue = economyManager.collectAllRevenue(); // Собираем доход
-        MetroLogger.logInfo("Collected " + collectedRevenue + " from stations");
-        if (collectedRevenue > 0) {
+        economyManager.updateStationsWear();
+        economyManager.processMaintenance();
 
+        updateTrains();
+
+
+        float collectedRevenue = economyManager.collectAllRevenue();
+
+        if (collectedRevenue > 0) {
             addMoney(collectedRevenue);
         }
 
@@ -344,7 +349,7 @@ public class GameWorld extends World {
         // Используем EconomyManager для расчета стоимости строительства
         float constructionCost = economyManager.calculateStationConstructionCost(station.getX(), station.getY());
         if (!removeMoney(constructionCost)) {
-            MetroLogger.logInfo("Cannot afford station construction: " + constructionCost);
+
             return;
         }
 
@@ -892,9 +897,9 @@ public class GameWorld extends World {
         return false;
     }
 
-    public float getStationDisplayRevenue(Station station) {
-        return economyManager.calculateStationDisplayRevenue(station);
-    }
+//    public float getStationDisplayRevenue(Station station) {
+//        return economyManager.calculateStationDisplayRevenue(station);
+//    }
 
     // Метод для получения содержания станции для отображения в UI
     public float getStationUpkeep(Station station) {

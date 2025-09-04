@@ -16,10 +16,7 @@ import metroline.screens.worldscreens.sandbox.SandboxSettingsScreen;
 import metroline.screens.worldscreens.sandbox.SandboxWorldScreen;
 import metroline.util.IntegerDocumentFilter;
 import metroline.util.localizate.LngUtil;
-import metroline.util.ui.MetrolineButton;
-import metroline.util.ui.MetrolineLabel;
-import metroline.util.ui.MetrolinePopupMenu;
-import metroline.util.ui.MetrolineToggleButton;
+import metroline.util.ui.*;
 import metroline.util.ui.tooltip.CursorTooltip;
 
 import javax.swing.*;
@@ -266,35 +263,9 @@ public class MainFrameUI {
         return panel;
     }
 
-    private JTextField createTimeScaleField() {
+    private MetrolineTextField createTimeScaleField() {
 
-        JTextField field = new JTextField("1", 3) {
-            @Override
-            protected void paintBorder(Graphics g) {}
-        };
-
-        field.setHorizontalAlignment(JTextField.CENTER);
-        field.setForeground(Color.WHITE);
-        field.setBackground(new Color(60, 60, 60));
-        field.setBorder(BorderFactory.createEmptyBorder());
-        field.setFont(new Font("Sans Serif", Font.BOLD, 13));
-        field.setEditable(false);
-        field.setOpaque(false);
-
-        ((PlainDocument)field.getDocument()).setDocumentFilter(new IntegerDocumentFilter());
-
-        field.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() == 2) {
-                    field.setEditable(true);
-                    field.setOpaque(true);
-                    field.setBackground(new Color(45, 45, 45));
-                    field.requestFocus();
-                    field.selectAll();
-                }
-            }
-        });
+        MetrolineTextField field =  new MetrolineTextField("1", 3,true, LngUtil.translatable("timebar.timespeed_desc"));
 
         field.addActionListener(e -> applyTimeScale(field));
         field.addFocusListener(new FocusAdapter() {
@@ -378,12 +349,12 @@ public class MainFrameUI {
             SandboxWorld world = (SandboxWorld) ((SandboxWorldScreen) currentScreen).getWorld();
             if (world != null && world.getGameTime() != null) {
 
-                world.getGameTime().setTimeScale(scale*1000);
+                world.getGameTime().setTimeScale(scale*100);
             }
         } else if (currentScreen instanceof GameWorldScreen) {
             GameWorld world = (GameWorld) ((GameWorldScreen) currentScreen).getWorld();
             if (world != null && world.getGameTime() != null) {
-                world.getGameTime().setTimeScale(scale*1000);
+                world.getGameTime().setTimeScale(scale*100);
             }
         }
     }
@@ -448,9 +419,9 @@ public class MainFrameUI {
                 if (world != null && world.getGameTime() != null) newTime = world.getGameTime().getDateTimeString();
                 GameTime gameTime = world.getGameTime();
 
-                if (gameTime != null && gameTime.checkHourPassed()) {
+          //      if (gameTime != null && gameTime.checkHourPassed()) {
                     world.update();
-                }
+         ////       }
                 //
 
             }

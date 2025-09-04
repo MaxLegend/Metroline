@@ -7,8 +7,6 @@ import metroline.input.selection.SelectionManager;
 import metroline.objects.enums.Direction;
 import metroline.objects.enums.StationColors;
 import metroline.objects.enums.StationType;
-import metroline.objects.enums.TrainType;
-import metroline.screens.worldscreens.normal.GameWorldScreen;
 import metroline.util.MetroLogger;
 
 import java.awt.*;
@@ -22,7 +20,7 @@ import java.util.Random;
  * TODO Чистка кода. Обобщение, разделение, комментирование. Вынести рендер в отдельный класс
  */
 public class Station extends GameObject {
-
+    private boolean skipTypeUpdate = false;
     private long constructionDate; // дата постройки в миллисекундах
     private float wearLevel = 0f; // степень износа (0..1)
     private boolean wasRepaired = false; // была ли станция отремонтирована
@@ -31,6 +29,7 @@ public class Station extends GameObject {
     private StationColors color;
     private StationType type;
 
+    private Train currentTrain;
 
     public Station() {
         super(0, 0);
@@ -45,90 +44,6 @@ public class Station extends GameObject {
     }
 
 
-//    /**
-//     * Добавляет доход при остановке поезда
-//     * @param trainType тип поезда
-//     * @return размер дохода
-//     */
-//    public float addTrainRevenue(TrainType trainType) {
-//        if (isLowIncomeStations()) {
-//            return 0f; // Проблемные станции не приносят дохода
-//        }
-//
-//        WorldTile tile = getWorld().getWorldTile(getX(), getY());
-//        if (tile == null) {
-//            return 0f;
-//        }
-//
-//        // Базовая формула дохода
-//        float baseRevenue = GameConstants.STATION_BASE_REVENUE;
-//
-//        // Модификаторы:
-//        float revenue = baseRevenue;
-//
-//        // 1. Модификатор типа поезда (более быстрые/современные поезда приносят больше)
-//        revenue *= trainType.getRevenueMultiplier();
-//
-//        // 2. Модификатор пассажиропотока
-//        revenue *= tile.getPassengerCount();
-//
-//        // 3. Модификатор способности платить
-//        revenue *= tile.getAbilityPay();
-//
-//        // 4. Модификатор типа станции
-//        if (type == StationType.TRANSFER) {
-//            revenue *= 1.5f; // Пересадочные станции приносят больше
-//        } else if (type == StationType.TERMINAL) {
-//            revenue *= 1.3f; // Конечные станции приносят больше
-//        }
-//
-//        // 5. Модификатор износа (чем больше износ, тем меньше доход)
-//        revenue *= (1 - wearLevel);
-//
-//        // 6. Модификатор местности
-//        revenue *= tile.getPerm();
-//
-//        accumulatedRevenue += revenue;
-//        return revenue;
-//    }
-//
-//    /**
-//     * Забирает накопленный доход и обнуляет счетчик
-//     * @return накопленный доход
-//     */
-//    public float collectRevenue() {
-//        float revenue = accumulatedRevenue;
-//        accumulatedRevenue = 0f;
-//        return revenue;
-//    }
-
-//    /**
-//     * Получает текущий накопленный доход без сброса
-//     * @return текущий накопленный доход
-//     */
-//    public float getAccumulatedRevenue() {
-//        return accumulatedRevenue;
-//    }
-//    public boolean isLowIncomeStations() {
-//         return this.getType() == StationType.DROWNED ||
-//                 this.getType() == StationType.ABANDONED ||
-//                 this.getType() == StationType.BURNED ||
-//                 this.getType() == StationType.RUINED ||
-//                 this.getType() == StationType.BUILDING ||
-//                 this.getType() == StationType.CLOSED ||
-//                 this.getType() == StationType.DESTROYED ||
-//                 this.getType() == StationType.PLANNED ||
-//                 this.getType() == StationType.DEPO; // Добавляем DEPO
-//    }
-
-//    public float calculateRepairCost(Station station) {
-//        float baseCost = GameConstants.STATION_REPAIR_BASE_COST;
-//        float wearFactor = station.getWearLevel(); // 0-1
-//        WorldTile tile = ((GameWorld) GameWorldScreen.getInstance().getWorld())
-//                .getWorldTile(station.getX(), station.getY());
-//
-//        return baseCost * wearFactor * (1 + tile.getPerm());
-//    }
 
     public void setWearLevel(float wearLevel) {
         this.wearLevel = wearLevel;
@@ -148,6 +63,51 @@ public class Station extends GameObject {
     }
 
 
+
+    /**
+     * Устанавливает поезд, который прибыл на станцию
+     * @param train поезд, который остановился на станции
+     */
+    public void setCurrentTrain(Train train) {
+        this.currentTrain = train;
+
+    }
+
+    /**
+     * Получает поезд, который в данный момент на станции
+     * @return поезд на станции или null, если станция свободна
+     */
+    public Train getCurrentTrain() {
+        return currentTrain;
+    }
+
+    /**
+     * Проверяет, есть ли поезд на станции
+     * @return true если на станции есть поезд, false если станция свободна
+     */
+    public boolean hasTrain() {
+        return currentTrain != null;
+    }
+
+    /**
+     * Освобождает станцию (убирает ссылку на поезд)
+     */
+    public void clearTrain() {
+        this.currentTrain = null;
+    }
+
+    /**
+     * Проверяет, может ли поезд остановиться на этой станции
+     * @return true если станция свободна и готова принять поезд
+     */
+    public boolean canAcceptTrain() {
+        return currentTrain == null &&
+                type != StationType.BUILDING &&
+                type != StationType.PLANNED &&
+                type != StationType.DESTROYED &&
+                type != StationType.RUINED &&
+                type != StationType.ABANDONED;
+    }
     public void setName(String name) {
         this.name = name;
         // Обновляем метку, если она существует
@@ -230,11 +190,10 @@ public class Station extends GameObject {
         }
         if (newType == StationType.CLOSED &&
                 (this.type == StationType.PLANNED || this.type == StationType.BUILDING)) {
-     //       MetroLogger.logWarning("Cannot close PLANNED or BUILDING station");
             return;
         }
         if (this.type == StationType.BUILDING && newType == StationType.PLANNED) {
-     //       MetroLogger.logWarning("Attempt to change BUILDING station back to PLANNED");
+
             return;
         }
 
@@ -252,12 +211,12 @@ public class Station extends GameObject {
             }
 
             if (!hasDifferentColorNeighbor) {
-            //    MetroLogger.logWarning("Attempt to set TRANSFER type without different color neighbors");
+
                 return;
             }
         }
 
-       // MetroLogger.logInfo("Changing station " + getName() + " type from " + this.type + " to " + newType);
+
 
         this.type = newType;
 
@@ -274,6 +233,9 @@ public class Station extends GameObject {
         }
     }
 
+    public boolean isTerminal() {
+        return type == StationType.TERMINAL || connections.size() == 1;
+    }
     public boolean connectStation(Station other) {
         Direction dir = getDirectionTo(other);
         Direction oppositeDir = dir.getOpposite();
@@ -322,12 +284,26 @@ public class Station extends GameObject {
             other.updateType();
         }
     }
+    /**
+     * Устанавливает флаг пропуска автоматического обновления типа
+     */
+    public void setSkipTypeUpdate(boolean skip) {
+        this.skipTypeUpdate = skip;
+    }
 
     /**
      * Automatically determines and updates station type based on connections
      */
     public void updateType() {
-        if(this.type == StationType.DEPO) {
+
+        if (type == StationType.DESTROYED ||
+                type == StationType.BURNED ||
+                type == StationType.DEPO ||
+                type == StationType.DROWNED ||
+                type == StationType.RUINED ||
+                type == StationType.ABANDONED ||
+                type == StationType.REPAIR ||
+                type == StationType.CLOSED) {
             return;
         }
         // Проверяем соседей
@@ -353,7 +329,7 @@ public class Station extends GameObject {
             newType = StationType.REGULAR;
         }
 
- 
+
 
         if (hasDifferentColorNeighbor) {
             newType = StationType.TRANSFER;
@@ -370,7 +346,6 @@ public class Station extends GameObject {
 
             if (this.type != newType) {
 
-         //   MetroLogger.logInfo("Auto-updating station " + getName() + " type from " + this.type + " to " + newType);
             this.type = newType;
             }
         }
@@ -451,51 +426,6 @@ public class Station extends GameObject {
         return wearLevel;
     }
 
-//    public float calculateUpkeepCost() {
-//        if (isLowIncomeStations()) {
-//            return 0f;
-//        }
-//
-//        WorldTile tile = getWorld().getWorldTile(getX(), getY());
-//        if (tile == null) {
-//            return 0f;
-//        }
-//
-//        float baseCost = GameConstants.BASE_STATION_UPKEEP;
-//        float perm = tile.getPerm();
-//
-//        float cost = baseCost * (1 + perm);
-//
-//        // Износ станции
-//        cost *= 1 + wearLevel * 2.5f;
-//
-//        // Тип станции
-//        if (type == StationType.TRANSFER) {
-//            cost *= 1.35f;
-//        }
-//
-//        // Вода
-//        if (tile.isWater() || hasWaterNeighbor()) {
-//            cost *= 1.25f;
-//        }
-//
-//        return cost;
-//    }
-//    private boolean hasWaterNeighbor() {
-//        for (Direction dir : Direction.values()) {
-//            int nx = getX() + dir.getDx();
-//            int ny = getY() + dir.getDy();
-//
-//            if (nx >= 0 && nx < getWorld().getWidth() &&
-//                    ny >= 0 && ny < getWorld().getHeight()) {
-//                WorldTile neighbor = getWorld().getWorldTile(nx, ny);
-//                if (neighbor != null && neighbor.isWater()) {
-//                    return true;
-//                }
-//            }
-//        }
-//        return false;
-//    }
 
 }
 

@@ -5,6 +5,7 @@ import metroline.MainFrame;
 import metroline.core.time.ConstructionTimeProcessor;
 import metroline.core.time.GameTime;
 import metroline.core.world.economic.EconomyManager;
+import metroline.objects.enums.TrainType;
 import metroline.objects.gameobjects.*;
 import metroline.objects.gameobjects.StationLabel;
 import metroline.screens.worldscreens.normal.GameWorldScreen;
@@ -439,7 +440,7 @@ public class InfoWindow extends JWindow {
         pack(); // Обновляем размер окна под содержимое
     }
 
-
+    float revenue,lastRevenue;
     public void updateInfo() {
         // Получаем экран мира (может быть GameWorldScreen или SandboxWorldScreen)
         WorldScreen worldScreen = null;
@@ -472,17 +473,18 @@ public class InfoWindow extends JWindow {
             StringBuilder info = new StringBuilder("<html>");
             info.append(LngUtil.translatable("infoWnd.position") + " ").append(station.getX()).append(", ").append(station.getY()).append("<br>");
             info.append(LngUtil.translatable("infoWnd.type") + " ").append(station.getType().getLocalizedName()).append("<br>");
-        //    info.append(LngUtil.translatable("infoWnd.color") + " ").append(station.getStationColor().getLocalizedName()).append("<br>");
-            //        info.append(LngUtil.translatable("infoWnd.abilityPay") + " ").append("" + MathUtil.round(world.getWorldTile(station.getX(), station.getY()).getAbilityPay(), 2)).append("<br>");
-         //   info.append(LngUtil.translatable("infoWnd.passengerCount") + " ").append("" + world.getWorldTile(station.getX(), station.getY()).getPassengerCount()).append("<br>");
 
-            // Используем EconomyManager для расчета дохода
-            float revenue = economyManager.calculateStationDisplayRevenue(station);
-            info.append(LngUtil.translatable("infoWnd.revenue") + " ")
-                .append(MathUtil.round(revenue, 2))
-                .append(" M (")
-                .append(MathUtil.round((1 - station.getWearLevel()) * 100, 0))
-                .append("%)<br>");
+            if(station.hasTrain()) {
+                revenue = economyManager.calculateStationRevenue(station, station.getCurrentTrain().getTrainType());
+                lastRevenue = revenue;
+            } else {
+                revenue = lastRevenue;
+            }
+                info.append(LngUtil.translatable("infoWnd.revenue") + " ")
+                    .append(MathUtil.round(revenue, 2))
+                    .append(" M (")
+                    .append(MathUtil.round((1 - station.getWearLevel()) * 100, 0))
+                    .append("%)<br>");
 
             // Используем EconomyManager для расчета стоимости строительства
             float constructionCost = economyManager.calculateStationConstructionCost(station.getX(), station.getY());

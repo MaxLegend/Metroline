@@ -9,6 +9,7 @@ import metroline.util.MetroLogger;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 //FIXME меню выбора поездов накладывается поверх тултайпа когда всплывающая панель выходит за рамки окна
@@ -203,6 +204,9 @@ public class Train extends GameObject {
 
     private void moveAlongTunnel(float deltaSeconds) {
         if (currentPath == null || currentPath.size() < 2) return;
+        if (currentTunnel != null && currentTunnel.getCurrentTrain() != this) {
+            currentTunnel.setCurrentTrain(this);
+        }
 
         float totalPathLength = calculateTotalPathLength();
         if (totalPathLength == 0) return;
@@ -308,6 +312,10 @@ public class Train extends GameObject {
     }
 
     private float calculateTotalPathLength() {
+        if (currentPath == null || currentPath.size() < 2) {
+            MetroLogger.logWarning("Attempt to calculate path length for null or empty path");
+            return 0f;
+        }
         float totalLength = 0;
         for (int i = 0; i < currentPath.size() - 1; i++) {
             PathPoint p1 = currentPath.get(i);
@@ -356,7 +364,7 @@ public class Train extends GameObject {
     private void handleStationWait(float deltaSeconds) {
         // Добавляем доход при прибытии на станцию (только один раз)
         if (!hasPaidAtCurrentStation) {
-      //      addTrainOnStationRevenue();
+            addTrainOnStationRevenue();
             hasPaidAtCurrentStation = true;
         }
 
@@ -370,23 +378,36 @@ public class Train extends GameObject {
             findNextTunnel(); // Будет вызываться каждый кадр, пока не найдет свободный путь
         }
     }
+    private void addTrainOnStationRevenue() {
+        if (currentStation != null && isStationValid(currentStation)) {
+            // ПРОВЕРЬТЕ, что getWorld() возвращает тот же GameWorld
+            if (getWorld() instanceof GameWorld) {
+                GameWorld gameWorld = (GameWorld) getWorld();
 
-    private boolean isNextStationOccupied(Station nextStation) {
-        if (nextStation == null) return false;
+                // ПРОВЕРЬТЕ, что economyManager не null
+                if (gameWorld.getEconomyManager() != null) {
+                    float revenue = gameWorld.getEconomyManager().calculateStationRevenue(currentStation, trainType);
 
-        GameWorld world = (GameWorld) getWorld();
-        if (world == null) return false;
-
-        // Проверяем все поезда в мире
-        for (GameObject obj : world.getGameplayUnits()) {
-            if (obj instanceof Train) {
-                Train otherTrain = (Train) obj;
-                // Если поезд стоит на целевой станции
-                if (otherTrain.getCurrentStation() == nextStation && otherTrain != this) {
-                    return true;
+                } else {
+                    MetroLogger.logError("EconomyManager is null in GameWorld!");
                 }
             }
         }
+    }
+    public void removeFromStation() {
+        if (currentStation != null) {
+            currentStation.clearTrain();
+            currentStation = null;
+        }
+    }
+    private boolean isNextStationOccupied(Station nextStation) {
+        if (nextStation == null) return false;
+
+        // Проверяем, есть ли уже поезд на станции
+        if (nextStation.hasTrain() && nextStation.getCurrentTrain() != this) {
+            return true;
+        }
+
         return false;
     }
     public float getCurrentX() {
@@ -403,30 +424,7 @@ public class Train extends GameObject {
         else return false;
     }
 
-//    private void addTrainOnStationRevenue() {
-//        if (currentStation != null && isStationValid(currentStation)) {
-//            // Добавляем доход в станцию
-//            float revenue = currentStation.addTrainRevenue(trainType);
-//
-//            // Можно добавить логирование для отладки
-//            if (revenue > 0) {
-//                MetroLogger.logInfo("Train " + name + " added " + revenue + " revenue to station " + currentStation.getName());
-//            }
-//        }
-//    }
-//    private int calculateRevenue() {
-//        // Базовая стоимость + бонусы в зависимости от типа станции
-//        int baseRevenue = 10;
-//
-//        if (currentStation.getType() == StationType.TRANSFER) {
-//            baseRevenue += 5; // Бонус за пересадочную станцию
-//        } else if (currentStation.getType() == StationType.TERMINAL) {
-//            baseRevenue += 3; // Бонус за конечную станцию
-//        }
-//
-//        // Можно добавить другие модификаторы (уровень станции, подключенные линии и т.д.)
-//        return baseRevenue;
-//    }
+
 
     private void updateDirection(PathPoint from, PathPoint to) {
         int dx = to.getX() - from.getX();
@@ -444,7 +442,17 @@ public class Train extends GameObject {
 
     private void reachTunnelEnd() {
         Station reachedStation = movingForward ? currentTunnel.getEnd() : currentTunnel.getStart();
+        // Освобождаем туннель
+        if (currentTunnel != null) {
+            currentTunnel.clearTrain();
+        }
+        // Уведомляем предыдущую станцию об отправлении поезда
+        if (currentStation != null) {
+            currentStation.clearTrain();
+        }
 
+        // Уведомляем новую станцию о прибытии поезда
+        reachedStation.setCurrentTrain(this);
         previousTunnel = currentTunnel;
         currentX = reachedStation.getX();
         currentY = reachedStation.getY();
@@ -479,68 +487,138 @@ public class Train extends GameObject {
                                                   .collect(Collectors.toList());
 
         if (connectedTunnels.isEmpty()) {
-            waitTimer = 1.0f; // Ждем, если нет подключенных туннелей
+            waitTimer = 1.0f;
             return;
         }
 
-        List<Tunnel> availableTunnels;
+        // Фильтруем доступные туннели по типу станции
+        List<Tunnel> availableTunnels = filterTunnelsByStationType(connectedTunnels);
 
+        if (availableTunnels.isEmpty()) {
+            availableTunnels = connectedTunnels; // Fallback
+        }
+
+        // Перемешиваем для случайного выбора
+        Collections.shuffle(availableTunnels);
+
+        // Ищем первый свободный туннель и станцию
+        for (Tunnel candidateTunnel : availableTunnels) {
+            boolean movingForward = candidateTunnel.getStart() == currentStation;
+            Station nextStation = movingForward ? candidateTunnel.getEnd() : candidateTunnel.getStart();
+
+            // Проверяем доступность туннеля и станции
+            if (isPathClear(candidateTunnel, nextStation)) {
+                // Нашли свободный путь - начинаем движение
+                startMovement(candidateTunnel, movingForward, nextStation);
+                return;
+            }
+        }
+
+        // Все пути заняты - ждем
+        waitTimer = 0.5f;
+    }
+
+    /**
+     * Фильтрует туннели по типу текущей станции
+     */
+    private List<Tunnel> filterTunnelsByStationType(List<Tunnel> connectedTunnels) {
         switch (currentStation.getType()) {
             case TERMINAL:
-                // Для терминалов используем только предыдущий туннель (возвращаемся назад)
-                availableTunnels = connectedTunnels.stream()
-                                                   .filter(t -> t == previousTunnel)
-                                                   .collect(Collectors.toList());
-                break;
+                // Для терминалов - только предыдущий туннель (возврат)
+                return connectedTunnels.stream()
+                                       .filter(t -> t == previousTunnel)
+                                       .collect(Collectors.toList());
 
             case TRANSFER:
             case TRANSIT:
-                // Для транзитных станций исключаем предыдущий туннель (двигаемся вперед)
-                availableTunnels = connectedTunnels.stream()
-                                                   .filter(t -> t != previousTunnel)
-                                                   .collect(Collectors.toList());
-                break;
+                // Для транзитных - исключаем предыдущий туннель (движение вперед)
+                return connectedTunnels.stream()
+                                       .filter(t -> t != previousTunnel)
+                                       .collect(Collectors.toList());
 
             case REGULAR:
             default:
-                // Для обычных станций исключаем предыдущий туннель, если есть другие варианты
+                // Для обычных - предпочитаем движение вперед, но разрешаем возврат если нет других вариантов
                 List<Tunnel> forwardTunnels = connectedTunnels.stream()
                                                               .filter(t -> t != previousTunnel)
                                                               .collect(Collectors.toList());
+                return !forwardTunnels.isEmpty() ? forwardTunnels : connectedTunnels;
+        }
+    }
 
-                if (!forwardTunnels.isEmpty()) {
-                    availableTunnels = forwardTunnels; // Используем туннели вперед
-                } else {
-                    availableTunnels = connectedTunnels; // Если нет других вариантов, используем все
-                }
-                break;
+    /**
+     * Проверяет, свободен ли путь (туннель и станция)
+     */
+    private boolean isPathClear(Tunnel tunnel, Station nextStation) {
+        // Проверяем туннель
+        if (tunnel.hasTrain() && tunnel.getCurrentTrain() != this) {
+            Train trainInTunnel = tunnel.getCurrentTrain();
+
+            // Если поезд в туннеле движется В НАПРАВЛЕНИИ следующей станции - нельзя ехать
+            if (isTrainMovingTowardsStation(trainInTunnel, nextStation)) {
+                return false;
+            }
+
+            // Если поезд в туннеле движется ОТ следующей станции - можно ехать
+
         }
 
-        if (availableTunnels.isEmpty()) {
-            availableTunnels = connectedTunnels; // Fallback: если нет доступных туннелей, используем все
+        // Проверяем станцию (для терминалов разрешаем занятость)
+        if (nextStation.hasTrain() && nextStation.getCurrentTrain() != this && !nextStation.isTerminal()
+        && nextStation.getType() != StationType.TRANSIT && nextStation.getType() != StationType.TRANSFER) {
+            // Для терминалов проверяем, что занят именно этот поезд (ждет отправления)
+            Train stationTrain = nextStation.getCurrentTrain();
+            if (stationTrain != null && stationTrain != this &&
+                    stationTrain.getCurrentStation() == nextStation) {
+                return false;
+            }
         }
 
-        // Выбираем туннель и проверяем, свободна ли следующая станция
-        Tunnel selectedTunnel = availableTunnels.get((int)(Math.random() * availableTunnels.size()));
-        boolean movingForward = selectedTunnel.getStart() == currentStation;
-        Station nextStation = movingForward ? selectedTunnel.getEnd() : selectedTunnel.getStart();
-
-        // Ждем до тех пор, пока станция не освободится
-        if (isNextStationOccupied(nextStation)) {
-            return;
+        return true;
+    }
+    /**
+     * Проверяет, движется ли поезд в направлении указанной станции
+     */
+    private boolean isTrainMovingTowardsStation(Train train, Station targetStation) {
+        if (train == null || targetStation == null || !train.isMoving()) {
+            return false;
         }
 
-        // Все проверки пройдены - начинаем движение
-        currentTunnel = selectedTunnel;
+        // Получаем текущий туннель поезда
+        Tunnel trainTunnel = train.getCurrentTunnel();
+        if (trainTunnel == null) {
+            return false;
+        }
+
+        // Определяем, в какую сторону движется поезд
+        boolean trainMovingForward = train.isMovingForward();
+        Station trainTargetStation = trainMovingForward ? trainTunnel.getEnd() : trainTunnel.getStart();
+
+        // Проверяем, совпадает ли целевая станция поезда с нашей целевой станцией
+        return trainTargetStation == targetStation;
+    }
+    /**
+     * Начинает движение по выбранному туннелю
+     */
+    private void startMovement(Tunnel tunnel, boolean movingForward, Station nextStation) {
+        currentTunnel = tunnel;
         this.movingForward = movingForward;
-        currentPath = currentTunnel.getPath();
+        currentPath = tunnel.getPath();
         pathProgress = movingForward ? 0.0f : 1.0f;
+
+        // Уведомляем туннель о въезде
+        tunnel.setCurrentTrain(this);
+
+        // Уведомляем текущую станцию об отправлении
+        if (currentStation != null) {
+            currentStation.clearTrain();
+        }
 
         currentStation = null;
         updatePositionFromPathProgress();
-
-
     }
+
+
 
     // Метод для получения информации о скорости для отладки
     public String getSpeedInfo() {

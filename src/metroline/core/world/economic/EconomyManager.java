@@ -10,6 +10,7 @@ import metroline.objects.gameobjects.GameConstants;
 import metroline.objects.gameobjects.PathPoint;
 import metroline.objects.gameobjects.Station;
 import metroline.objects.gameobjects.Tunnel;
+import metroline.util.MetroLogger;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,12 +27,12 @@ import static metroline.objects.gameobjects.GameConstants.*;
  */
 public class EconomyManager {
     private final GameWorld world;
-    private final Map<Station, Float> stationRevenueAccumulator;
+    public static Map<Station, Float> stationRevenueAccumulator = new HashMap<>();
     private final Map<Station, Long> lastMaintenanceUpdate;
     private final Map<Tunnel, Long> lastTunnelMaintenanceUpdate;
 
     // Константы экономики
-    private static final float BASE_STATION_REVENUE = 0.1f;
+    private static final float BASE_STATION_REVENUE = 10f;
     private static final float BASE_STATION_UPKEEP = 0.001f;
     private static final float BASE_TUNNEL_UPKEEP_PER_SEGMENT = 0.0005f;
     private static final float STATION_BASE_COST = 100f;
@@ -47,7 +48,9 @@ public class EconomyManager {
         this.lastMaintenanceUpdate = new HashMap<>();
         this.lastTunnelMaintenanceUpdate = new HashMap<>();
     }
-
+    public int getAccumulatorSize() {
+        return stationRevenueAccumulator.size();
+    }
     /**
      * Рассчитывает доход от станции при остановке поезда
      * @param station станция
@@ -77,7 +80,7 @@ public class EconomyManager {
 
         // Дополнительный множитель для станций на воде
         if (tile.isWater() || hasWaterNeighbor(station)) {
-            revenue *= 0.8f; // Снижение дохода на воде
+            revenue *= 1.8f; // Снижение дохода на воде
         }
 
         // Добавляем в аккумулятор станции
@@ -86,20 +89,8 @@ public class EconomyManager {
         return revenue;
     }
 
-    /**
-     * Вспомогательный метод для безопасного использования множителей
-     * Если значение <= 0, возвращает значение по умолчанию
-     */
-    private float getSafeMultiplier(float value, float defaultValue) {
-        return value > 0 ? value : defaultValue;
-    }
-
-    /**
-     * Рассчитывает полный доход от станции (для отображения в InfoWindow)
-     * @param station станция
-     * @return текущий потенциальный доход
-     */
-    public float calculateStationDisplayRevenue(Station station) {
+    public float calculateAverageStationRevenue(Station station) {
+        // Проверка на невалидные станции
         if (isInvalidStation(station)) {
             return 0f;
         }
@@ -109,22 +100,35 @@ public class EconomyManager {
             return 0f;
         }
 
-        // Усредненный доход для отображения (без конкретного поезда)
         float revenue = BASE_STATION_REVENUE;
-        revenue *= 1.5f; // Средний множитель от поездов
-        revenue *= getSafeMultiplier(tile.getPassengerCount(), 1.0f);
-        revenue *= getSafeMultiplier(tile.getAbilityPay(), 1.0f);
+
+        // Множители дохода (защита от нулевых значений)
+        revenue *= 1.5f;
+        revenue *= getSafeMultiplier(tile.getPassengerCount(), 1.0f); // Пассажиропоток как множитель
+        revenue *= getSafeMultiplier(tile.getAbilityPay(), 1.0f);     // Платежеспособность как множитель
         revenue *= getStationTypeMultiplier(station.getType());
-        revenue *= (1 - station.getWearLevel());
-        revenue *= getSafeMultiplier(tile.getPerm(), 1.0f);
+        revenue *= (1 - station.getWearLevel()); // Износ снижает доход
+        revenue *= getSafeMultiplier(tile.getPerm(), 1.0f); // Множитель местности
 
         // Дополнительный множитель для станций на воде
         if (tile.isWater() || hasWaterNeighbor(station)) {
-            revenue *= 0.8f;
+            revenue *= 1.8f; // Снижение дохода на воде
         }
+
+        // Добавляем в аккумулятор станции
+        stationRevenueAccumulator.merge(station, revenue, Float::sum);
 
         return revenue;
     }
+    /**
+     * Вспомогательный метод для безопасного использования множителей
+     * Если значение <= 0, возвращает значение по умолчанию
+     */
+    private float getSafeMultiplier(float value, float defaultValue) {
+        return value > 0 ? value : defaultValue;
+    }
+
+
 
     /**
      * Рассчитывает стоимость содержания станции
@@ -355,11 +359,15 @@ public class EconomyManager {
     public float collectAllRevenue() {
         float totalRevenue = 0f;
 
+
+
         for (Map.Entry<Station, Float> entry : stationRevenueAccumulator.entrySet()) {
+
             totalRevenue += entry.getValue();
         }
 
         stationRevenueAccumulator.clear();
+
         return totalRevenue;
     }
 
