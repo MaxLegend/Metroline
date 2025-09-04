@@ -522,6 +522,9 @@ public class Train extends GameObject {
      * Фильтрует туннели по типу текущей станции
      */
     private List<Tunnel> filterTunnelsByStationType(List<Tunnel> connectedTunnels) {
+        if (currentStation == null) {
+            return Collections.emptyList(); // или tunnels, если логика позволяет
+        }
         switch (currentStation.getType()) {
             case TERMINAL:
                 // Для терминалов - только предыдущий туннель (возврат)
@@ -558,8 +561,6 @@ public class Train extends GameObject {
             if (isTrainMovingTowardsStation(trainInTunnel, nextStation)) {
                 return false;
             }
-
-            // Если поезд в туннеле движется ОТ следующей станции - можно ехать
 
         }
 

@@ -386,16 +386,15 @@ public class CityDistrict {
         }
     }
 
-    public void removeBuilding(GameplayUnits building) {
-        // Используем итератор для безопасного удаления
+    public boolean removeBuilding(GameplayUnits building) {
         Iterator<GameplayUnits> iterator = buildings.iterator();
         while (iterator.hasNext()) {
             if (iterator.next().equals(building)) {
                 iterator.remove();
-                world.removeGameplayUnits(building);
-                break;
+                return true;
             }
         }
+        return false;
     }
     /*******************************
      * BUILDING TYPE LOGIC SECTION

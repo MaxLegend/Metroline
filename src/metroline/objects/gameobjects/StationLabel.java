@@ -11,7 +11,7 @@ import java.awt.*;
 public class StationLabel extends GameObject {
     private String text;
     private GameObject parentStation;
-
+    private boolean visible = true;
 
 
     public StationLabel() {
@@ -24,7 +24,13 @@ public class StationLabel extends GameObject {
         this.text = text;
         this.parentStation = parentStation;
     }
+    public boolean isVisible() {
+        return visible;
+    }
 
+    public void setVisible(boolean visible) {
+        this.visible = visible;
+    }
     public String getText() {
         return text;
     }
@@ -67,6 +73,9 @@ public class StationLabel extends GameObject {
     @Override
     public void draw(Graphics2D g, int offsetX, int offsetY, float zoom) {
         // Получаем относительное положение текста к станции
+        if (!visible) {
+            return;
+        }
         if (parentStation != null) {
             int relX = getX() - parentStation.getX();
             int relY = getY() - parentStation.getY();

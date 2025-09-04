@@ -195,6 +195,7 @@ infoWnd.revenue:Last revenue:
 infoWnd.gUnits=Revenue Multiplier:
 infoWnd.stationLabel=Label
 infoWnd.upkeep:Maintenance Costs:
+infoWnd.hideButton=Hide station name
 tunnel.upkeep:Maintenance Costs:
 units.house_culture=House of Culture
 units.church=Church

@@ -23,6 +23,8 @@ public class CityManager {
     private static final int DISTRICT_UPDATE_INTERVAL = 300000;
     private static final int EXPANSION_CHECK_INTERVAL = 120000;
 
+    private long lastZoneUpdateTime;
+    private static final int ZONE_UPDATE_INTERVAL = 30000; // Обновлять зоны каждые 30 секунд
     /*******************************
      * CONSTRUCTOR SECTION
      *******************************/
@@ -125,6 +127,11 @@ public class CityManager {
             }
             lastUpdateTime = currentTime;
         }
+        // Автоматическое обновление зон
+        if (currentTime - lastZoneUpdateTime > ZONE_UPDATE_INTERVAL) {
+            world.updatePaymentAndPassengerZones();
+            lastZoneUpdateTime = currentTime;
+        }
     }
 
     /*******************************
@@ -136,14 +143,25 @@ public class CityManager {
                     Math.pow(building.getY() - district.getCenterY(), 2));
             if (distance <= district.getRadius() + 5) {
                 district.getBuildings().add(building);
+
+                // НЕМЕДЛЕННО обновляем зоны при добавлении здания
+                world.updatePaymentAndPassengerZones();
                 break;
             }
         }
     }
 
     public void onBuildingRemoved(GameplayUnits building) {
+        boolean removed = false;
         for (CityDistrict district : districts) {
-            district.removeBuilding(building);
+            if (district.removeBuilding(building)) {
+                removed = true;
+            }
+        }
+
+        // НЕМЕДЛЕННО обновляем зоны при удалении здания
+        if (removed) {
+            world.updatePaymentAndPassengerZones();
         }
     }
 

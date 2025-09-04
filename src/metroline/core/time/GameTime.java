@@ -32,7 +32,7 @@ public class GameTime implements Serializable {
     // Сериализуемые поля (сохраняются в файл)
     // Сериализуемые поля
     private long epochMillis;        // текущее игровое время (мс с эпохи)
-    private double timeScale = 120.0; // ускорение (1.0 = реальное время)
+    private double timeScale = 1000.0; // ускорение (1.0 = реальное время)
     private boolean paused = true;   // флаг паузы
 
     // transient поля

@@ -28,6 +28,84 @@ public enum GameplayUnitsType {
 
         this.localizationKey = localizationKey;
     }
+    public boolean isPassengerBuilding() {
+        return this == HOUSE
+                || this == PORT
+                || this == AIRPORT
+                || this == SMALL_HOUSE
+                || this == PERSONAL_HOUSE
+                || this == BIG_PERSONAL_HOUSE
+                || this == BIG_HOUSE;
+    }
+    public float getPassengerGeneration() {
+        switch (this) {
+            case PORT: return 1600;
+            case AIRPORT: return 2500;
+            case BIG_HOUSE: return 1000;
+            case HOUSE: return 700;
+            case SMALL_HOUSE: return 400;
+            case PERSONAL_HOUSE: return 300;
+            case BIG_PERSONAL_HOUSE: return 600;
+            default: return 0;
+        }
+    }
+    public float getPaymentGeneration() {
+        switch (this) {
+            case FACTORY: return 0.8f;
+            case FACTORY2: return 0.84f;
+            case FACTORY3: return 0.9f;
+            case FACTORY4: return 0.76f;
+            case FACTORY5: return 0.91f;
+            case AIRPORT: return 2.1f;
+            case PORT: return 1.4f;
+            case HOUSE_CULTURE: return 0.7f;
+            case MUSEUM: return 0.89f;
+            case CHURCH: return 2.0f;
+            case CITYHALL: return 2.6f;
+            case SHOP: return 1.3f;
+            default: return 0;
+        }
+    }
+    public int getInfluenceRadius() {
+        switch (this) {
+            case FACTORY:
+                return 4;
+            case FACTORY2:
+                return 7;
+            case FACTORY3:
+                return 6;
+            case FACTORY4:
+                return 3;
+            case FACTORY5:
+                return 4;
+            case AIRPORT:
+                return 5;
+            case PORT:
+                return 4;
+            case HOUSE_CULTURE:
+                return 4;
+            case MUSEUM:
+                return 5;
+            case CHURCH:
+                return 2;
+            case CITYHALL:
+                return 2;
+            case SHOP:
+                return 6;
+            case BIG_HOUSE:
+                return 4;
+            case HOUSE:
+                return 3;
+            case SMALL_HOUSE:
+                return 2;
+            case PERSONAL_HOUSE:
+                return 2;
+            case BIG_PERSONAL_HOUSE:
+                return 3;
+            default:
+                return 0;
+        }
+    }
     public String getLocalizedName() {
         return LngUtil.translatable(localizationKey);
     }

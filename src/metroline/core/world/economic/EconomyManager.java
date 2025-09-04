@@ -84,11 +84,19 @@ public class EconomyManager {
         }
 
         // Добавляем в аккумулятор станции
-        stationRevenueAccumulator.merge(station, revenue, Float::sum);
+        addToRevenueAccumulator(station, revenue);
 
         return revenue;
     }
 
+    private synchronized void addToRevenueAccumulator(Station station, float revenue) {
+        stationRevenueAccumulator.merge(station, revenue, Float::sum);
+    }
+    // Метод для расчета стоимости ремонта станции
+    // Метод для расчета стоимости ремонта станции
+    public float calculateRepairCost(Station station) {
+        return station.getRepairCost();
+    }
     public float calculateAverageStationRevenue(Station station) {
         // Проверка на невалидные станции
         if (isInvalidStation(station)) {

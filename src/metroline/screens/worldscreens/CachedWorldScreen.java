@@ -23,16 +23,19 @@ import java.util.List;
 
 // TODO Добавить еще слоев. Убрать множество окон для одного объекта
 public class CachedWorldScreen extends WorldScreen {
+    protected static final int WORLD_TILE_SIZE = 16;
     protected static final int TILE_SIZE = 32;
     protected static final int CACHE_SCALE = 2;
 
     protected VolatileImage staticWorldCache;
-    protected VolatileImage paymentZonesCache;
-    protected VolatileImage passengerZonesCache;
+    public VolatileImage paymentZonesCache;
+    public VolatileImage passengerZonesCache;
+    protected VolatileImage grassZonesCache;
 
     protected boolean staticCacheValid = false;
     protected boolean paymentZonesCacheValid = false;
     protected boolean passengerZonesCacheValid = false;
+    protected boolean grassZonesCacheValid = false; // Флаг валидности кэша травы
     protected boolean worldChanged = true;
 
 
@@ -46,6 +49,7 @@ public class CachedWorldScreen extends WorldScreen {
     protected BufferedImage compressedStaticCache;
     protected BufferedImage compressedPaymentZonesCache;
     protected BufferedImage compressedPassengerZonesCache;
+    protected BufferedImage compressedGrassZonesCache;
 
     protected boolean compressedCacheValid = false;
 
@@ -114,6 +118,10 @@ public class CachedWorldScreen extends WorldScreen {
             compressedPassengerZonesCache.flush();
             compressedPassengerZonesCache = null;
         }
+        if (compressedGrassZonesCache != null) {
+            compressedGrassZonesCache.flush();
+            compressedGrassZonesCache = null;
+        }
         compressedCacheValid = false;
     }
 
@@ -162,6 +170,7 @@ public class CachedWorldScreen extends WorldScreen {
         staticCacheValid = false;
         paymentZonesCacheValid = false;
         passengerZonesCacheValid = false;
+        grassZonesCacheValid = false; // Инвалидируем кэш травы
         compressedCacheValid = false;
         worldChanged = true;
 
@@ -172,6 +181,7 @@ public class CachedWorldScreen extends WorldScreen {
     public void invalidateZonesCache() {
         paymentZonesCacheValid = false;
         passengerZonesCacheValid = false;
+        grassZonesCacheValid = false;
         // Сбрасываем кэш максимумов при изменении мира
         cachedMaxAbilityPay = -1;
         cachedMaxPassengerCount = -1;
@@ -216,7 +226,87 @@ public class CachedWorldScreen extends WorldScreen {
         staticCacheValid = true;
         worldChanged = false;
     }
-    protected void updatePaymentZonesCache(int width, int height) {
+    protected void updateGrassZonesCache(int width, int height) {
+        if (width <= 0 || height <= 0 || !GameWorld.showGrassZones) {
+            grassZonesCacheValid = false;
+            return;
+        }
+
+        boolean needsRecreation = needToRecreateCache(grassZonesCache, width, height);
+        if (needsRecreation) {
+            if (grassZonesCache != null) grassZonesCache.flush();
+            grassZonesCache = createCompatibleVolatileImage(width * TILE_SIZE, height * TILE_SIZE);
+        }
+
+        int validateResult = grassZonesCache.validate(getGraphicsConfiguration());
+        if (validateResult == VolatileImage.IMAGE_INCOMPATIBLE) {
+            grassZonesCache.flush();
+            grassZonesCache = createCompatibleVolatileImage(width * TILE_SIZE, height * TILE_SIZE);
+        }
+
+        if (validateResult != VolatileImage.IMAGE_OK) {
+            Graphics2D g = grassZonesCache.createGraphics();
+            try {
+                clearImage(g, grassZonesCache);
+                g.scale(CACHE_SCALE, CACHE_SCALE);
+                drawGrassZonesToCache(g);
+            } finally {
+                g.dispose();
+            }
+        }
+        grassZonesCacheValid = true;
+    }
+    // Метод для отрисовки зон травы в кэш
+    protected void drawGrassZonesToCache(Graphics2D g) {
+        int tileSize = TILE_SIZE/2;
+
+        for (int y = 0; y < getWorld().getHeight(); y++) {
+            for (int x = 0; x < getWorld().getWidth(); x++) {
+                WorldTile tile = getWorld().getWorldTile(x, y);
+                if (tile != null) {
+                    int drawX = x * tileSize;
+                    int drawY = y * tileSize;
+
+                    // Получаем значение травы для тайла
+                    float grassValue = tile.getGrassValue();
+                    Color grassColor = getGrassZoneColor(grassValue);
+
+                    // Полупрозрачная заливка
+                    g.setColor(new Color(grassColor.getRed(), grassColor.getGreen(),
+                            grassColor.getBlue(), 250)); // 60% прозрачность
+                    g.fillRect(drawX, drawY, tileSize, tileSize);
+
+                }
+            }
+        }
+    }
+
+    private Color getGrassZoneColor(float grassValue) {
+        // Высококонтрастная палитра от темно-зеленого к ярко-зеленому
+        if (grassValue < 0.4f) {
+            // Темно-зеленые тона
+            float t = grassValue / 0.3f;
+            int r = (int) (20 + t * (60 - 20));
+            int g = (int) (60 + t * (140 - 60));
+            int b = (int) (20 + t * (50 - 20));
+            return new Color(r, g, b);
+        } else if (grassValue < 0.5f) {
+            // Средне-зеленые тона
+            float t = (grassValue - 0.3f) / 0.4f;
+            int r = (int) (60 + t * (120 - 60));
+            int g = (int) (140 + t * (200 - 140));
+            int b = (int) (50 + t * (100 - 50));
+            return new Color(r, g, b);
+        } else {
+            // Ярко-зеленые тона
+            float t = (grassValue - 0.7f) / 0.3f;
+            int r = (int) (120 + t * (180 - 120));
+            int g = (int) (200 + t * (255 - 200));
+            int b = (int) (100 + t * (150 - 100));
+            return new Color(r, g, b);
+        }
+    }
+    public void updatePaymentZonesCache(int width, int height) {
         if (width <= 0 || height <= 0 || !GameWorld.showPaymentZones) {
             paymentZonesCacheValid = false;
             return;
@@ -234,7 +324,7 @@ public class CachedWorldScreen extends WorldScreen {
             paymentZonesCache = createCompatibleVolatileImage(width * TILE_SIZE, height * TILE_SIZE);
         }
 
-        if (validateResult != VolatileImage.IMAGE_OK) {
+    //    if (validateResult != VolatileImage.IMAGE_OK) {
             Graphics2D g = paymentZonesCache.createGraphics();
             try {
                 clearImage(g, paymentZonesCache);
@@ -242,12 +332,12 @@ public class CachedWorldScreen extends WorldScreen {
                 drawPaymentZonesToCache(g);
             } finally {
                 g.dispose();
-            }
+  //          }
         }
         paymentZonesCacheValid = true;
     }
 
-    protected void updatePassengerZonesCache(int width, int height) {
+    public void updatePassengerZonesCache(int width, int height) {
         if (width <= 0 || height <= 0 || !GameWorld.showPassengerZones) {
             passengerZonesCacheValid = false;
             return;
@@ -265,7 +355,7 @@ public class CachedWorldScreen extends WorldScreen {
             passengerZonesCache = createCompatibleVolatileImage(width * TILE_SIZE, height * TILE_SIZE);
         }
 
-        if (validateResult != VolatileImage.IMAGE_OK) {
+   //     if (validateResult != VolatileImage.IMAGE_OK) {
             Graphics2D g = passengerZonesCache.createGraphics();
             try {
                 clearImage(g, passengerZonesCache);
@@ -274,7 +364,7 @@ public class CachedWorldScreen extends WorldScreen {
             } finally {
                 g.dispose();
             }
-        }
+   //     }
         passengerZonesCacheValid = true;
     }
     private boolean needToRecreateCache(VolatileImage cache, int width, int height) {
@@ -314,8 +404,17 @@ public class CachedWorldScreen extends WorldScreen {
         if (!staticCacheValid || staticWorldCache == null) {
             updateStaticWorldCache(width, height);
         }
-
-        drawVolatileImage(g, staticWorldCache, 0, 0, () -> updateStaticWorldCache(width, height));
+        if (!GameWorld.showGrassZones) {
+            drawVolatileImage(g, staticWorldCache, 0, 0, () -> updateStaticWorldCache(width, height));
+            // Обновляем и рисуем кэш зон травы
+        } else {
+            if (!grassZonesCacheValid || !validateVolatileImage(grassZonesCache,
+                    () -> updateGrassZonesCache(width, height))) {
+                updateGrassZonesCache(width, height);
+            }
+            drawVolatileImage(g, grassZonesCache, 0, 0,
+                    () -> updateGrassZonesCache(width, height));
+        }
         // Обновляем и рисуем кэш зон платежеспособности
         if (GameWorld.showPaymentZones) {
             if (!paymentZonesCacheValid || !validateVolatileImage(paymentZonesCache,
@@ -392,7 +491,7 @@ public class CachedWorldScreen extends WorldScreen {
     // Методы для отрисовки в кэш
     protected void drawPaymentZonesToCache(Graphics2D g) {
         updateZoneCache();
-        int tileSize = TILE_SIZE;
+        int tileSize = TILE_SIZE/2;
 
         for (int y = 0; y < getWorld().getHeight(); y++) {
             for (int x = 0; x < getWorld().getWidth(); x++) {
@@ -408,8 +507,6 @@ public class CachedWorldScreen extends WorldScreen {
                             zoneColor.getBlue(), 100));
                     g.fillRect(drawX, drawY, tileSize, tileSize);
 
-                    g.setColor(zoneColor.darker());
-                    g.drawRect(drawX, drawY, tileSize, tileSize);
                 }
             }
         }
@@ -417,7 +514,7 @@ public class CachedWorldScreen extends WorldScreen {
 
     protected void drawPassengerZonesToCache(Graphics2D g) {
         updateZoneCache();
-        int tileSize = TILE_SIZE;
+        int tileSize = TILE_SIZE/2;
 
         for (int y = 0; y < getWorld().getHeight(); y++) {
             for (int x = 0; x < getWorld().getWidth(); x++) {
@@ -433,8 +530,6 @@ public class CachedWorldScreen extends WorldScreen {
                             zoneColor.getBlue(), 100));
                     g.fillRect(drawX, drawY, tileSize, tileSize);
 
-                    g.setColor(zoneColor.darker());
-                    g.drawRect(drawX, drawY, tileSize, tileSize);
                 }
             }
         }
@@ -442,12 +537,10 @@ public class CachedWorldScreen extends WorldScreen {
     protected void drawDynamicWorld(Graphics2D g) {
         AffineTransform originalTransform = g.getTransform();
 
-        drawAnimatedWater(g);
+
         drawTunnels(g);
         drawStations(g);
-        if(GameWorld.showGameplayUnits) {
-            drawGameplayUnits(g);
-        }
+
         drawLabels(g);
 
         g.setTransform(originalTransform);
@@ -571,65 +664,6 @@ public class CachedWorldScreen extends WorldScreen {
         g.setTransform(originalTransform);
     }
 
-    protected void drawPaymentZones(Graphics2D g) {
-        if (!GameWorld.showPaymentZones) return;
-
-        int tileSize = TILE_SIZE;
-        float maxAbilityPay = getMaxAbilityPay(); // Нужно будет реализовать этот метод
-
-        for (int y = 0; y < getWorld().getHeight(); y++) {
-            for (int x = 0; x < getWorld().getWidth(); x++) {
-                WorldTile tile = getWorld().getWorldTile(x, y);
-                if (tile != null) {
-                    int drawX = x * tileSize;
-                    int drawY = y * tileSize;
-
-                    // Градиент от синего (низкая) к красному (высокая)
-                    float ratio = tile.getAbilityPay() / maxAbilityPay;
-                    Color zoneColor = getPaymentZoneColor(ratio);
-
-                    // Полупрозрачная заливка
-                    g.setColor(new Color(zoneColor.getRed(), zoneColor.getGreen(),
-                            zoneColor.getBlue(), 100)); // 40% прозрачность
-                    g.fillRect(drawX, drawY, tileSize, tileSize);
-
-                    // Контур
-                    g.setColor(zoneColor.darker());
-                    g.drawRect(drawX, drawY, tileSize, tileSize);
-                }
-            }
-        }
-    }
-
-    protected void drawPassengerZones(Graphics2D g) {
-        if (!GameWorld.showPassengerZones) return;
-
-        int tileSize = TILE_SIZE;
-        int maxPassengers = getMaxPassengerCount(); // Нужно будет реализовать этот метод
-
-        for (int y = 0; y < getWorld().getHeight(); y++) {
-            for (int x = 0; x < getWorld().getWidth(); x++) {
-                WorldTile tile = getWorld().getWorldTile(x, y);
-                if (tile != null) {
-                    int drawX = x * tileSize;
-                    int drawY = y * tileSize;
-
-                    // Градиент от зеленого (мало) к желтому (много)
-                    float ratio = (float) tile.getPassengerCount() / maxPassengers;
-                    Color zoneColor = getPassengerZoneColor(ratio);
-
-                    // Полупрозрачная заливка
-                    g.setColor(new Color(zoneColor.getRed(), zoneColor.getGreen(),
-                            zoneColor.getBlue(), 100)); // 40% прозрачность
-                    g.fillRect(drawX, drawY, tileSize, tileSize);
-
-                    // Контур
-                    g.setColor(zoneColor.darker());
-                    g.drawRect(drawX, drawY, tileSize, tileSize);
-                }
-            }
-        }
-    }
 
     private Color getPaymentZoneColor(float ratio) {
         // Градиент: синий (0.0) -> фиолетовый (0.5) -> красный (1.0)
@@ -663,32 +697,6 @@ public class CachedWorldScreen extends WorldScreen {
             int b = 0;
             return new Color(r, g, b);
         }
-    }
-
-    private float getMaxAbilityPay() {
-        float max = 0;
-        for (int y = 0; y < getWorld().getHeight(); y++) {
-            for (int x = 0; x < getWorld().getWidth(); x++) {
-                WorldTile tile = getWorld().getWorldTile(x, y);
-                if (tile != null && tile.getAbilityPay() > max) {
-                    max = tile.getAbilityPay();
-                }
-            }
-        }
-        return max > 0 ? max : 1; // Защита от деления на ноль
-    }
-
-    private int getMaxPassengerCount() {
-        int max = 0;
-        for (int y = 0; y < getWorld().getHeight(); y++) {
-            for (int x = 0; x < getWorld().getWidth(); x++) {
-                WorldTile tile = getWorld().getWorldTile(x, y);
-                if (tile != null && tile.getPassengerCount() > max) {
-                    max = tile.getPassengerCount();
-                }
-            }
-        }
-        return max > 0 ? max : 1; // Защита от деления на ноль
     }
 
 

@@ -40,12 +40,16 @@ public class GameWorld extends World {
     public static boolean showGameplayUnits = false;
     public static boolean showPaymentZones = false;
     public static boolean showPassengerZones = false;
+    public static boolean showGrassZones = false;
+
     private List<GameplayUnits> gameplayUnits = new CopyOnWriteArrayList<>();
     private List<Train> trains = new ArrayList<>();
     public long lastTrainsUpdateTime;
 
     private CityManager cityManager;
     private EconomyManager economyManager;
+
+    private long lastZoneUpdate;
 
     public transient LinesLegendWindow legendWindow;
     public GameWorld() {
@@ -149,13 +153,7 @@ public class GameWorld extends World {
             }
 
         }
-        // Генерация зон с использованием того же смешанного шума
-        if(hasAbilityPay) {
-            generatePaymentZones(perlin, voronoi);
-        }
-        if(hasPassengerCount) {
-            generatePassengerZones(perlin, voronoi);
-        }
+
 
 
 
@@ -169,9 +167,14 @@ public class GameWorld extends World {
                 addRivers(rand.nextInt(1,2));
             }
         }
-
+        generateGrassLandscape();
         applyGradient();
 
+        generateRandomGameplayUnits((int)GameConstants.GAMEPLAY_UNITS_COUNT);
+
+        if(hasAbilityPay || hasPassengerCount) {
+            updatePaymentAndPassengerZones();
+        }
     }
 
     public void update() {
@@ -189,6 +192,11 @@ public class GameWorld extends World {
         }
 
         updateCities();
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastZoneUpdate > 60000) { // Каждую минуту
+            updatePaymentAndPassengerZones();
+            lastZoneUpdate = currentTime;
+        }
     }
 
     public EconomyManager getEconomyManager() {
@@ -260,44 +268,6 @@ public class GameWorld extends World {
             return 0.4f + (noise - 0.3f) * 0.2f; // Средние породы
         } else {
             return 0.9f + (noise - 0.7f) * 0.3f; // Твердые породы
-        }
-    }
-    private void generatePaymentZones(PerlinNoise perlin, VoronoiNoise voronoi) {
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                float nx = (float)x / width * 12f; // Более высокая частота
-                float ny = (float)y / height * 12f;
-
-                // Больше вороного для четких зон
-                float perlinValue = perlin.noise(nx, ny, 0);
-                float voronoiValue = voronoi.evaluate(nx, ny);
-
-                //   value = 1f - value; // Инвертируем
-
-                if (voronoiValue > 0.4f) { // Более высокий порог
-                    getWorldTile(x, y).setAbilityPay((float) (voronoiValue * 1.5)); // Усиливаем значения
-                }
-            }
-        }
-    }
-
-    private void generatePassengerZones(PerlinNoise perlin, VoronoiNoise voronoi) {
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                float nx = (float)x / width * 12f; // Более высокая частота
-                float ny = (float)y / height * 12f;
-
-                // Больше вороного для четких зон
-                float perlinValue = perlin.noise(nx, ny, 0);
-                float voronoiValue = voronoi.evaluate(nx, ny);
-                float value = mixNoises(perlinValue, voronoiValue, 0.3f); // 70% вороного
-
-                value = 1f - value; // Инвертируем
-
-                if (value > 0.6f) { // Только самые яркие зоны
-                    getWorldTile(x, y).setPassengerCount((int)(value * 1200)); // Усиливаем значения
-                }
-            }
         }
     }
 
@@ -595,7 +565,11 @@ public class GameWorld extends World {
     public float getMoney() {
         return money;
     }
-
+    public void deductMoney(float amount) {
+        if (canAfford(amount)) {
+            addMoney(-amount);
+        }
+    }
     public boolean canAfford(float amount) {
         return money >= amount;
     }
@@ -652,6 +626,102 @@ public class GameWorld extends World {
         }
         return false;
     }
+    public void generateGrassLandscape() {
+        System.out.println("Starting high-contrast grass generation...");
+
+        PerlinNoise perlin = new PerlinNoise(System.currentTimeMillis());
+        VoronoiNoise voronoi = new VoronoiNoise(System.currentTimeMillis() + 1);
+
+        float scale = 0.03f; // Уменьшим масштаб для более крупных features
+
+        float minValue = Float.MAX_VALUE;
+        float maxValue = Float.MIN_VALUE;
+
+        for (int y = 0; y < getHeight(); y++) {
+            for (int x = 0; x < getWidth(); x++) {
+                WorldTile tile = getWorldTile(x, y);
+                if (tile != null && !tile.isWater()) {
+                    // Многоканальный шум для большего разнообразия
+                    float perlin1 = perlin.noise(x * scale, y * scale, 0);
+                    float perlin2 = perlin.noise(x * scale * 2 + 100, y * scale * 2 + 100, 0);
+                    float perlin3 = perlin.noise(x * scale * 4 + 200, y * scale * 4 + 200, 0);
+
+                    float voronoi1 = voronoi.evaluate(x * scale * 0.8f, y * scale * 0.8f);
+                    float voronoi2 = voronoi.evaluate(x * scale * 1.5f + 50, y * scale * 1.5f + 50);
+
+                    // Комбинируем с усилением контраста
+                    float combined = (perlin1 * 0.4f + perlin2 * 0.3f + perlin3 * 0.2f) * 0.9f +
+                            (voronoi1 * 0.6f + voronoi2 * 0.4f) * 0.1f;
+
+                    // Резкое увеличение контраста
+                    combined = enhanceContrast(combined, 2.5f); // Сильный контраст
+
+                    // Расширяем диапазон
+                    combined = combined * 1.8f - 0.4f; // Сдвигаем и растягиваем
+                    combined = Math.max(0, Math.min(1, combined));
+
+                    // Нелинейное преобразование для большего визуального разнообразия
+                    combined = (float) Math.pow(combined, 0.4); // Обратная гамма-коррекция
+
+                    tile.setGrassValue(combined);
+
+                    minValue = Math.min(minValue, combined);
+                    maxValue = Math.max(maxValue, combined);
+                } else if (tile != null) {
+                    tile.setGrassValue(0); // Вода - нет травы
+                }
+            }
+        }
+
+
+
+        // Более агрессивное сглаживание
+        smoothGrassLandscapeHighContrast();
+    }
+
+    private float enhanceContrast(float value, float contrast) {
+        // Функция увеличения контраста
+        return (float) Math.tanh((value - 0.5f) * contrast * 2) * 0.5f + 0.5f;
+    }
+
+    private void smoothGrassLandscapeHighContrast() {
+        // Gaussian blur 5x5 для плавности, но с сохранением контраста
+        for (int y = 2; y < getHeight() - 2; y++) {
+            for (int x = 2; x < getWidth() - 2; x++) {
+                WorldTile tile = getWorldTile(x, y);
+                if (tile != null && !tile.isWater()) {
+                    float sum = 0;
+                    float totalWeight = 0;
+
+                    // Gaussian kernel 5x5
+                    float[][] weights = {
+                            {0.003f, 0.013f, 0.022f, 0.013f, 0.003f},
+                            {0.013f, 0.059f, 0.097f, 0.059f, 0.013f},
+                            {0.022f, 0.097f, 0.159f, 0.097f, 0.022f},
+                            {0.013f, 0.059f, 0.097f, 0.059f, 0.013f},
+                            {0.003f, 0.013f, 0.022f, 0.013f, 0.003f}
+                    };
+
+                    for (int dy = -2; dy <= 2; dy++) {
+                        for (int dx = -2; dx <= 2; dx++) {
+                            WorldTile neighbor = getWorldTile(x + dx, y + dy);
+                            if (neighbor != null && !neighbor.isWater()) {
+                                float weight = weights[dy + 2][dx + 2];
+                                sum += neighbor.getGrassValue() * weight;
+                                totalWeight += weight;
+                            }
+                        }
+                    }
+
+                    if (totalWeight > 0) {
+                        // Сохраняем больше оригинальной текстуры для контраста
+                        float smoothed = (tile.getGrassValue() * 0.7f) + (sum / totalWeight * 0.3f);
+                        tile.setGrassValue(smoothed);
+                    }
+                }
+            }
+        }
+    }
     public void generateRandomGameplayUnits(int count) {
         GameplayUnitsType[] types = GameplayUnitsType.values();
         int generatedCount = 0;
@@ -696,8 +766,9 @@ public class GameWorld extends World {
         gameplayUnits.add(obj);
         getGameplayTile(obj.getX(), obj.getY()).setContent(obj);
 
+        // Обновляем зоны при добавлении здания
+        updatePaymentAndPassengerZones();
 
-        // Уведомляем CityManager о новом здании (если нужно)
         if (cityManager != null) {
             cityManager.onBuildingAdded(obj);
         }
@@ -705,16 +776,15 @@ public class GameWorld extends World {
         if (GameWorldScreen.getInstance() != null) {
             GameWorldScreen.getInstance().invalidateCache();
         }
-//        gameplayUnits.add(obj);
-//        gameplayGrid[obj.getX()][obj.getY()].setContent(obj);
-//        GameWorldScreen.getInstance().invalidateCache(false);
     }
 
     public void removeGameplayUnits(GameplayUnits obj) {
         gameplayUnits.remove(obj);
         getGameplayTile(obj.getX(), obj.getY()).setContent(null);
 
-        // Уведомляем CityManager об удалении здания
+        // Обновляем зоны при удалении здания
+        updatePaymentAndPassengerZones();
+
         if (cityManager != null) {
             cityManager.onBuildingRemoved(obj);
         }
@@ -722,10 +792,6 @@ public class GameWorld extends World {
         if (GameWorldScreen.getInstance() != null) {
             GameWorldScreen.getInstance().invalidateCache();
         }
-
-//        gameplayUnits.remove(obj);
-//        gameplayGrid[obj.getX()][obj.getY()].setContent(null);
-//        GameWorldScreen.getInstance().invalidateCache(false);
     }
     public CityManager getCityManager() {
         return cityManager;
@@ -809,7 +875,118 @@ public class GameWorld extends World {
             station.updateType();
         }
     }
+    public void updatePaymentAndPassengerZones() {
+        // Сначала сбрасываем значения
+        resetZones();
 
+        // Затем применяем влияние всех существующих зданий
+        applyBuildingInfluence();
+
+        // Обновляем кэш отображения
+        invalidateZonesCache();
+    }
+    public void invalidateZonesCache() {
+        if (GameWorldScreen.getInstance() != null) {
+            GameWorldScreen screen = GameWorldScreen.getInstance();
+            screen.invalidateZonesCache();
+
+            // Принудительно обновляем кэш изображений
+            int width = getWidth();
+            int height = getHeight();
+
+            if (screen.paymentZonesCache != null) {
+                screen.updatePaymentZonesCache(width, height);
+            }
+            if (screen.passengerZonesCache != null) {
+                screen.updatePassengerZonesCache(width, height);
+            }
+
+        }
+    }
+    private void resetZones() {
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                WorldTile tile = getWorldTile(x, y);
+                if (tile != null) {
+                    tile.setAbilityPay(0);
+                    tile.setPassengerCount(0);
+                }
+            }
+        }
+    }
+
+    private void applyBuildingInfluence() {
+        // Проходим по всем GameplayUnits
+        for (GameplayUnits unit : gameplayUnits) {
+            if (unit.getType().isPassengerBuilding()) {
+                // Жилые здания создают пассажиропоток
+                applyPassengerInfluence(unit);
+            } else {
+                // Нежилые здания создают платежеспособность
+                applyPaymentInfluence(unit);
+            }
+        }
+    }
+
+    private void applyPassengerInfluence(GameplayUnits unit) {
+        int centerX = unit.getX();
+        int centerY = unit.getY();
+        float maxInfluence = unit.getType().getPassengerGeneration(); // Добавим этот метод в GameplayUnitsType
+
+        // Радиус влияния (можно настроить)
+        int radius = unit.getType().getInfluenceRadius();
+
+        for (int dy = -radius; dy <= radius; dy++) {
+            for (int dx = -radius; dx <= radius; dx++) {
+                int x = centerX + dx;
+                int y = centerY + dy;
+
+                if (x >= 0 && x < width && y >= 0 && y < height) {
+                    float distance = (float) Math.sqrt(dx * dx + dy * dy);
+                    float influence = calculateInfluence(maxInfluence, distance, radius);
+
+                    WorldTile tile = getWorldTile(x, y);
+                    if (tile != null) {
+                        tile.setPassengerCount(tile.getPassengerCount() + (int) influence);
+                    }
+                }
+            }
+        }
+    }
+
+    private void applyPaymentInfluence(GameplayUnits unit) {
+        int centerX = unit.getX();
+        int centerY = unit.getY();
+        float maxInfluence = unit.getType().getPaymentGeneration(); // Добавим этот метод в GameplayUnitsType
+
+        // Радиус влияния
+        int radius = unit.getType().getInfluenceRadius();
+
+        for (int dy = -radius; dy <= radius; dy++) {
+            for (int dx = -radius; dx <= radius; dx++) {
+                int x = centerX + dx;
+                int y = centerY + dy;
+
+                if (x >= 0 && x < width && y >= 0 && y < height) {
+                    float distance = (float) Math.sqrt(dx * dx + dy * dy);
+                    float influence = calculateInfluence(maxInfluence, distance, radius);
+
+                    WorldTile tile = getWorldTile(x, y);
+                    if (tile != null) {
+                        tile.setAbilityPay(tile.getAbilityPay() + influence);
+                    }
+                }
+            }
+        }
+    }
+
+    private float calculateInfluence(float maxInfluence, float distance, int radius) {
+        // Линейное затухание влияния с расстоянием
+        if (distance > radius) return 0;
+
+        float attenuation = 1 - (distance / radius);
+        return maxInfluence * attenuation;
+    }
     public void saveWorld() {
         try {
             MetroSerializer serializer = new MetroSerializer();
@@ -882,7 +1059,7 @@ public class GameWorld extends World {
             if (this.screen != null) {
                 this.screen.reinitializeControllers();
             }
-
+            updatePaymentAndPassengerZones();
             MetroLogger.logInfo("World successfully loaded");
             UserInterfaceUtil.showTimedMessage(LngUtil.translatable("world.loaded"), false, 2000);
             return true;
@@ -896,10 +1073,6 @@ public class GameWorld extends World {
         }
         return false;
     }
-
-//    public float getStationDisplayRevenue(Station station) {
-//        return economyManager.calculateStationDisplayRevenue(station);
-//    }
 
     // Метод для получения содержания станции для отображения в UI
     public float getStationUpkeep(Station station) {

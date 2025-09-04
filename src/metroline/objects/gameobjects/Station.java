@@ -31,6 +31,8 @@ public class Station extends GameObject {
 
     private Train currentTrain;
 
+    private static final float WEAR_RATE_MULTIPLIER = 5.0f;
+
     public Station() {
         super(0, 0);
     }
@@ -380,46 +382,80 @@ public class Station extends GameObject {
         return Direction.NORTH; // default
     }
 
-//    public void updateWear() {
-//        long currentTime = getWorld().getGameTime().getCurrentTimeMillis();
-//
-//        long age = currentTime - getConstructionDate();
-//
-//        if (type == StationType.CLOSED) {
-//            // Закрытые станции изнашиваются быстрее
-//            wearLevel = Math.min(1f, (float)age / GameConstants.ABANDONED_THRESHOLD);
-//
-//            if (age >= GameConstants.ABANDONED_THRESHOLD) {
-//                setType(StationType.ABANDONED);
-//            }
-//        } else if (type != StationType.ABANDONED &&
-//                type != StationType.DESTROYED &&
-//                type != StationType.BUILDING &&
-//                type != StationType.PLANNED) {
-//            // Обычные станции
-//            wearLevel = Math.min(1f, (float)age / GameConstants.MAX_LIFETIME);
-//
-//            if (age >= GameConstants.MAX_LIFETIME) {
-//                // Станция становится разрушенной
-//                setType(StationType.RUINED);
-//            }
-//        }
-//    }
+    public void updateWear() {
+        if (type == StationType.BUILDING || type == StationType.PLANNED) {
+            return; // Строящиеся и планируемые станции не изнашиваются
+        }
+
+        long currentTime = getWorld().getGameTime().getCurrentTimeMillis();
+        long age = currentTime - getConstructionDate();
+
+        // Ускоренный износ для тестирования
+        float effectiveAge = age * WEAR_RATE_MULTIPLIER;
+
+        if (type == StationType.CLOSED) {
+            // Закрытые станции изнашиваются быстрее
+            wearLevel = Math.min(1f, effectiveAge / GameConstants.ABANDONED_THRESHOLD);
+
+            if (effectiveAge >= GameConstants.ABANDONED_THRESHOLD) {
+                setType(StationType.ABANDONED);
+            }
+        } else if (type != StationType.ABANDONED &&
+                type != StationType.DESTROYED &&
+                type != StationType.RUINED) {
+            // Обычные станции
+            wearLevel = Math.min(1f, effectiveAge / GameConstants.MAX_LIFETIME);
+
+            if (effectiveAge >= GameConstants.MAX_LIFETIME) {
+                // Станция становится разрушенной
+                setType(StationType.RUINED);
+            }
+        }
+    }
 
     public boolean canRepair() {
+        // Станцию можно ремонтировать если:
+        // 1. Она не новая (прошло достаточно времени с постройки/последнего ремонта)
+        // 2. Уровень износа выше минимального
+        // 3. Станция не в полностью разрушенном состоянии
         long age = getWorld().getGameTime().getCurrentTimeMillis() - getConstructionDate();
-        return age >= GameConstants.REPAIR_THRESHOLD && wearLevel < 1f &&
+        long minAgeForRepair = (long)(GameConstants.REPAIR_THRESHOLD / WEAR_RATE_MULTIPLIER);
+
+        return age >= minAgeForRepair &&
+                wearLevel > 0.1f && // Минимальный износ для ремонта
                 type != StationType.ABANDONED &&
                 type != StationType.RUINED &&
-                type != StationType.DESTROYED;
+                type != StationType.DESTROYED &&
+                type != StationType.BUILDING &&
+                type != StationType.PLANNED;
     }
 
     public void repair() {
         if (canRepair()) {
-            wearLevel = 0.2f; // После ремонта износ снижается, но не до нуля
+            wearLevel = Math.max(0f, wearLevel - 0.5f); // Уменьшаем износ на 50%
             setConstructionDate(getWorld().getGameTime().getCurrentTimeMillis());
             wasRepaired = true;
+
+            // Если станция была закрыта, открываем ее после ремонта
+            if (type == StationType.CLOSED) {
+                updateType(); // Автоматически определит правильный тип
+            }
         }
+    }
+
+    public float getRepairCost() {
+        // Стоимость ремонта зависит от уровня износа и типа станции
+        float baseCost = 1000f; // Базовая стоимость
+        float wearMultiplier = wearLevel * 2f; // Чем больше износ, тем дороже ремонт
+        float typeMultiplier = 1f;
+
+        if (type == StationType.TRANSFER) {
+            typeMultiplier = 1.5f;
+        } else if (type == StationType.TERMINAL) {
+            typeMultiplier = 1.2f;
+        }
+
+        return baseCost * wearMultiplier * typeMultiplier;
     }
 
     public float getWearLevel() {

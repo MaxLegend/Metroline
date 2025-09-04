@@ -4,6 +4,7 @@ import metroline.MainFrame;
 
 import metroline.core.time.ConstructionTimeProcessor;
 import metroline.core.time.GameTime;
+import metroline.core.world.World;
 import metroline.core.world.economic.EconomyManager;
 import metroline.objects.enums.TrainType;
 import metroline.objects.gameobjects.*;
@@ -23,6 +24,7 @@ import metroline.core.world.GameWorld;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -45,6 +47,8 @@ public class InfoWindow extends JWindow {
     private JButton saveNameButton;
     private JButton repairButton;
     private JLabel wearInfoLabel;
+
+    private JButton toggleLabelButton;
 
     private static final Map<Object, InfoWindow> openWindows = new HashMap<>();
     public InfoWindow(Window owner) {
@@ -100,6 +104,7 @@ public class InfoWindow extends JWindow {
         closeButton.setFocusPainted(false);
         closeButton.setMargin(new Insets(0, 0, 0, 0));
         closeButton.addActionListener(e -> hideWindow());
+
         // Кнопка ремонта
         repairButton = new JButton("\uD83D\uDD27");
         repairButton.setFont(StyleUtil.getMetrolineFont(14));
@@ -108,7 +113,34 @@ public class InfoWindow extends JWindow {
         repairButton.setBorderPainted(false);
         repairButton.setFocusPainted(false);
         repairButton.setMargin(new Insets(0, 0, 0, 0));
-   //     repairButton.addActionListener(e -> repairStation());
+        repairButton.addActionListener(e -> repairStation());
+
+        toggleLabelButton = new JButton("👁");
+        toggleLabelButton.setFont(StyleUtil.getMetrolineFont(14));
+        toggleLabelButton.setForeground(StyleUtil.FOREGROUND_COLOR);
+        toggleLabelButton.setContentAreaFilled(false);
+        toggleLabelButton.setBorderPainted(false);
+        toggleLabelButton.setFocusPainted(false);
+        toggleLabelButton.setMargin(new Insets(0, 0, 0, 0));
+        toggleLabelButton.addActionListener(e -> toggleLabelVisibility());
+
+
+        // НОВЫЙ КОД: Создаем правую панель для дополнительных элементов
+        JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
+        rightPanel.setOpaque(false);
+        rightPanel.add(toggleLabelButton);
+        rightPanel.add(repairButton);
+        rightPanel.add(closeButton);
+
+        toggleLabelButton.setVisible(false);
+        // Собираем заголовок с новой структурой
+        JPanel titlePanel = new JPanel(new BorderLayout(10, 0));
+        titlePanel.setOpaque(false);
+        titlePanel.add(titleLabel, BorderLayout.CENTER); // Текст слева
+        titlePanel.add(rightPanel, BorderLayout.EAST);   // Кнопки справа
+
+        headerPanel.add(titlePanel, BorderLayout.NORTH);
+        headerPanel.setBorder(new EmptyBorder(0, 0, 5, 0));
 
         // Основная информация
         infoLabel = new JLabel();
@@ -124,16 +156,7 @@ public class InfoWindow extends JWindow {
         progressBar.setVisible(false);
         progressBar.setBorder(BorderFactory.createEmptyBorder());
 
-        // Собираем заголовок
-        JPanel titlePanel = new JPanel(new BorderLayout());
-        titlePanel.setOpaque(false);
-        titlePanel.add(titleLabel, BorderLayout.CENTER);
-        titlePanel.add(closeButton, BorderLayout.EAST);
-        titlePanel.add(repairButton, BorderLayout.WEST);
-
-        headerPanel.add(titlePanel, BorderLayout.NORTH);
-        headerPanel.setBorder(new EmptyBorder(0, 0, 5, 0));
-
+        // Основная компоновка контента
         contentPanel.add(headerPanel, BorderLayout.NORTH);
         contentPanel.add(infoLabel, BorderLayout.CENTER);
         contentPanel.add(progressBar, BorderLayout.SOUTH);
@@ -143,7 +166,7 @@ public class InfoWindow extends JWindow {
         // Таймер для обновления информации
         updateTimer = new Timer(200, e -> updateInfo());
         updateTimer.start();
-
+     //   initLabelToggleButton();
         initNameEditComponents();
         //     initWearComponents();
         // Установка начального размера
@@ -160,6 +183,90 @@ public class InfoWindow extends JWindow {
                                 }
                             });
     }
+    private void repairStation() {
+        if (currentObject instanceof Station) {
+            Station station = (Station) currentObject;
+
+            // Проверяем, можно ли ремонтировать станцию
+            if (!station.canRepair()) {
+                showRepairMessage("infoWnd.cannot_repair");
+                return;
+            }
+
+            // Проверяем достаточно ли денег
+            if (getOwner() instanceof MainFrame) {
+                MainFrame frame = (MainFrame) getOwner();
+                if (frame.getCurrentScreen() instanceof GameWorldScreen) {
+                    GameWorldScreen screen = (GameWorldScreen) frame.getCurrentScreen();
+                    GameWorld world = (GameWorld) screen.getWorld();
+
+                    float repairCost = station.getRepairCost();
+                    if (world.canAfford(repairCost)) {
+                        // Производим ремонт
+                        world.deductMoney(repairCost);
+                        station.repair();
+
+                        // Обновляем информацию
+                        updateInfo();
+
+                        // Показываем сообщение об успешном ремонте
+                        showRepairMessage("infoWnd.repair_success", repairCost);
+                    } else {
+                        showRepairMessage("infoWnd.not_enough_money", repairCost);
+                    }
+                }
+            }
+        }
+    }
+
+    private void showRepairMessage(String messageKey, Object... args) {
+        String message = LngUtil.translatable(messageKey, args);
+
+        // Можно использовать всплывающее сообщение или изменить текст в infoLabel
+        infoLabel.setText("<html>" + message + "<br>" + infoLabel.getText().replace("<html>", "") + "</html>");
+
+        // Или показать временное сообщение
+        JOptionPane.showMessageDialog(this, message,
+                LngUtil.translatable("infoWnd.repair_title"),
+                JOptionPane.INFORMATION_MESSAGE);
+    }
+    private void toggleLabelVisibility() {
+        if (currentObject instanceof Station) {
+            Station station = (Station) currentObject;
+            World world = station.getWorld();
+            StationLabel label = world.getLabelForStation(station);
+
+            if (label != null) {
+                label.setVisible(!label.isVisible());
+
+                // Обновляем иконку кнопки
+                updateLabelToggleButtonIcon();
+
+                // Перерисовываем экран
+                if (getOwner() instanceof MainFrame) {
+                    ((MainFrame)getOwner()).getCurrentScreen().repaint();
+                }
+            }
+        }
+    }
+
+    private void updateLabelToggleButtonIcon() {
+        if (currentObject instanceof Station) {
+            Station station = (Station) currentObject;
+            StationLabel label = station.getWorld().getLabelForStation(station);
+
+            if (label != null) {
+                if (label.isVisible()) {
+                    toggleLabelButton.setText("◈");
+                    toggleLabelButton.setToolTipText(LngUtil.translatable("infoWnd.hide_label"));
+                } else {
+                    toggleLabelButton.setText("◇");
+                    toggleLabelButton.setToolTipText(LngUtil.translatable("infoWnd.show_label"));
+                }
+            }
+        }
+    }
+
     private void bringToFrontProperly() {
         if (getOwner() != null) {
             // 1. Сбрасываем alwaysOnTop
@@ -390,6 +497,7 @@ public class InfoWindow extends JWindow {
         }
     }
     public void displayTrainInfo(Train train, Point location) {
+        toggleLabelButton.setVisible(false);
         this.currentObject = train;
         updateInfo();
         setLocation(location);
@@ -398,27 +506,40 @@ public class InfoWindow extends JWindow {
     }
 
     public void displayStationInfo(Station station, Point location) {
-        if (openWindows.containsKey(station)) {
-            InfoWindow existingWindow = openWindows.get(station);
-            existingWindow.hideWindow();
-            return;
-        }
-
-        this.currentObject = station;
-        if (editNamePanel.isVisible()) {
-            saveStationName();
-        }
-        Color stationColor = station.getStationColor().getColor();
-        titleLabel.setText("<html><font color='" +
-                String.format("#%06X", stationColor.getRGB() & 0xFFFFFF) + "'>" +
-                station.getName() + "</font></html>");
-        updateInfo();
-        setLocation(location);
-        setVisible(true);
-        pack(); // Обновляем размер окна под содержимое
+    if (openWindows.containsKey(station)) {
+        InfoWindow existingWindow = openWindows.get(station);
+        existingWindow.hideWindow();
+        return;
     }
 
+    this.currentObject = station;
+    if (editNamePanel.isVisible()) {
+        saveStationName();
+    }
+
+    Color stationColor = station.getStationColor().getColor();
+    titleLabel.setText("<html><font color='" +
+            String.format("#%06X", stationColor.getRGB() & 0xFFFFFF) + "'>" +
+            station.getName() + "</font></html>");
+
+    // Показываем кнопку переключения видимости метки
+    toggleLabelButton.setVisible(true);
+    updateLabelToggleButtonIcon();
+
+    // Добавляем кнопку в заголовок
+    JPanel titlePanel = (JPanel) titleLabel.getParent();
+    if (titlePanel != null && !Arrays.asList(titlePanel.getComponents()).contains(toggleLabelButton)) {
+        titlePanel.add(toggleLabelButton, BorderLayout.WEST);
+    }
+
+    updateInfo();
+    setLocation(location);
+    setVisible(true);
+    pack();
+}
     public void displayTunnelInfo(Tunnel tunnel, Point location) {
+        toggleLabelButton.setVisible(false);
+        repairButton.setVisible(false);
         this.currentObject = tunnel;
         updateInfo();
         setLocation(location);
@@ -426,6 +547,8 @@ public class InfoWindow extends JWindow {
         pack(); // Обновляем размер окна под содержимое
     }
     public void displayGameplayUnitsInfo(GameplayUnits gUnits, Point location) {
+        toggleLabelButton.setVisible(false);
+        repairButton.setVisible(false);
         this.currentObject = gUnits;
         updateInfo();
         setLocation(location);
@@ -433,6 +556,8 @@ public class InfoWindow extends JWindow {
         pack(); // Обновляем размер окна под содержимое
     }
     public void displayLabelInfo(StationLabel stationLabel, Point location) {
+        repairButton.setVisible(false);
+        toggleLabelButton.setVisible(false);
         this.currentObject = stationLabel;
         updateInfo();
         setLocation(location);
@@ -583,6 +708,7 @@ public class InfoWindow extends JWindow {
     }
 
     public void hideWindow() {
+        toggleLabelButton.setVisible(false);
         if (editNamePanel.isVisible()) {
             saveStationName();
         }
@@ -612,45 +738,5 @@ public class InfoWindow extends JWindow {
         super.setVisible(visible && getOwner().isVisible());
     }
 
-
-
-//    private void repairStation() {
-//        if (currentObject instanceof Station) {
-//            Station station = (Station) currentObject;
-//            GameWorld world = (GameWorld) GameWorldScreen.getInstance().getWorld();
-//
-//            // Проверяем, можно ли ремонтировать эту станцию
-//            if (!station.canRepair()) {
-//                JOptionPane.showMessageDialog(this,
-//                        LngUtil.translatable("station.cannot_repair"),
-//                        LngUtil.translatable("info"),
-//                        JOptionPane.INFORMATION_MESSAGE);
-//                return;
-//            }
-//
-//            // Рассчитываем стоимость ремонта
-//            float repairCost = station.calculateRepairCost(station);
-//
-//            if (world.canAfford(repairCost)) {
-//                int choice = JOptionPane.showConfirmDialog(this,
-//                        LngUtil.translatable("station.repair_confirm")
-//                               .replace("{cost}", String.format("%.2f", repairCost))
-//                               .replace("{wear}", String.format("%.0f%%", station.getWearLevel() * 100)),
-//                        LngUtil.translatable("station.repair_title"),
-//                        JOptionPane.YES_NO_OPTION);
-//
-//                if (choice == JOptionPane.YES_OPTION) {
-//                    world.removeMoney(repairCost);
-//                    station.repair();
-//                    updateInfo();
-//                    GameWorldScreen.getInstance().repaint();
-//
-//                    UserInterfaceUtil.showTimedMessage("station.repaired", true, 2000);
-//                }
-//            } else {
-//                UserInterfaceUtil.showTimedMessage("station.not_enough_money_repair", false, 2000);
-//            }
-//        }
-//    }
 
 }

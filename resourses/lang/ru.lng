@@ -196,7 +196,12 @@ infoWnd.revenue:Последний доход:
 infoWnd.gUnits=Множитель доходности:
 infoWnd.stationLabel=Метка
 infoWnd.upkeep:Расходы содержания:
+infoWnd.hideButton=Скрыть название станции
+infoWnd.label:Метка:
 tunnel.upkeep:Расходы содержания:
+
+
+
 units.house_culture=Дом культуры
 units.church=Церковь
 units.airport=Аэропорт

@@ -13,7 +13,7 @@ public class WorldTile extends Tile {
     private float perm; // 0 = can build, 1 = cannot build
     private static int baseTileColorRGB = 0x6E6E6E; // (110,110,110)
     private transient Color cachedBaseTileColor; // создаётся лениво, 1 раз
-
+    private float grassValue;
     private boolean isWater; // Новая переменная для воды
     private float abilityPay; // Платежеспособность
     private int passengerCount; // Количество пассажиров
@@ -123,7 +123,13 @@ public class WorldTile extends Tile {
 
     public int getPassengerCount() { return passengerCount; }
     public void setPassengerCount(int passengerCount) { this.passengerCount = passengerCount; }
+    public float getGrassValue() {
+        return grassValue;
+    }
 
+    public void setGrassValue(float grassValue) {
+        this.grassValue = Math.max(0, Math.min(1, grassValue));
+    }
 //
     public void draw(Graphics g, int offsetX, int offsetY, float zoom) {
         int drawSize = (int)(size * zoom);
