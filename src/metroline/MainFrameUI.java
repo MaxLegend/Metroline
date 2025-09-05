@@ -485,12 +485,24 @@ public class MainFrameUI {
             ((GameWorldScreen)currentScreen).invalidateCache();
             currentScreen.repaint();
         }
+        if( GameWorld.showGameplayUnits) {
+            UserInterfaceUtil.showTimedMessageDownScreen(LngUtil.translatable("world.g_units_on"), false, 2000);
+        } else {
+            UserInterfaceUtil.showTimedMessageDownScreen(LngUtil.translatable("world.g_units_off"), false, 2000);
+        }
     }
     public void toggleGrassZones() {
         GameWorld.showGrassZones = !GameWorld.showGrassZones;
         if (currentScreen instanceof GameWorldScreen) {
             ((GameWorldScreen)currentScreen).invalidateCache();
+
             currentScreen.repaint();
+        }
+        if( GameWorld.showGrassZones) {
+            UserInterfaceUtil.showTimedMessageDownScreen(LngUtil.translatable("world.grass_on"), false, 2000);
+        } else {
+            UserInterfaceUtil.showTimedMessageDownScreen(LngUtil.translatable("world.grass_off"), false, 2000);
+
         }
     }
     public void togglePaymentZones() {
@@ -498,7 +510,13 @@ public class MainFrameUI {
         if (currentScreen instanceof GameWorldScreen) {
             ((GameWorldScreen)currentScreen).invalidateCache();
             ((GameWorldScreen)currentScreen).invalidateZonesCache();
+
             currentScreen.repaint();
+        }
+        if( GameWorld.showPaymentZones) {
+            UserInterfaceUtil.showTimedMessageDownScreen(LngUtil.translatable("world.passzone_on"), false, 2000);
+        } else {
+            UserInterfaceUtil.showTimedMessageDownScreen(LngUtil.translatable("world.passzone_off"), false, 2000);
         }
     }
 
@@ -508,6 +526,11 @@ public class MainFrameUI {
             ((GameWorldScreen)currentScreen).invalidateCache();
             ((GameWorldScreen)currentScreen).invalidateZonesCache();
             currentScreen.repaint();
+        }
+        if( GameWorld.showPassengerZones) {
+            UserInterfaceUtil.showTimedMessageDownScreen(LngUtil.translatable("world.payzone_on"), false, 2000);
+        } else {
+            UserInterfaceUtil.showTimedMessageDownScreen(LngUtil.translatable("world.payzone_off"), false, 2000);
         }
     }
     private void showOptionsPopupMenu(JButton sourceButton) {
@@ -526,6 +549,7 @@ public class MainFrameUI {
         popupMenu.addMetrolineItem(LngUtil.translatable("elayer.passenger"), this::togglePassengerZones);
         popupMenu.addMetrolineItem(LngUtil.translatable("elayer.abilityPay"), this::togglePaymentZones);
         popupMenu.addMetrolineItem(LngUtil.translatable("elayer.gameplayUnits"), this::toggleGameplayUnits);
+        popupMenu.addMetrolineItem(LngUtil.translatable("elayer.aboveground"), this::toggleGrassZones);
         popupMenu.showAboveComponent(sourceButton);
     }
     public void switchScreen(String screenName) {

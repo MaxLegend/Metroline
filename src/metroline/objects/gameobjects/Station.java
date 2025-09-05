@@ -46,7 +46,26 @@ public class Station extends GameObject {
     }
 
 
+    /**
+     * Проверяет, есть ли соседняя станция того же цвета в радиусе одной клетки
+     * @return true если есть соседняя станция того же цвета
+     */
+    public boolean hasSameColorNeighbor() {
+        for (Direction dir : Direction.getOrthogonalDirections()) {
+            int nx = x + dir.getDx();
+            int ny = y + dir.getDy();
+            Station neighbor = getWorld().getStationAt(nx, ny);
 
+            if (neighbor != null &&
+                    neighbor.getStationColor() == this.color &&
+                    neighbor.getType() != StationType.PLANNED &&
+                    neighbor.getType() != StationType.BUILDING &&
+                    neighbor.getType() != StationType.DESTROYED) {
+                return true;
+            }
+        }
+        return false;
+    }
     public void setWearLevel(float wearLevel) {
         this.wearLevel = wearLevel;
     }

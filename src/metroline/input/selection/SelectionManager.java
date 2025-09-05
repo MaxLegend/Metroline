@@ -3,6 +3,8 @@ package metroline.input.selection;
 import java.util.ArrayList;
 import java.util.List;
 
+// FIX Баги с выбиралкой. Перепроверить все ситуации
+// MAYBE Сделать подсветку по наведению
 public class SelectionManager {
     private static SelectionManager instance;
     private Selectable selectedObject;

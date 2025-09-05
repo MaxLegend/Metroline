@@ -11,6 +11,7 @@ import metroline.objects.gameobjects.*;
 import metroline.objects.gameobjects.StationLabel;
 import metroline.screens.worldscreens.normal.GameWorldScreen;
 import metroline.screens.worldscreens.WorldScreen;
+import metroline.util.MetroLogger;
 import metroline.util.localizate.LngUtil;
 import metroline.util.MathUtil;
 import metroline.util.ui.UserInterfaceUtil;
@@ -49,7 +50,8 @@ public class InfoWindow extends JWindow {
     private JLabel wearInfoLabel;
 
     private JButton toggleLabelButton;
-
+    private boolean isUpdating = false;
+    float revenue,lastRevenue;
     private static final Map<Object, InfoWindow> openWindows = new HashMap<>();
     public InfoWindow(Window owner) {
         super(owner); // Создаем окно без владельца
@@ -282,6 +284,7 @@ public class InfoWindow extends JWindow {
         }
     }
     private void initNameEditComponents() {
+        MetroLogger.logInfo("initNameEditComponents");
         // Панель для редактирования имени
         editNamePanel = new JPanel(new BorderLayout(5, 0));
         editNamePanel.setOpaque(false);
@@ -294,9 +297,9 @@ public class InfoWindow extends JWindow {
         nameEditField.setBackground(new Color(60, 60, 60));
         nameEditField.setBorder(BorderFactory.createCompoundBorder());
 
-        saveNameButton = new JButton("✓");
+        saveNameButton = new JButton("\uD83D\uDCBE");
         saveNameButton.setFont(StyleUtil.getMetrolineFont(14));
-        saveNameButton.setForeground(Color.GREEN);
+        saveNameButton.setForeground(Color.WHITE);
         saveNameButton.setContentAreaFilled(false);
         saveNameButton.setBorderPainted(false);
         saveNameButton.setFocusPainted(false);
@@ -306,6 +309,7 @@ public class InfoWindow extends JWindow {
             @Override
             public void keyPressed(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+                    MetroLogger.logInfo("cancelNameEditing");
                     cancelNameEditing();
                 }
             }
@@ -398,6 +402,7 @@ public class InfoWindow extends JWindow {
 
         editNamePanel.add(nameEditField, BorderLayout.CENTER);
         editNamePanel.add(saveNameButton, BorderLayout.EAST);
+        MetroLogger.logInfo("END initNameEditComponents");
     }
 
     private Rectangle getAdjustedBounds(int x, int y) {
@@ -426,9 +431,7 @@ public class InfoWindow extends JWindow {
         titlePanel.repaint();
     }
     private void startNameEditing(Station station) {
-//        repairButton.setVisible(station.getType() == StationType.REGULAR ||
-//                station.getType() == StationType.TRANSFER);
-        // Заменяем label на поле редактирования
+        MetroLogger.logInfo("START startNameEditing");
         JPanel titlePanel = (JPanel) titleLabel.getParent();
         titlePanel.remove(titleLabel);
         titlePanel.add(editNamePanel, BorderLayout.CENTER);
@@ -458,34 +461,42 @@ public class InfoWindow extends JWindow {
 
         nameEditField.requestFocusInWindow();
         nameEditField.selectAll();
+        MetroLogger.logInfo("END startNameEditing");
+
     }
-
+    private boolean isEditingName = false;
     private void saveStationName() {
-        if (!(currentObject instanceof Station)) return;
+        if (isEditingName || !(currentObject instanceof Station)) return;
+        MetroLogger.logInfo("START saveStationName");
+        isEditingName = true;
+        try {
+            Station station = (Station) currentObject;
+            String newName = nameEditField.getText().trim();
 
-        Station station = (Station) currentObject;
-        String newName = nameEditField.getText().trim();
+            if (!newName.isEmpty() && !newName.equals(station.getName())) {
+                station.setName(newName);
+                titleLabel.setText(newName);
 
-        if (!newName.isEmpty()) {
-            station.setName(newName);
-            titleLabel.setText(newName);
+                // Убираем вызов updateInfo() - он вызывает рекурсию!
+                // updateInfo(); // ← УБРАТЬ эту строку!
 
-            // Возвращаем label на место
-            JPanel titlePanel = (JPanel) editNamePanel.getParent();
-            titlePanel.remove(editNamePanel);
-            titlePanel.add(titleLabel, BorderLayout.CENTER);
+                // Просто обновляем заголовок
+                Color stationColor = station.getStationColor().getColor();
+                titleLabel.setText("<html><font color='" +
+                        String.format("#%06X", stationColor.getRGB() & 0xFFFFFF) + "'>" +
+                        newName + "</font></html>");
+                MetroLogger.logInfo("saveStationName " + newName);
+            }
 
-            editNamePanel.setVisible(false);
-            titlePanel.revalidate();
-            titlePanel.repaint();
+            cancelNameEditing();
 
-            // Обновляем информацию в окне
-            updateInfo();
-
-            // Обновляем экран
+            // Только перерисовка, без обновления информации
             if (getOwner() instanceof MainFrame) {
                 ((MainFrame)getOwner()).getCurrentScreen().repaint();
+                MetroLogger.logInfo("repaint ");
             }
+        } finally {
+            isEditingName = false;
         }
     }
     public static void updateWindowsVisibility(MainFrame frame) {
@@ -506,16 +517,23 @@ public class InfoWindow extends JWindow {
     }
 
     public void displayStationInfo(Station station, Point location) {
-    if (openWindows.containsKey(station)) {
-        InfoWindow existingWindow = openWindows.get(station);
-        existingWindow.hideWindow();
-        return;
-    }
+        if (openWindows.containsKey(station)) {
+            InfoWindow existingWindow = openWindows.get(station);
+            // Обновляем позицию и показываем существующее окно
+            existingWindow.setLocation(location);
+            existingWindow.updateInfo();
+            existingWindow.setVisible(true);
+            existingWindow.toFront();
+            return;
+        }
 
     this.currentObject = station;
     if (editNamePanel.isVisible()) {
         saveStationName();
     }
+        // Добавляем в карту открытых окон
+        openWindows.put(station, this);
+
 
     Color stationColor = station.getStationColor().getColor();
     titleLabel.setText("<html><font color='" +
@@ -538,6 +556,17 @@ public class InfoWindow extends JWindow {
     pack();
 }
     public void displayTunnelInfo(Tunnel tunnel, Point location) {
+        if (openWindows.containsKey(tunnel)) {
+            InfoWindow existingWindow = openWindows.get(tunnel);
+            // Обновляем позицию и показываем существующее окно
+            existingWindow.setLocation(location);
+            existingWindow.updateInfo();
+            existingWindow.setVisible(true);
+            existingWindow.toFront();
+            return;
+        }
+        openWindows.put(tunnel, this);
+
         toggleLabelButton.setVisible(false);
         repairButton.setVisible(false);
         this.currentObject = tunnel;
@@ -547,6 +576,16 @@ public class InfoWindow extends JWindow {
         pack(); // Обновляем размер окна под содержимое
     }
     public void displayGameplayUnitsInfo(GameplayUnits gUnits, Point location) {
+        if (openWindows.containsKey(gUnits)) {
+            InfoWindow existingWindow = openWindows.get(gUnits);
+            // Обновляем позицию и показываем существующее окно
+            existingWindow.setLocation(location);
+            existingWindow.updateInfo();
+            existingWindow.setVisible(true);
+            existingWindow.toFront();
+            return;
+        }
+        openWindows.put(gUnits, this);
         toggleLabelButton.setVisible(false);
         repairButton.setVisible(false);
         this.currentObject = gUnits;
@@ -556,6 +595,16 @@ public class InfoWindow extends JWindow {
         pack(); // Обновляем размер окна под содержимое
     }
     public void displayLabelInfo(StationLabel stationLabel, Point location) {
+        if (openWindows.containsKey(stationLabel)) {
+            InfoWindow existingWindow = openWindows.get(stationLabel);
+            // Обновляем позицию и показываем существующее окно
+            existingWindow.setLocation(location);
+            existingWindow.updateInfo();
+            existingWindow.setVisible(true);
+            existingWindow.toFront();
+            return;
+        }
+        openWindows.put(stationLabel, this);
         repairButton.setVisible(false);
         toggleLabelButton.setVisible(false);
         this.currentObject = stationLabel;
@@ -565,120 +614,128 @@ public class InfoWindow extends JWindow {
         pack(); // Обновляем размер окна под содержимое
     }
 
-    float revenue,lastRevenue;
     public void updateInfo() {
+        if (isUpdating) return;
+        isUpdating = true;
         // Получаем экран мира (может быть GameWorldScreen или SandboxWorldScreen)
-        WorldScreen worldScreen = null;
-        if (getOwner() instanceof MainFrame) {
-            MainFrame frame = (MainFrame) getOwner();
-            if (frame.getCurrentScreen() instanceof WorldScreen) {
-                worldScreen = (WorldScreen) frame.getCurrentScreen();
+        try {
+            WorldScreen worldScreen = null;
+            if (getOwner() instanceof MainFrame) {
+                MainFrame frame = (MainFrame) getOwner();
+                if (frame.getCurrentScreen() instanceof WorldScreen) {
+                    worldScreen = (WorldScreen) frame.getCurrentScreen();
+                }
             }
-        }
 
-        if (worldScreen == null || !(worldScreen.getWorld() instanceof GameWorld)) {
-            return;
-        }
-
-        GameWorld world = (GameWorld) worldScreen.getWorld();
-        EconomyManager economyManager = world.getEconomyManager();
-
-        if (currentObject instanceof Station) {
-            Station station = (Station) currentObject;
-            GameTime gameTime = world.getGameTime();
-            long constructionDate = station.getConstructionDate();
-            long currentTime = gameTime.getCurrentTimeMillis();
-            long age = currentTime - constructionDate;
-
-            Color stationColor = station.getStationColor().getColor();
-            titleLabel.setText("<html><font color='" +
-                    String.format("#%06X", stationColor.getRGB() & 0xFFFFFF) + "'>" +
-                    station.getName() + "</font></html>");
-
-            StringBuilder info = new StringBuilder("<html>");
-            info.append(LngUtil.translatable("infoWnd.position") + " ").append(station.getX()).append(", ").append(station.getY()).append("<br>");
-            info.append(LngUtil.translatable("infoWnd.type") + " ").append(station.getType().getLocalizedName()).append("<br>");
-
-            if(station.hasTrain()) {
-                revenue = economyManager.calculateStationRevenue(station, station.getCurrentTrain().getTrainType());
-                lastRevenue = revenue;
-            } else {
-                revenue = economyManager.calculateSimplyStationRevenue(station);
+            if (worldScreen == null || !(worldScreen.getWorld() instanceof GameWorld)) {
+                return;
             }
+
+            GameWorld world = (GameWorld) worldScreen.getWorld();
+            EconomyManager economyManager = world.getEconomyManager();
+
+            if (currentObject instanceof Station) {
+                Station station = (Station) currentObject;
+                GameTime gameTime = world.getGameTime();
+                long constructionDate = station.getConstructionDate();
+                long currentTime = gameTime.getCurrentTimeMillis();
+                long age = currentTime - constructionDate;
+
+                Color stationColor = station.getStationColor().getColor();
+                titleLabel.setText("<html><font color='" +
+                        String.format("#%06X", stationColor.getRGB() & 0xFFFFFF) + "'>" +
+                        station.getName() + "</font></html>");
+
+                StringBuilder info = new StringBuilder("<html>");
+                info.append(LngUtil.translatable("infoWnd.position") + " ").append(station.getX()).append(", ").append(station.getY()).append("<br>");
+                info.append(LngUtil.translatable("infoWnd.type") + " ").append(station.getType().getLocalizedName()).append("<br>");
+
+                if (station.hasTrain()) {
+                    revenue = economyManager.calculateStationRevenue(station, station.getCurrentTrain().getTrainType());
+                    lastRevenue = revenue;
+                } else {
+                    revenue = economyManager.calculateSimplyStationRevenue(station);
+                }
                 info.append(LngUtil.translatable("infoWnd.revenue") + " ")
                     .append(MathUtil.round(revenue, 2))
                     .append(" M (")
                     .append(MathUtil.round((1 - station.getWearLevel()) * 100, 0))
                     .append("%)<br>");
 
-            // Используем EconomyManager для расчета стоимости строительства
-            float constructionCost = economyManager.calculateStationConstructionCost(station.getX(), station.getY());
-            info.append(LngUtil.translatable("infoWnd.cost") + " ").append(MathUtil.round(constructionCost, 2)).append(" M").append("<br>");
+                // Используем EconomyManager для расчета стоимости строительства
+                float constructionCost = economyManager.calculateStationConstructionCost(station.getX(), station.getY());
+                info.append(LngUtil.translatable("infoWnd.cost") + " ").append(MathUtil.round(constructionCost, 2)).append(" M").append("<br>");
 
-            // Используем EconomyManager для расчета содержания
-            float upkeep = economyManager.calculateStationUpkeep(station);
-            info.append(LngUtil.translatable("infoWnd.upkeep") + " ").append(MathUtil.round(upkeep, 4)).append(" M").append("<br>");
+                // Используем EconomyManager для расчета содержания
+                float upkeep = economyManager.calculateStationUpkeep(station);
+                info.append(LngUtil.translatable("infoWnd.upkeep") + " ").append(MathUtil.round(upkeep, 4)).append(" M").append("<br>");
 
-            info.append(String.format("<html>%s: %s<br>%s: %s</html>",
-                    LngUtil.translatable("station.build_date"),
-                    gameTime.formatDate(constructionDate),
-                    LngUtil.translatable("station.wear_level"),
-                    String.format("%.0f%%", station.getWearLevel() * 100)));
+                info.append(String.format("<html>%s: %s<br>%s: %s</html>",
+                        LngUtil.translatable("infoWnd.station_build_date"),
+                        gameTime.formatDate(constructionDate),
+                        LngUtil.translatable("infoWnd.station_wear_level"),
+                        String.format("%.0f%%", station.getWearLevel() * 100)));
 
-            infoLabel.setText(info.toString());
-            updateProgress(world);
+                infoLabel.setText(info.toString());
+                updateProgress(world);
 
-        } else if (currentObject instanceof Train) {
-            Train train = (Train) currentObject;
-            titleLabel.setText(LngUtil.translatable("train.cost." + train.getTrainType().name().toLowerCase()));
+            } else if (currentObject instanceof Train) {
+                Train train = (Train) currentObject;
+                titleLabel.setText(LngUtil.translatable("infoWnd.train.cost." + train.getTrainType().name().toLowerCase()));
 
-            StringBuilder info = new StringBuilder("<html>");
-            info.append(LngUtil.translatable("infoWnd.position") + " ").append(MathUtil.round(train.getCurrentX(), 2)).append(", ").append(MathUtil.round(train.getCurrentY(), 2)).append("<br>");
-            info.append(LngUtil.translatable("infoWnd.speed") + " ").append(train.getNormalizedSpeed()).append("<br>");
-            infoLabel.setText(info.toString());
+                StringBuilder info = new StringBuilder("<html>");
+                info.append(LngUtil.translatable("infoWnd.position") + " ").append(MathUtil.round(train.getCurrentX(), 2)).append(", ").append(MathUtil.round(train.getCurrentY(), 2)).append("<br>");
+                info.append(LngUtil.translatable("infoWnd.train_speed") + " ").append(train.getNormalizedSpeed()).append("<br>");
+                if (!train.isMoving())
+                    info.append(LngUtil.translatable("infoWnd.train_wait_time") + " ").append(train.getWaitTimer() + " s").append("<br>");
+                infoLabel.setText(info.toString());
 
-        } else if (currentObject instanceof Tunnel) {
-            Tunnel tunnel = (Tunnel) currentObject;
-            titleLabel.setText(LngUtil.translatable("infoWnd.tunnel_title"));
+            } else if (currentObject instanceof Tunnel) {
+                Tunnel tunnel = (Tunnel) currentObject;
+                titleLabel.setText(LngUtil.translatable("infoWnd.tunnel_title"));
 
-            StringBuilder info = new StringBuilder("<html>");
-            info.append(LngUtil.translatable("infoWnd.tunnel_from") + " ").append(tunnel.getStart().getName()).append("<br>");
-            info.append(LngUtil.translatable("infoWnd.tunnel_to") + " ").append(tunnel.getEnd().getName()).append("<br>");
-            info.append(LngUtil.translatable("infoWnd.tunnel_length") + " ").append(tunnel.getLength()).append(" " + LngUtil.translatable("infoWnd.tunnel_segments") + " <br>");
-            info.append(LngUtil.translatable("infoWnd.tunnel_type") + " ").append(tunnel.getType().getLocalizedName() + "<br>");
+                StringBuilder info = new StringBuilder("<html>");
+                info.append(LngUtil.translatable("infoWnd.tunnel_from") + " ").append(tunnel.getStart().getName()).append("<br>");
+                info.append(LngUtil.translatable("infoWnd.tunnel_to") + " ").append(tunnel.getEnd().getName()).append("<br>");
+                info.append(LngUtil.translatable("infoWnd.tunnel_length") + " ").append(tunnel.getLength()).append(" " + LngUtil.translatable("infoWnd.tunnel_segments") + " <br>");
+                info.append(LngUtil.translatable("infoWnd.tunnel_type") + " ").append(tunnel.getType().getLocalizedName() + "<br>");
 
-            // Используем EconomyManager для расчета стоимости строительства
-            float cost = economyManager.calculateTunnelConstructionCost(tunnel);
-            info.append(LngUtil.translatable("infoWnd.tunnel_cost") + " ").append(MathUtil.round(cost, 2)).append(" M" + " <br>");
+                // Используем EconomyManager для расчета стоимости строительства
+                float cost = economyManager.calculateTunnelConstructionCost(tunnel);
+                info.append(LngUtil.translatable("infoWnd.tunnel_cost") + " ").append(MathUtil.round(cost, 2)).append(" M" + " <br>");
 
-            // Используем EconomyManager для расчета содержания
-            float upkeep = economyManager.calculateTunnelUpkeep(tunnel);
-            info.append(LngUtil.translatable("infoWnd.upkeep") + " ").append(MathUtil.round(upkeep, 4)).append(" M").append("<br>");
+                // Используем EconomyManager для расчета содержания
+                float upkeep = economyManager.calculateTunnelUpkeep(tunnel);
+                info.append(LngUtil.translatable("infoWnd.upkeep") + " ").append(MathUtil.round(upkeep, 4)).append(" M").append("<br>");
 
-            infoLabel.setText(info.toString());
-            updateProgress(world);
+                infoLabel.setText(info.toString());
+                updateProgress(world);
 
-        } else if (currentObject instanceof GameplayUnits) {
-            GameplayUnits gUnits = (GameplayUnits) currentObject;
-            titleLabel.setText(LngUtil.translatable(gUnits.getType().getLocalizedName()));
+            } else if (currentObject instanceof GameplayUnits) {
+                GameplayUnits gUnits = (GameplayUnits) currentObject;
+                titleLabel.setText(LngUtil.translatable(gUnits.getType().getLocalizedName()));
 
-            StringBuilder info = new StringBuilder("<html>");
-            info.append(LngUtil.translatable("infoWnd.gUnits") + " ").append(gUnits.getType().getIncomeMultiplier()).append("<br>");
-            info.append(LngUtil.translatable("infoWnd.position") + " ").append(gUnits.getX()).append(", ").append(gUnits.getY()).append("<br>");
-            info.append(LngUtil.translatable("infoWnd.condition") + " ").append(gUnits.getCondition()).append("<br>");
-            info.append(LngUtil.translatable("infoWnd.isAbandoned") + " ").append(gUnits.isAbandoned()).append("<br>");
-            infoLabel.setText(info.toString());
+                StringBuilder info = new StringBuilder("<html>");
+                info.append(LngUtil.translatable("infoWnd.gUnits") + " ").append(gUnits.getType().getIncomeMultiplier() + " %").append("<br>");
+                info.append(LngUtil.translatable("infoWnd.position") + " ").append(gUnits.getX()).append(", ").append(gUnits.getY()).append("<br>");
+                info.append(LngUtil.translatable("infoWnd.condition") + " ").append(gUnits.getCondition()).append("<br>");
+                if (gUnits.isAbandoned())
+                    info.append(LngUtil.translatable("infoWnd.isAbandoned") + " ").append(gUnits.isAbandoned()).append("<br>");
+                infoLabel.setText(info.toString());
 
-        } else if (currentObject instanceof StationLabel) {
-            StationLabel stationLabel = (StationLabel) currentObject;
-            titleLabel.setText(LngUtil.translatable(stationLabel.getText()));
+            } else if (currentObject instanceof StationLabel) {
+                StationLabel stationLabel = (StationLabel) currentObject;
+                titleLabel.setText(LngUtil.translatable(stationLabel.getText()));
 
-            StringBuilder info = new StringBuilder("<html>");
-            info.append(LngUtil.translatable("infoWnd.label") + " ").append(stationLabel.getText()).append("<br>");
-            infoLabel.setText(info.toString());
+                StringBuilder info = new StringBuilder("<html>");
+                info.append(LngUtil.translatable("infoWnd.stationLabel") + " ").append(stationLabel.getText()).append("<br>");
+                infoLabel.setText(info.toString());
+            }
+
+            pack(); // Подгоняем размер окна под содержимое
+        } finally {
+            isUpdating = false;
         }
-
-        pack(); // Подгоняем размер окна под содержимое
     }
 
     private void updateProgress(GameWorld world) {
@@ -727,7 +784,16 @@ public class InfoWindow extends JWindow {
             }
         }
     }
-
+    @Override
+    public void dispose() {
+        if (updateTimer != null) {
+            updateTimer.stop();
+        }
+        if (currentObject != null) {
+            openWindows.remove(currentObject);
+        }
+        super.dispose();
+    }
     @Override
     public void setVisible(boolean visible) {
         if (visible) {
@@ -737,6 +803,5 @@ public class InfoWindow extends JWindow {
         }
         super.setVisible(visible && getOwner().isVisible());
     }
-
 
 }

@@ -65,6 +65,15 @@ world.station_revenue_desc=Estimated station revenue considering construction di
 world.station_upkeep_desc=Calculates station maintenance cost considering rock hardness.
 world.tunnel_upkeep_desc=Calculates tunnel maintenance cost depending on the number of segments.
 world.gameplay_units_desc=Number of gameplay points of interest (e.g., museums, airports, etc.). A station built near a point of interest generates more money.
+
+world.grass_on=Landscape on
+world.grass_off=Landscape off
+world.payzone_on=Payments Zone on
+world.payzone_off=Payments Zone off
+world.passzone_on=Passengers Zone on
+world.passzone_off=Passengers Zone off
+world.g_units_on=Buildings on
+world.g_units_off=Buildings off
 -------------------------------
 # Toolbar
 -------------------------------
@@ -172,6 +181,7 @@ money.currency=₽
 elayer.passenger=Passenger Traffic
 elayer.abilityPay=Affordability
 elayer.gameplayUnits=Surface Buildings
+elayer.aboveground=Surface
 timebar.economic_layers=Layers
 
 -------------------------------
@@ -197,13 +207,24 @@ infoWnd.stationLabel=Label
 infoWnd.upkeep:Maintenance Costs:
 infoWnd.hideButton=Hide station name
 tunnel.upkeep:Maintenance Costs:
+
+
+units.big_personal_house=Tesmio's Manor
+units.personal_house=Personal House
+units.big_house=High House
+units.small_house=Small House
+units.house=House
 units.house_culture=House of Culture
 units.church=Church
 units.airport=Airport
 units.port=Port
 units.cityhall=City Hall
 units.shop=Shop
-units.factory=Factory
+units.factory=Chip Factory
+units.factory2=Heat Station
+units.factory3=Metallurgical Plant
+units.factory4=Cloth Factory
+units.factory5=Special Plant
 units.museum=Museum
 
 # Line Legend

@@ -103,19 +103,21 @@ public class GameplayUnits extends GameObject {
         this.type = type;
         this.name = type.getLocalizedName();
         this.creationTime = world.getGameTime().getCurrentTimeMillis();
-        this.condition = 80 + world.rand.nextInt(20); // 80-100% initially
+        this.condition = 90 + world.rand.nextInt(10); // 80-100% initially
         this.isAbandoned = false;
     }
 
     public void updateCondition() {
-        if (!isAbandoned && getWorld().rand.nextFloat() < 0.01f) {
+        if (!isAbandoned && getWorld().rand.nextInt(1323) == 2) {
             condition = Math.max(0, condition - 1);
 
             // Увеличиваем шанс забрасывания
             if (condition < 40 && getWorld().rand.nextFloat() < 0.08f) {
                 abandon();
             }
-
+            if(isAbandoned()  && getWorld().rand.nextFloat() < 0.08f) {
+                renovate();
+            }
             // Шанс полного разрушения очень старых зданий
             long age = getWorld().getGameTime().getCurrentTimeMillis() - creationTime;
             if (age > 86400000 && random.nextFloat() < 0.001f) { // После 24 часов
@@ -377,7 +379,7 @@ public class GameplayUnits extends GameObject {
     }
     public void renovate() {
         isAbandoned = false;
-        condition = 80 + getWorld().rand.nextInt(20);
+        condition = 100;
     }
     public long getCreationTime() { return creationTime; }
     public int getCondition() { return condition; }

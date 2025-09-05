@@ -39,69 +39,69 @@ public enum GameplayUnitsType {
     }
     public float getPassengerGeneration() {
         switch (this) {
-            case PORT: return 1600;
-            case AIRPORT: return 2500;
-            case BIG_HOUSE: return 1000;
-            case HOUSE: return 700;
-            case SMALL_HOUSE: return 400;
-            case PERSONAL_HOUSE: return 300;
-            case BIG_PERSONAL_HOUSE: return 600;
+            case PORT: return 5f;
+            case AIRPORT: return 7f;
+            case BIG_HOUSE: return 3.3f;
+            case HOUSE: return 2.8f;
+            case SMALL_HOUSE: return 2.1f;
+            case PERSONAL_HOUSE: return 2.3f;
+            case BIG_PERSONAL_HOUSE: return 3.1f;
             default: return 0;
         }
     }
     public float getPaymentGeneration() {
         switch (this) {
-            case FACTORY: return 0.8f;
-            case FACTORY2: return 0.84f;
-            case FACTORY3: return 0.9f;
-            case FACTORY4: return 0.76f;
-            case FACTORY5: return 0.91f;
-            case AIRPORT: return 2.1f;
-            case PORT: return 1.4f;
-            case HOUSE_CULTURE: return 0.7f;
-            case MUSEUM: return 0.89f;
-            case CHURCH: return 2.0f;
-            case CITYHALL: return 2.6f;
-            case SHOP: return 1.3f;
+            case FACTORY: return 1.8f;
+            case FACTORY2: return 1.84f;
+            case FACTORY3: return 1.9f;
+            case FACTORY4: return 1.76f;
+            case FACTORY5: return 1.91f;
+            case AIRPORT: return 3.1f;
+            case PORT: return 2.4f;
+            case HOUSE_CULTURE: return 1.7f;
+            case MUSEUM: return 1.89f;
+            case CHURCH: return 3.0f;
+            case CITYHALL: return 3.6f;
+            case SHOP: return 2.3f;
             default: return 0;
         }
     }
     public int getInfluenceRadius() {
         switch (this) {
             case FACTORY:
-                return 4;
+                return 3;
             case FACTORY2:
                 return 7;
             case FACTORY3:
-                return 6;
-            case FACTORY4:
-                return 3;
-            case FACTORY5:
-                return 4;
-            case AIRPORT:
                 return 5;
+            case FACTORY4:
+                return 5;
+            case FACTORY5:
+                return 5;
+            case AIRPORT:
+                return 9;
             case PORT:
-                return 4;
+                return 7;
             case HOUSE_CULTURE:
-                return 4;
+                return 5;
             case MUSEUM:
                 return 5;
             case CHURCH:
-                return 2;
+                return 3;
             case CITYHALL:
-                return 2;
+                return 3;
             case SHOP:
-                return 6;
+                return 7;
             case BIG_HOUSE:
-                return 4;
+                return 7;
             case HOUSE:
-                return 3;
+                return 5;
             case SMALL_HOUSE:
-                return 2;
-            case PERSONAL_HOUSE:
-                return 2;
-            case BIG_PERSONAL_HOUSE:
                 return 3;
+            case PERSONAL_HOUSE:
+                return 3;
+            case BIG_PERSONAL_HOUSE:
+                return 5;
             default:
                 return 0;
         }

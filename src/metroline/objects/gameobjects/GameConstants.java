@@ -37,14 +37,14 @@ public class GameConstants {
     public static  float STATION_REPAIR_BASE_COST = 10;
 
     // Мультипликаторы дохода для разных типов поездов
-    public static final float TRAIN_REVENUE_MULTIPLIER_FIRST = 0.8f;
-    public static final float TRAIN_REVENUE_MULTIPLIER_OLD = 1.0f;
-    public static final float TRAIN_REVENUE_MULTIPLIER_CLASSIC = 1.2f;
-    public static final float TRAIN_REVENUE_MULTIPLIER_MODERN = 1.5f;
-    public static final float TRAIN_REVENUE_MULTIPLIER_NEW = 1.8f;
-    public static final float TRAIN_REVENUE_MULTIPLIER_NEWEST = 2.0f;
-    public static final float TRAIN_REVENUE_MULTIPLIER_FUTURISTIC = 2.5f;
-    public static final float TRAIN_REVENUE_MULTIPLIER_FAR_FUTURISTIC = 3.0f;
+    public static final float TRAIN_REVENUE_MULTIPLIER_FIRST = 1.8f;
+    public static final float TRAIN_REVENUE_MULTIPLIER_OLD = 2.0f;
+    public static final float TRAIN_REVENUE_MULTIPLIER_CLASSIC = 2.2f;
+    public static final float TRAIN_REVENUE_MULTIPLIER_MODERN = 2.5f;
+    public static final float TRAIN_REVENUE_MULTIPLIER_NEW = 2.8f;
+    public static final float TRAIN_REVENUE_MULTIPLIER_NEWEST = 3.0f;
+    public static final float TRAIN_REVENUE_MULTIPLIER_FUTURISTIC = 3.5f;
+    public static final float TRAIN_REVENUE_MULTIPLIER_FAR_FUTURISTIC = 4.0f;
 
     public static final String[] NAME_PARTS = {
             LngUtil.translatable("st_name_1"),

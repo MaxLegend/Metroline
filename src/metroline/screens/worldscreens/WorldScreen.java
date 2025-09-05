@@ -23,7 +23,6 @@ public class WorldScreen extends GameScreen {
 
     //Central click handler
     public MouseController mouseController;
- //   public KeyboardController keyboardController;
 
     private final Runtime runtime = Runtime.getRuntime();
     private long lastGCTime = 0;
@@ -44,6 +43,7 @@ public class WorldScreen extends GameScreen {
     public boolean isCPressed = false;
     public boolean isAPressed = false;
 
+    public boolean isTildePressed = false;
     public boolean isSpacePressed = false;
 
     public WorldScreen(MainFrame parent) {
@@ -53,36 +53,20 @@ public class WorldScreen extends GameScreen {
     public WorldScreen(MainFrame parent, World worldIn) {
         super(parent);
         this.world = worldIn;
-        // Initialize controllers
         mouseController = new MouseController(this);
-  //      keyboardController = new KeyboardController(this);
         addMouseListener(mouseController);
         addMouseMotionListener(mouseController);
         addMouseWheelListener(mouseController);
-  //      addKeyListener(keyboardController);
     }
 
     public void reinitializeControllers() {
         // Удаляем старые слушатели
         this.removeMouseListener(mouseController);
         this.removeMouseMotionListener(mouseController);
-  //      this.removeKeyListener(keyboardController);
-
-        // Создаем новые контроллеры
         this.mouseController = new MouseController(this);
-  //      this.keyboardController = new KeyboardController(this);
-
-        // Добавляем слушатели
         this.addMouseListener(mouseController);
         this.addMouseMotionListener(mouseController);
-   //     this.addKeyListener(keyboardController);
         requestFocusInWindow();
-    }
-    public void setZoomAndOffset(float newZoom, int newOffsetX, int newOffsetY) {
-        this.zoom = newZoom;
-        this.offsetX = newOffsetX;
-        this.offsetY = newOffsetY;
-        repaint(); // Только один вызов repaint!
     }
     public World getWorld() {
         return world;
@@ -186,10 +170,10 @@ public class WorldScreen extends GameScreen {
             startBackgroundGC();
         }
 
-        // Логирование памяти каждые 120 кадров
-        if (frameCount % 880 == 0) {
-            logMemoryUsage();
-        }
+//        // Логирование памяти каждые 120 кадров
+//        if (frameCount % 880 == 0) {
+//            logMemoryUsage();
+//        }
     }
 
     private void startBackgroundGC() {
@@ -206,12 +190,12 @@ public class WorldScreen extends GameScreen {
 
                 long gcTime = (System.nanoTime() - startTime) / 1000000;
 
-                System.out.println(String.format(
-                        "Background GC: %dms, Memory: %dMB -> %dMB",
-                        gcTime,
-                        (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024,
-                        (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024
-                             ));
+//                System.out.println(String.format(
+//                        "Background GC: %dms, Memory: %dMB -> %dMB",
+//                        gcTime,
+//                        (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024,
+//                        (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024
+//                             ));
 
             } catch (Exception e) {
                 System.err.println("GC thread error: " + e.getMessage());

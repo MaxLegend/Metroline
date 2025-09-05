@@ -21,7 +21,6 @@ import java.util.List;
 
 
 
-// TODO Добавить еще слоев. Убрать множество окон для одного объекта
 public class CachedWorldScreen extends WorldScreen {
     protected static final int WORLD_TILE_SIZE = 16;
     protected static final int TILE_SIZE = 32;
@@ -616,7 +615,7 @@ public class CachedWorldScreen extends WorldScreen {
         drawTunnels(g);
         drawStations(g);
 
-        drawLabels(g);
+
 
         g.setTransform(originalTransform);
     }
@@ -758,20 +757,22 @@ public class CachedWorldScreen extends WorldScreen {
     }
 
     private Color getPassengerZoneColor(float ratio) {
-        // Градиент: зеленый (0.0) -> желтый (0.5) -> оранжевый (1.0)
+        // Градиент в HSL: зеленый (120°) -> желтый (60°) -> оранжевый (30°) -> красный (0°)
+        float hue;
+
         if (ratio < 0.5f) {
-            // Зеленый -> Желтый
-            int r = (int) (ratio * 2 * 255);
-            int g = 255;
-            int b = 0;
-            return new Color(r, g, b);
+            // Зеленый (120°) -> Желтый (60°)
+            hue = 120 - (ratio * 120);
         } else {
-            // Желтый -> Оранжевый
-            int r = 255;
-            int g = (int) ((1 - (ratio - 0.5f)) * 255);
-            int b = 0;
-            return new Color(r, g, b);
+            // Желтый (60°) -> Красный (0°)
+            hue = 60 - ((ratio - 0.5f) * 120);
         }
+
+        // Насыщенность и яркость постоянные
+        float saturation = 1.0f;
+        float lightness = 0.5f;
+
+        return Color.getHSBColor(hue / 360, saturation, lightness);
     }
 
 

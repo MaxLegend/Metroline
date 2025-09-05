@@ -73,7 +73,7 @@ public class MetroSerializer {
                 for (int x = 0; x < world.getWidth(); x++) {
                     WorldTile tile = world.getWorldTile(x, y);
                     writer.write(String.format(Locale.US,
-                            "{x:%d,y:%d,perm:%.2f,isWater:%b,abilityPay:%.2f,passengerCount:%d}\n",
+                            "{x:%d,y:%d,perm:%.2f,isWater:%b,abilityPay:%.2f,passengerCount:%.2f}\n",
                             x, y,
                             tile.getPerm(),
                             tile.isWater(),
@@ -380,7 +380,7 @@ public class MetroSerializer {
                         float perm = Float.parseFloat(ParsingUtils.extractValue(parts[2], "perm"));
                         boolean isWater = Boolean.parseBoolean(ParsingUtils.extractValue(parts[3], "isWater"));
                         float abilityPay = Float.parseFloat(ParsingUtils.extractValue(parts[4], "abilityPay"));
-                        int passengerCount = Integer.parseInt(ParsingUtils.extractValue(parts[5], "passengerCount").split("\\.")[0]); // Убираем .00
+                        float passengerCount = Float.parseFloat(ParsingUtils.extractValue(parts[5], "passengerCount")); // Убираем .00
 
                         WorldTile tile = gameWorld.getWorldTile(x, y);
                         if (tile != null) {

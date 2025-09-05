@@ -406,6 +406,8 @@ public class WorldClickController {
     }
     /**
      * Попытка выбрать метку
+     * FIX Метка перестает выбираться после перезагрузки!!!
+     * TODO Скрытие меток надо сделать физическим, а не визуальным
      */
     private boolean trySelectLabel(int x, int y) {
         // Сначала точное совпадение
@@ -413,14 +415,6 @@ public class WorldClickController {
         if (stationLabel != null) {
             selectObject(stationLabel, x, y);
             return true;
-        }
-
-        // Затем проверяем визуальную область
-        for (StationLabel l : GameWorldScreen.getInstance().getWorld().getLabels()) {
-            if (isClickOnLabelVisualArea(l, x, y)) {
-                selectObject(l, x, y);
-                return true;
-            }
         }
 
         return false;

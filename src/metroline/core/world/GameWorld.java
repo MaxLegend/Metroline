@@ -108,7 +108,6 @@ public class GameWorld extends World {
         PerlinNoise perlin = new PerlinNoise(seed);
         VoronoiNoise voronoi = new VoronoiNoise(seed);
         if(!hasLandscape) {
-
             for (short y = 0; y < height; y++) {
                 for (short x = 0; x < width; x++) {
                     worldTile = new WorldTile(x, y, 0f, false, 0,0, 0x6E6E6E);
@@ -141,9 +140,6 @@ public class GameWorld extends World {
                     worldTile = new WorldTile(x, y, perm, false, 0,0, 0xFFFFFF);
                     setWorldTile(x, y, worldTile);
                     worldTile.setBaseTileColor(worldColor);
-                    // Создаем тайл
-//                    worldGrid[x][y] = new WorldTile(x, y, perm, false, 0,0, Color.WHITE);
-//                    worldGrid[x][y].setBaseTileColor(worldColor);
                     gameTile = new GameTile(x, y);
                     setGameTile(x, y, gameTile);
 
@@ -158,8 +154,14 @@ public class GameWorld extends World {
 
 
         if (hasRivers) {
+            if(getWidth() > 300 || getHeight() > 300) {
+                addRivers(rand.nextInt(1,9));
+            } else
+            if(getWidth() > 200 || getHeight() > 200) {
+                addRivers(rand.nextInt(1,7));
+            } else
             if(getWidth() > 100 || getHeight() > 100) {
-                addRivers(rand.nextInt(2,4));
+                addRivers(rand.nextInt(1,5));
             } else
             if(getWidth() > 50 || getHeight() > 50) {
                 addRivers(rand.nextInt(1,3));
@@ -213,7 +215,7 @@ public class GameWorld extends World {
         float revenue = economyManager.calculateStationRevenue(station, trainType);
         if (revenue > 0) {
             // Доход будет добавлен в аккумулятор EconomyManager
-            MetroLogger.logInfo("Revenue " + revenue + " accumulated from train at station " + station.getName());
+
         }
 
         MetroLogger.logInfo("Train added to station: " + station.getName());
@@ -374,10 +376,6 @@ public class GameWorld extends World {
         return obj instanceof GameplayUnits ? (GameplayUnits)obj : null;
     }
 
-//    public List<GameplayUnits> getAllGameplayUnits() {
-//        return new ArrayList<>(allGameplayUnits);
-//    }
-
     public void startDestroyingTunnel(Tunnel tunnel) {
         if (tunnel.getType() != TunnelType.ACTIVE) {
             MetroLogger.logWarning("Cannot destroy tunnel of type " + tunnel.getType());
@@ -462,101 +460,11 @@ public class GameWorld extends World {
     public ConstructionTimeProcessor getConstructionProcessor() {
         return processor;
     }
-//    public float calculateStationsUpkeep() {
-//        float totalUpkeep = 0;
-//        for (Station station : getStations()) {
-//            totalUpkeep += station.calculateUpkeepCost();
-//        }
-//        return totalUpkeep;
-//    }
-//    public float calculateTunnelsUpkeep() {
-//        float totalUpkeep = 0;
-//        for (Tunnel t : getTunnels()) {
-//            totalUpkeep = t.calculateTunnelsUpkeep();
-//
-//        }
-//        return totalUpkeep;
-//    }
+
     /*********************
      * ECONOMIC SECTION
      *********************/
-    public float calculateStationRevenue(Station station) {
-        // Получаем тайл, на котором стоит станция
-        WorldTile tile = getWorldTile(station.getX(), station.getY());
 
-        // Базовый доход
-        float revenue = GameConstants.STATION_BASE_REVENUE;
-
-        float permModifier = 1 + (tile.getPerm());
-
-        float abilityPayModifier = 1 + (tile.getAbilityPay());
-
-        float passengerModifier = 1 + tile.getPassengerCount();
-
-        // Итоговый расчет
-        revenue = revenue * permModifier * abilityPayModifier * passengerModifier;
-
-        float gameplayUnitsMultiplier = 1.0f;
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dy = -1; dy <= 1; dy++) {
-                if (dx == 0 && dy == 0) continue;
-
-                int nx = station.getX() + dx;
-                int ny = station.getY() + dy;
-
-                if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-                    GameObject obj = getGameplayTile(nx, ny).getContent();
-                    if (obj instanceof GameplayUnits) {
-                        gameplayUnitsMultiplier *= ((GameplayUnits) obj).getType().getIncomeMultiplier();
-
-
-                    }
-                }
-            }
-        }
-
-        float wearModifier = 1f - station.getWearLevel() * 0.5f; // Доход падает до 50% при максимальном износе
-
-        if (station.getType() == StationType.DROWNED ||
-                station.getType() == StationType.ABANDONED ||
-                station.getType() == StationType.BURNED ||
-                station.getType() == StationType.RUINED ||
-                station.getType() == StationType.BUILDING ||
-                station.getType() == StationType.CLOSED ||
-                station.getType() == StationType.DESTROYED ||
-                station.getType() == StationType.PLANNED) {
-            return 0;
-        }
-        return revenue * gameplayUnitsMultiplier * wearModifier;
-    }
-//    public float getDemolitionCost(Station station) {
-//        float baseCost = GameConstants.BASE_STATION_DEMOLITION_COST;
-//
-//        if (station.getType() == StationType.RUINED ||
-//                station.getType() == StationType.ABANDONED) {
-//            return baseCost * (1 + station.getWearLevel()) * 3f; // В 3 раза дороже
-//        }
-//
-//        return baseCost * (1 + station.getWearLevel());
-//    }
-//    public void updateStationsWear() {
-//        for (Station station : stations) {
-//            station.updateWear();
-//        }
-//    }
-//    public void updateStationsRevenue() {
-//        for (Station station : stations) {
-//            // Пропускаем станции, которые строятся или разрушаются
-//            if (station.isLowIncomeStations()) {
-//                addMoney(0);
-//                return;
-//            }
-//
-//            float revenue = calculateStationRevenue(station);
-//            addMoney(revenue);
-//
-//        }
-//    }
     @Override
     public void removeStation(Station station) {
         super.removeStation(station);
@@ -980,10 +888,26 @@ public class GameWorld extends World {
     }
 
     private float calculateInfluence(float maxInfluence, float distance, int radius) {
-        // Линейное затухание влияния с расстоянием
-        if (distance > radius) return 0;
+        // Увеличиваем радиус влияния на 20%
+        int extendedRadius = (int) (radius * 1.2f);
+        if (distance > extendedRadius) return 0;
 
-        float attenuation = 1 - (distance / radius);
+        // Нелинейное затухание с элементами хаоса
+        float normalizedDistance = distance / extendedRadius;
+
+        // Квадратичное затухание (более резкое в конце)
+        float quadraticAttenuation = 1 - normalizedDistance * normalizedDistance;
+
+        // Добавляем немного хаотичности (псевдо-случайные колебания)
+        float chaosFactor = 0.15f; // Сила хаотичности (0-1)
+        float randomVariation = (float) (1 - chaosFactor + Math.random() * chaosFactor * 2);
+
+        // Комбинируем затухания с хаотическим фактором
+        float attenuation = quadraticAttenuation * randomVariation;
+
+        // Гарантируем, что влияние не станет отрицательным
+        attenuation = Math.max(0, Math.min(1, attenuation));
+
         return maxInfluence * attenuation;
     }
     public void saveWorld() {

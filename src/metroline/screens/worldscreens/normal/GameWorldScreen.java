@@ -190,18 +190,19 @@ public class GameWorldScreen extends CachedWorldScreen {
         g.scale(zoom, zoom);
         g.translate(offsetX, offsetY);
 
-
+        drawAnimatedWater(g);
         renderWorld(g);
+
         if (!GameWorld.showGrassZones) {
 
             drawDynamicWorld(g);
             drawTrains(g);
             drawSelections(g);
         }
-        drawAnimatedWater(g);
         if(GameWorld.showGameplayUnits) {
             drawGameplayUnits(g);
         }
+        if (!GameWorld.showGrassZones) drawLabels(g);
         // Restore transformations
         g.setTransform(oldTransform);
 

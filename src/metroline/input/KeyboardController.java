@@ -112,27 +112,28 @@ public class KeyboardController {
 
         if(mainFrame.getCurrentScreen() instanceof GameWorldScreen worldScreen) {
             GameWorld world = (GameWorld) worldScreen.getWorld();
-            // Дополнительная обработка для WorldScreen
+
             switch (e.getKeyCode()) {
                 case KeyEvent.VK_ESCAPE:
                     worldScreen.isEscPressed = true;
                     break;
-                case KeyEvent.VK_Z:
+                case KeyEvent.VK_2:
                     mainFrame.mainFrameUI.toggleGrassZones();
                     break;
-                case KeyEvent.VK_A:
-                    mainFrame.mainFrameUI.toggleGameplayUnits();
+                case KeyEvent.VK_1:
+                     mainFrame.mainFrameUI.toggleGameplayUnits();
                     break;
-                case KeyEvent.VK_S:
+                case KeyEvent.VK_3:
                     mainFrame.mainFrameUI.togglePaymentZones();
                     break;
-                case KeyEvent.VK_D:
+                case KeyEvent.VK_4:
                     mainFrame.mainFrameUI.togglePassengerZones();
                     break;
 
             }
         }
     }
+
 
     private void handleKeyReleased(KeyEvent e) {
         // Обновляем состояния для WorldScreen при отпускании клавиш
@@ -150,6 +151,7 @@ public class KeyboardController {
     }
 
     private void updateWorldScreenKeyStates() {
+
         if (mainFrame.getCurrentScreen() != null) {
             if(mainFrame.getCurrentScreen() instanceof WorldScreen worldScreen) {
                 worldScreen.isAltPressed = isKeyPressed(KeyEvent.VK_ALT);
@@ -157,7 +159,9 @@ public class KeyboardController {
                 worldScreen.isSpacePressed = isKeyPressed(KeyEvent.VK_SPACE);
                 worldScreen.isShiftPressed = isKeyPressed(KeyEvent.VK_SHIFT);
                 worldScreen.isCPressed = isKeyPressed(KeyEvent.VK_C);
+                worldScreen.isTildePressed = isKeyPressed(KeyEvent.VK_BACK_QUOTE);
                 worldScreen.isAPressed = isKeyPressed(KeyEvent.VK_A);
+
                 worldScreen.isEscPressed = isKeyPressed(KeyEvent.VK_ESCAPE);
 
             }
@@ -184,6 +188,7 @@ public class KeyboardController {
             worldScreen.isCPressed = false;
             worldScreen.isAPressed = false;
             worldScreen.isEscPressed = false;
+            worldScreen.isTildePressed = false;
         }
     }
 }

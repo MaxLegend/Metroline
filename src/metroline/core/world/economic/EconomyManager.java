@@ -21,10 +21,6 @@ import static metroline.objects.gameobjects.GameConstants.*;
  * Централизованный менеджер экономической системы игры
  * Управляет всеми финансовыми операциями, доходами, расходами и содержанием объектов
  */
-/**
- * Централизованный менеджер экономической системы игры
- * Управляет всеми финансовыми операциями, доходами, расходами и содержанием объектов
- */
 public class EconomyManager {
     private final GameWorld world;
     public static Map<Station, Float> stationRevenueAccumulator = new HashMap<>();
@@ -85,6 +81,9 @@ public class EconomyManager {
             return 0f;
         }
 
+        if(station.hasSameColorNeighbor()) {
+            return 0f;
+        }
         float revenue = BASE_STATION_REVENUE;
 
         // Множители дохода (защита от нулевых значений)
@@ -427,11 +426,11 @@ public class EconomyManager {
     private float getStationTypeMultiplier(StationType type) {
         switch (type) {
             case TRANSFER:
-                return 1.5f;
+                return 2.5f;
             case TERMINAL:
                 return 1.3f;
             case TRANSIT:
-                return 1.1f;
+                return 1.9f;
             default:
                 return 1.0f;
         }
