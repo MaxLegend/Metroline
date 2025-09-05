@@ -99,7 +99,7 @@ public class WorldClickController {
         Station station = world.getStationAt(x, y);
 
         if (station != null && station.getType() == StationType.PLANNED) {
-            float stationCost = calculateStationCost(station);
+            float stationCost = world.getEconomyManager().calculateStationConstructionCost(station.getX(), station.getY());
             if (world.canAfford(stationCost)) {
                 world.addMoney(-stationCost);
                 station.setType(StationType.BUILDING);
@@ -704,21 +704,21 @@ public class WorldClickController {
         }
     }
 
-    /**
-     * Расчет стоимости станции
-     */
-    private float calculateStationCost(Station station) {
-        float totalCost = (GameConstants.STATION_BASE_COST * 100) * GameWorldScreen.getInstance().getWorld().getWorldTile(station.getX(), station.getY()).getPerm();
-
-        for (Tunnel tunnel : GameWorldScreen.getInstance().getWorld().getTunnels()) {
-            if ((tunnel.getStart() == station || tunnel.getEnd() == station) &&
-                    tunnel.getType() == TunnelType.PLANNED) {
-                totalCost += tunnel.getLength() * GameConstants.TUNNEL_COST_PER_SEGMENT;
-            }
-        }
-
-        return totalCost;
-    }
+//    /**
+//     * Расчет стоимости станции
+//     */
+//    private float calculateStationCost(Station station) {
+//        float totalCost = (GameConstants.STATION_BASE_COST * 100) * GameWorldScreen.getInstance().getWorld().getWorldTile(station.getX(), station.getY()).getPerm();
+//
+//        for (Tunnel tunnel : GameWorldScreen.getInstance().getWorld().getTunnels()) {
+//            if ((tunnel.getStart() == station || tunnel.getEnd() == station) &&
+//                    tunnel.getType() == TunnelType.PLANNED) {
+//                totalCost += tunnel.getLength() * GameConstants.TUNNEL_COST_PER_SEGMENT;
+//            }
+//        }
+//
+//        return totalCost;
+//    }
 
     /**
      * Показ выбора цвета

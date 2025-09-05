@@ -43,7 +43,7 @@ public class Station extends GameObject {
         this.type = type;
         this.name = generateRandomName();
         this.constructionDate = world.getGameTime().getCurrentTimeMillis();
-    //    this.label = new StationLabel(world, x+1, y, name, this);
+
     }
 
     /**

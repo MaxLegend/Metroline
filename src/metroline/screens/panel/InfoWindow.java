@@ -51,7 +51,7 @@ public class InfoWindow extends JWindow {
 
     private JButton toggleLabelButton;
     private boolean isUpdating = false;
-    float revenue,lastRevenue;
+
     private static final Map<Object, InfoWindow> openWindows = new HashMap<>();
     public InfoWindow(Window owner) {
         super(owner); // Создаем окно без владельца
@@ -284,7 +284,7 @@ public class InfoWindow extends JWindow {
         }
     }
     private void initNameEditComponents() {
-        MetroLogger.logInfo("initNameEditComponents");
+
         // Панель для редактирования имени
         editNamePanel = new JPanel(new BorderLayout(5, 0));
         editNamePanel.setOpaque(false);
@@ -309,7 +309,6 @@ public class InfoWindow extends JWindow {
             @Override
             public void keyPressed(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
-                    MetroLogger.logInfo("cancelNameEditing");
                     cancelNameEditing();
                 }
             }
@@ -402,7 +401,7 @@ public class InfoWindow extends JWindow {
 
         editNamePanel.add(nameEditField, BorderLayout.CENTER);
         editNamePanel.add(saveNameButton, BorderLayout.EAST);
-        MetroLogger.logInfo("END initNameEditComponents");
+
     }
 
     private Rectangle getAdjustedBounds(int x, int y) {
@@ -431,7 +430,7 @@ public class InfoWindow extends JWindow {
         titlePanel.repaint();
     }
     private void startNameEditing(Station station) {
-        MetroLogger.logInfo("START startNameEditing");
+
         JPanel titlePanel = (JPanel) titleLabel.getParent();
         titlePanel.remove(titleLabel);
         titlePanel.add(editNamePanel, BorderLayout.CENTER);
@@ -461,7 +460,7 @@ public class InfoWindow extends JWindow {
 
         nameEditField.requestFocusInWindow();
         nameEditField.selectAll();
-        MetroLogger.logInfo("END startNameEditing");
+
 
     }
     private boolean isEditingName = false;
@@ -613,7 +612,7 @@ public class InfoWindow extends JWindow {
         setVisible(true);
         pack(); // Обновляем размер окна под содержимое
     }
-
+    float revenue, lastRevenue;
     public void updateInfo() {
         if (isUpdating) return;
         isUpdating = true;
@@ -650,14 +649,10 @@ public class InfoWindow extends JWindow {
                 info.append(LngUtil.translatable("infoWnd.position") + " ").append(station.getX()).append(", ").append(station.getY()).append("<br>");
                 info.append(LngUtil.translatable("infoWnd.type") + " ").append(station.getType().getLocalizedName()).append("<br>");
 
-                if (station.hasTrain()) {
-                    revenue = economyManager.calculateStationRevenue(station, station.getCurrentTrain().getTrainType());
-                    lastRevenue = revenue;
-                } else {
-                    revenue = economyManager.calculateSimplyStationRevenue(station);
-                }
+               float currentRevenue = economyManager.preCalculateStationRevenue(station);
+
                 info.append(LngUtil.translatable("infoWnd.revenue") + " ")
-                    .append(MathUtil.round(revenue, 2))
+                    .append(MathUtil.round(currentRevenue, 2))
                     .append(" M (")
                     .append(MathUtil.round((1 - station.getWearLevel()) * 100, 0))
                     .append("%)<br>");

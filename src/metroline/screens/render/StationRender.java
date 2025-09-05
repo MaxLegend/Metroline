@@ -429,7 +429,7 @@ public class StationRender {
         Shape selectionShape = new RoundRectangle2D.Float(drawX - 2 * zoom, drawY - 2 * zoom,
                 drawSize + 4 * zoom, drawSize + 4 * zoom, arcSize, arcSize);
 
-        Shape worldColorShape = new RoundRectangle2D.Float(drawX, drawY, drawSize, drawSize, arcSize, arcSize);
+        Shape worldColorShape = new RoundRectangle2D.Float(drawX-4, drawY-4, drawSize+8, drawSize+8, arcSize, arcSize);
 
         // Специальные формы
         Map<StationType, Shape> specialShapes = new EnumMap<>(StationType.class);

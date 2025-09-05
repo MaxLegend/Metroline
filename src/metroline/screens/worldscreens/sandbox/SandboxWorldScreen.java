@@ -18,6 +18,7 @@ import java.util.List;
 
 
 /**
+ * FIX Привести класс в соответствие с GameWorld - сейчас краш из за меток
  * World screen that displays and interacts with the game world
  */
 public class SandboxWorldScreen extends CachedWorldScreen {

@@ -386,8 +386,8 @@ public class Train extends GameObject {
 
                 // ПРОВЕРЬТЕ, что economyManager не null
                 if (gameWorld.getEconomyManager() != null) {
-                    float revenue = gameWorld.getEconomyManager().calculateStationRevenue(currentStation, trainType);
-
+                    float revenue = gameWorld.getEconomyManager().calculateStationRevenue(currentStation);
+                    gameWorld.addMoney(revenue);
                 } else {
                     MetroLogger.logError("EconomyManager is null in GameWorld!");
                 }
@@ -441,6 +441,7 @@ public class Train extends GameObject {
     }
 
     private void reachTunnelEnd() {
+        if (currentTunnel == null) return;
         Station reachedStation = movingForward ? currentTunnel.getEnd() : currentTunnel.getStart();
         // Освобождаем туннель
         if (currentTunnel != null) {

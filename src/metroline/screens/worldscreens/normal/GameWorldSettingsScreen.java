@@ -166,7 +166,7 @@ public class GameWorldSettingsScreen extends GameScreen {
         moneyValueLabel.setForeground(StyleUtil.FOREGROUND_COLOR);
         moneyValueLabel.setFont(new Font("Sans Serif", Font.BOLD, 13));
 
-        moneySlider = new MetrolineSlider("world.start_money_desc",50, 1000000, 2000, 100);
+        moneySlider = new MetrolineSlider("world.start_money_desc",50, 1000000, 10000, 100);
         citiesCountSlider = new MetrolineSlider(LngUtil.translatable("world.cities_count_desc"),2, 60, 5, 1);
 
         moneyTextLabel = new MetrolineLabel(moneySlider.getValue() + " M");
@@ -250,11 +250,11 @@ public class GameWorldSettingsScreen extends GameScreen {
         economyPanel.add(Box.createRigidArea(new Dimension(0, 20)));
 
         // Create economic sliders
-        stationBaseCostSlider = new MetrolineSlider("world.station_cost_desc", 5f, 40, GameConstants.STATION_BASE_COST, 0.5f);
-        tunnelCostPerSegmentSlider = new MetrolineSlider("world.tunnel_segment_cost_desc",0.1f, 10, GameConstants.TUNNEL_COST_PER_SEGMENT, 0.1f);
-        stationBaseRevenueSlider = new MetrolineSlider("world.station_revenue_desc",0.1f, 5, GameConstants.STATION_BASE_REVENUE, 0.1f);
-        baseStationUpkeepSlider = new MetrolineSlider("world.station_upkeep_desc",0.1f, 8, GameConstants.BASE_STATION_UPKEEP, 0.1f);
-        baseTunnelUpkeepSlider = new MetrolineSlider("world.tunnel_upkeep_desc",0.1f, 2, GameConstants.BASE_TUNNEL_UPKEEP_PER_SEGMENT, 0.5f);
+        stationBaseCostSlider = new MetrolineSlider("world.station_cost_desc", 20f, 400f, GameConstants.STATION_BASE_COST, 20f);
+        tunnelCostPerSegmentSlider = new MetrolineSlider("world.tunnel_segment_cost_desc",1f, 50, GameConstants.TUNNEL_COST_PER_SEGMENT, 1f);
+        stationBaseRevenueSlider = new MetrolineSlider("world.station_revenue_desc",0f, 40, GameConstants.BASE_STATION_REVENUE, 0.1f);
+        baseStationUpkeepSlider = new MetrolineSlider("world.station_upkeep_desc",0f, 40, GameConstants.BASE_STATION_UPKEEP, 5f);
+        baseTunnelUpkeepSlider = new MetrolineSlider("world.tunnel_upkeep_desc",0f, 5, GameConstants.BASE_TUNNEL_UPKEEP_PER_SEGMENT, 0.5f);
         gameplayUnitsCountSlider = new MetrolineSlider("world.gameplay_units_desc",5f, 100, GameConstants.GAMEPLAY_UNITS_COUNT, 1f);
 
         // Add economic sliders to panel
@@ -401,7 +401,7 @@ public class GameWorldSettingsScreen extends GameScreen {
         // Установка значений в GameConstants
         GameConstants.STATION_BASE_COST = stationBaseCost;
         GameConstants.TUNNEL_COST_PER_SEGMENT = tunnelCostPerSegment;
-        GameConstants.STATION_BASE_REVENUE = stationBaseRevenue;
+        GameConstants.BASE_STATION_REVENUE = stationBaseRevenue;
         GameConstants.BASE_STATION_UPKEEP = baseStationUpkeep;
         GameConstants.BASE_TUNNEL_UPKEEP_PER_SEGMENT = baseTunnelUpkeep;
         GameConstants.GAMEPLAY_UNITS_COUNT = gameplayUnitsCount;
@@ -419,7 +419,7 @@ public class GameWorldSettingsScreen extends GameScreen {
     public void onActivate() {
         stationBaseCostSlider.setValue(GameConstants.STATION_BASE_COST);
         tunnelCostPerSegmentSlider.setValue(GameConstants.TUNNEL_COST_PER_SEGMENT);
-        stationBaseRevenueSlider.setValue(GameConstants.STATION_BASE_REVENUE);
+        stationBaseRevenueSlider.setValue(GameConstants.BASE_STATION_REVENUE);
         baseStationUpkeepSlider.setValue(GameConstants.BASE_STATION_UPKEEP);
         baseTunnelUpkeepSlider.setValue(GameConstants.BASE_TUNNEL_UPKEEP_PER_SEGMENT);
         gameplayUnitsCountSlider.setValue(GameConstants.GAMEPLAY_UNITS_COUNT);

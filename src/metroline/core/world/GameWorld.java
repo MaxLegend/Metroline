@@ -211,12 +211,6 @@ public class GameWorld extends World {
         Train train = new Train(this, station, trainType);
         trains.add(train);
 
-        // Используем EconomyManager для расчета дохода
-        float revenue = economyManager.calculateStationRevenue(station, trainType);
-        if (revenue > 0) {
-            // Доход будет добавлен в аккумулятор EconomyManager
-
-        }
 
         MetroLogger.logInfo("Train added to station: " + station.getName());
     }
@@ -321,6 +315,7 @@ public class GameWorld extends World {
 
         // Используем EconomyManager для расчета стоимости строительства
         float constructionCost = economyManager.calculateStationConstructionCost(station.getX(), station.getY());
+
         if (!removeMoney(constructionCost)) {
 
             return;
@@ -513,9 +508,6 @@ public class GameWorld extends World {
             MainFrame.getInstance().mainFrameUI.updateMoneyDisplay(money);
         }
     }
-//    public StationLabel getLabelForStation(Station station) {
-//        return station.getLabel(); // Теперь это будет работать
-//    }
 
 
 

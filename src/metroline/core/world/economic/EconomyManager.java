@@ -18,6 +18,7 @@ import java.util.Map;
 import static metroline.objects.gameobjects.GameConstants.*;
 
 /**
+ * FIX При открытом при попытке изменить в полноэкран InfoWindow краш?
  * Централизованный менеджер экономической системы игры
  * Управляет всеми финансовыми операциями, доходами, расходами и содержанием объектов
  */
@@ -27,13 +28,6 @@ public class EconomyManager {
     private final Map<Station, Long> lastMaintenanceUpdate;
     private final Map<Tunnel, Long> lastTunnelMaintenanceUpdate;
 
-    // Константы экономики
-    private static final float BASE_STATION_REVENUE = 10f;
-    private static final float BASE_STATION_UPKEEP = 0.001f;
-    private static final float BASE_TUNNEL_UPKEEP_PER_SEGMENT = 0.0005f;
-    private static final float STATION_BASE_COST = 100f;
-    private static final float TUNNEL_COST_PER_SEGMENT = 10f;
-    private static final float STATION_REPAIR_BASE_COST = 50f;
 
     // Интервал обновления содержания (в миллисекундах игрового времени)
     private static final long MAINTENANCE_UPDATE_INTERVAL = 60000; // 1 минута игрового времени
@@ -47,30 +41,14 @@ public class EconomyManager {
     public int getAccumulatorSize() {
         return stationRevenueAccumulator.size();
     }
-    public float calculateSimplyStationRevenue(Station station) {
-        WorldTile tile = world.getWorldTile(station.getX(), station.getY());
-        if (tile == null) {
-            return 0f;
-        }
-        float revenue = BASE_STATION_REVENUE;
-        revenue *= getSafeMultiplier(tile.getPassengerCount(), 1.0f); // Пассажиропоток как множитель
-        revenue *= getSafeMultiplier(tile.getAbilityPay(), 1.0f);     // Платежеспособность как множитель
-        revenue *= getStationTypeMultiplier(station.getType());
-        revenue *= (1 - station.getWearLevel()); // Износ снижает доход
-        revenue *= getSafeMultiplier(tile.getPerm(), 1.0f); // Множитель местности
 
-        if (tile.isWater() || hasWaterNeighbor(station)) {
-            revenue *= 1.8f;
-        }
-        return revenue;
-}
     /**
      * Рассчитывает доход от станции при остановке поезда
      * @param station станция
-     * @param trainType тип поезда
+     *
      * @return размер дохода
      */
-    public float calculateStationRevenue(Station station, TrainType trainType) {
+    public float calculateStationRevenue(Station station) {
         // Проверка на невалидные станции
         if (isInvalidStation(station)) {
             return 0f;
@@ -86,8 +64,6 @@ public class EconomyManager {
         }
         float revenue = BASE_STATION_REVENUE;
 
-        // Множители дохода (защита от нулевых значений)
-        revenue *= trainType.getRevenueMultiplier();
         revenue *= getSafeMultiplier(tile.getPassengerCount(), 1.0f); // Пассажиропоток как множитель
         revenue *= getSafeMultiplier(tile.getAbilityPay(), 1.0f);     // Платежеспособность как множитель
         revenue *= getStationTypeMultiplier(station.getType());
@@ -104,30 +80,18 @@ public class EconomyManager {
 
         return revenue;
     }
-
-    private synchronized void addToRevenueAccumulator(Station station, float revenue) {
-        stationRevenueAccumulator.merge(station, revenue, Float::sum);
-    }
-    // Метод для расчета стоимости ремонта станции
-    // Метод для расчета стоимости ремонта станции
-    public float calculateRepairCost(Station station) {
-        return station.getRepairCost();
-    }
-    public float calculateAverageStationRevenue(Station station) {
-        // Проверка на невалидные станции
-        if (isInvalidStation(station)) {
-            return 0f;
-        }
+    public float preCalculateStationRevenue(Station station) {
 
         WorldTile tile = world.getWorldTile(station.getX(), station.getY());
         if (tile == null) {
             return 0f;
         }
 
+        if(station.hasSameColorNeighbor()) {
+            return 0f;
+        }
         float revenue = BASE_STATION_REVENUE;
 
-        // Множители дохода (защита от нулевых значений)
-        revenue *= 1.5f;
         revenue *= getSafeMultiplier(tile.getPassengerCount(), 1.0f); // Пассажиропоток как множитель
         revenue *= getSafeMultiplier(tile.getAbilityPay(), 1.0f);     // Платежеспособность как множитель
         revenue *= getStationTypeMultiplier(station.getType());
@@ -139,11 +103,17 @@ public class EconomyManager {
             revenue *= 1.8f; // Снижение дохода на воде
         }
 
-        // Добавляем в аккумулятор станции
-        stationRevenueAccumulator.merge(station, revenue, Float::sum);
-
         return revenue;
     }
+    private synchronized void addToRevenueAccumulator(Station station, float revenue) {
+        stationRevenueAccumulator.merge(station, revenue, Float::sum);
+    }
+    // Метод для расчета стоимости ремонта станции
+    // Метод для расчета стоимости ремонта станции
+    public float calculateRepairCost(Station station) {
+        return station.getRepairCost();
+    }
+
     /**
      * Вспомогательный метод для безопасного использования множителей
      * Если значение <= 0, возвращает значение по умолчанию
@@ -347,32 +317,34 @@ public class EconomyManager {
      * Обрабатывает периодические платежи за содержание
      */
     public void processMaintenance() {
-        long currentTime = world.getGameTime().getCurrentTimeMillis();
-        float totalUpkeep = 0f;
 
-        // Содержание станций
-        for (Station station : world.getStations()) {
-            Long lastUpdate = lastMaintenanceUpdate.get(station);
-            if (lastUpdate == null || currentTime - lastUpdate >= MAINTENANCE_UPDATE_INTERVAL) {
-                float upkeep = calculateStationUpkeep(station);
-                totalUpkeep += upkeep;
-                lastMaintenanceUpdate.put(station, currentTime);
+
+            long currentTime = world.getGameTime().getCurrentTimeMillis();
+            float totalUpkeep = 0f;
+            // Содержание станций
+            for (Station station : world.getStations()) {
+                Long lastUpdate = lastMaintenanceUpdate.get(station);
+                if (lastUpdate == null || currentTime - lastUpdate >= MAINTENANCE_UPDATE_INTERVAL) {
+                    float upkeep = calculateStationUpkeep(station);
+                    totalUpkeep += upkeep;
+                    lastMaintenanceUpdate.put(station, currentTime);
+                }
             }
-        }
 
-        // Содержание туннелей
-        for (Tunnel tunnel : world.getTunnels()) {
-            Long lastUpdate = lastTunnelMaintenanceUpdate.get(tunnel);
-            if (lastUpdate == null || currentTime - lastUpdate >= MAINTENANCE_UPDATE_INTERVAL) {
-                float upkeep = calculateTunnelUpkeep(tunnel);
-                totalUpkeep += upkeep;
-                lastTunnelMaintenanceUpdate.put(tunnel, currentTime);
+            // Содержание туннелей
+            for (Tunnel tunnel : world.getTunnels()) {
+                Long lastUpdate = lastTunnelMaintenanceUpdate.get(tunnel);
+                if (lastUpdate == null || currentTime - lastUpdate >= MAINTENANCE_UPDATE_INTERVAL) {
+                    float upkeep = calculateTunnelUpkeep(tunnel);
+                    totalUpkeep += upkeep;
+                    lastTunnelMaintenanceUpdate.put(tunnel, currentTime);
+                }
             }
-        }
-
-        // Списываем общую сумму
-        if (totalUpkeep > 0) {
-            world.removeMoney(totalUpkeep);
+        if(world.getGameTime().checkDayPassed()) {
+            // Списываем общую сумму
+            if (totalUpkeep > 0) {
+                world.removeMoney(totalUpkeep);
+            }
         }
     }
 
