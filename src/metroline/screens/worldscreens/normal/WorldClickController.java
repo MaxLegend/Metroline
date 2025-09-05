@@ -32,6 +32,7 @@ import java.util.List;
 
 import static metroline.objects.gameobjects.GameConstants.COST_STANDART_TRAIN;
 
+// FIX Убрать возможность выбирать скрытые объекты
 public class WorldClickController {
 
     public static PathPoint dragOffset = null;

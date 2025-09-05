@@ -26,6 +26,7 @@ public class KeyboardController {
     private KeyboardController(MainFrame mainFrame) {
         this.mainFrame = mainFrame;
         setupGlobalKeyListener();
+        setupFocusListener();
     }
 
     public static void initialize(MainFrame mainFrame) {
@@ -105,7 +106,18 @@ public class KeyboardController {
             handleWorldScreenKeyPressed(e);
         }
     }
+    private void setupFocusListener() {
+        KeyboardFocusManager.getCurrentKeyboardFocusManager()
+                            .addPropertyChangeListener("focusOwner", evt -> {
+                                Component newFocus = (Component) evt.getNewValue();
+                                Component oldFocus = (Component) evt.getOldValue();
 
+                                // Если фокус ушел из нашего приложения
+                                if (oldFocus != null && newFocus != oldFocus) {
+                                    clearAllKeys(); // Сбрасываем все клавиши
+                                }
+                            });
+    }
     private void handleWorldScreenKeyPressed(KeyEvent e) {
         // Обновляем состояния клавиш для WorldScreen
         updateWorldScreenKeyStates();

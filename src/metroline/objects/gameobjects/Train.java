@@ -12,8 +12,8 @@ import java.awt.image.BufferedImage;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-//FIXME меню выбора поездов накладывается поверх тултайпа когда всплывающая панель выходит за рамки окна
-
+// FIX меню выбора поездов накладывается поверх тултайпа когда всплывающая панель выходит за рамки окна
+// FIX иногда NPE по выбору туннеля в currentTunnel В (java.lang.NullPointerException: Cannot invoke "metroline.objects.gameobjects.Tunnel.setCurrentTrain(metroline.objects.gameobjects.Train)" because "this.currentTunnel" is null)
 public class Train extends GameObject {
     private Station currentStation;
     private Tunnel currentTunnel;

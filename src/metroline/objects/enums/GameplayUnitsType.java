@@ -39,13 +39,13 @@ public enum GameplayUnitsType {
     }
     public float getPassengerGeneration() {
         switch (this) {
-            case PORT: return 5f;
-            case AIRPORT: return 7f;
-            case BIG_HOUSE: return 3.3f;
-            case HOUSE: return 2.8f;
-            case SMALL_HOUSE: return 2.1f;
-            case PERSONAL_HOUSE: return 2.3f;
-            case BIG_PERSONAL_HOUSE: return 3.1f;
+            case PORT: return 10f;
+            case AIRPORT: return 13f;
+            case BIG_HOUSE: return 8.3f;
+            case HOUSE: return 7.8f;
+            case SMALL_HOUSE: return 7.1f;
+            case PERSONAL_HOUSE: return 7.3f;
+            case BIG_PERSONAL_HOUSE: return 8.1f;
             default: return 0;
         }
     }

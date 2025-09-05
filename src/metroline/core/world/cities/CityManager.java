@@ -21,7 +21,7 @@ public class CityManager {
      *******************************/
     private static final double DISTRICTS_PER_10000_CELLS = 2.5;
 
-    private static final int DISTRICT_UPDATE_INTERVAL = 8000000;
+    private static final int DISTRICT_UPDATE_INTERVAL = 2400000;
     private static final int EXPANSION_CHECK_INTERVAL = 120000;
 
     private long lastZoneUpdateTime;
