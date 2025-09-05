@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import static metroline.objects.gameobjects.GameConstants.COUNT_DISTRICTS;
+
 public class CityManager {
     private final GameWorld world;
     private final List<CityDistrict> districts;
@@ -18,13 +20,12 @@ public class CityManager {
      * CONSTANTS SECTION
      *******************************/
     private static final double DISTRICTS_PER_10000_CELLS = 2.5;
-    private static final int MIN_DISTRICTS = 1;
-    private static final int MAX_DISTRICTS = 40;
-    private static final int DISTRICT_UPDATE_INTERVAL = 300000;
+
+    private static final int DISTRICT_UPDATE_INTERVAL = 8000000;
     private static final int EXPANSION_CHECK_INTERVAL = 120000;
 
     private long lastZoneUpdateTime;
-    private static final int ZONE_UPDATE_INTERVAL = 30000; // Обновлять зоны каждые 30 секунд
+    private static final int ZONE_UPDATE_INTERVAL = 60000; // Обновлять зоны каждые 30 секунд
     /*******************************
      * CONSTRUCTOR SECTION
      *******************************/
@@ -47,22 +48,33 @@ public class CityManager {
         int minDistanceFromEdge = Math.min(world.getWidth(), world.getHeight()) / 10;
         minDistanceFromEdge = Math.max(5, minDistanceFromEdge);
 
-        while (created < districtCount && attempts < districtCount * 3) {
+        // Увеличиваем максимальное количество попыток
+        while (created < districtCount && attempts < districtCount * 5) {
             if (createDistrict(created, minDistanceFromEdge)) {
                 created++;
             }
             attempts++;
         }
+
+        // Логируем результат для отладки
+        MetroLogger.logInfo("Generated " + created + " districts out of " + districtCount + " requested");
     }
 
     private int calculateDistrictCount() {
+        // Если COUNT_DISTRICTS задан (больше 0), используем его с небольшим разбросом
+        if (COUNT_DISTRICTS > 0) {
+            int variation = (int) (COUNT_DISTRICTS * 0.15); // 15% разброс
+            variation = Math.max(1, variation); // Минимум 1 для вариативности
+            return (int) (COUNT_DISTRICTS - variation + random.nextInt(variation * 2 + 1));
+        }
+
+        // Автоматический расчет только если COUNT_DISTRICTS не задан
         double area = world.getWidth() * world.getHeight();
         int calculatedCount = (int) Math.round(area / 10000.0 * DISTRICTS_PER_10000_CELLS);
 
-        calculatedCount = Math.max(MIN_DISTRICTS, calculatedCount);
-        calculatedCount = Math.min(MAX_DISTRICTS, calculatedCount);
-
+        // Добавляем вариативность к автоматическому расчету
         int variation = (int) (calculatedCount * 0.25);
+        variation = Math.max(1, variation);
         return calculatedCount - variation + random.nextInt(variation * 2 + 1);
     }
 
@@ -84,20 +96,22 @@ public class CityManager {
     }
 
     private boolean isValidDistrictLocation(int centerX, int centerY, int radius) {
-        int safeMargin = radius + 5;
+        // Базовая проверка границ
+        int safeMargin = radius + 3; // Уменьшаем запас
         if (centerX - safeMargin < 0 || centerX + safeMargin >= world.getWidth() ||
                 centerY - safeMargin < 0 || centerY + safeMargin >= world.getHeight()) {
             return false;
         }
 
+        // Проверка воды
         if (world.getWorldTile(centerX, centerY).isWater()) {
             return false;
         }
 
+        // Проверка расстояния до других районов (можно уменьшить минимальное расстояние)
         for (CityDistrict existing : districts) {
-            double distance = Math.sqrt(Math.pow(centerX - existing.getCenterX(), 2) +
-                    Math.pow(centerY - existing.getCenterY(), 2));
-            double minDistance = radius + existing.getRadius() + 10;
+            double distance = Math.sqrt(Math.pow(centerX - existing.getCenterX(), 2) + Math.pow(centerY - existing.getCenterY(), 2));
+            double minDistance = radius + existing.getRadius() + 5; // Уменьшаем с 10 до 5
             if (distance < minDistance) {
                 return false;
             }

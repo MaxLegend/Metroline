@@ -2,6 +2,7 @@ package metroline.objects.gameobjects;
 
 import metroline.core.world.World;
 import metroline.input.selection.SelectionManager;
+import metroline.screens.worldscreens.normal.GameWorldScreen;
 
 import java.awt.*;
 
@@ -42,6 +43,9 @@ public class StationLabel extends GameObject {
     public GameObject getParentGameObject() {
         return parentStation;
     }
+    public void setParentGameObject(GameObject obj) {
+        this.parentStation = obj;
+    }
     public long getParentStationId() {
         return parentStation != null ? parentStation.getUniqueId() : -1;
     }
@@ -49,53 +53,80 @@ public class StationLabel extends GameObject {
         GameObject parent = getParentGameObject();
         World world = getWorld();
 
-        // Разрешаем перемещение в любую позицию рядом со станцией (не только ортогонально)
         if (parent != null) {
-            int dx = Math.abs(newX - parent.getX());
-            int dy = Math.abs(newY - parent.getY());
+            int dx = newX - parent.getX();
+            int dy = newY - parent.getY();
 
-            // Разрешаем перемещение в пределах 2 клеток от станции
-            if (dx <= 2 && dy <= 2 && (dx + dy) > 0) { // Исключаем позицию станции
+            // Разрешаем перемещение только в 8 клетках вокруг станции (3x3 grid без центра)
+            // dx и dy должны быть в диапазоне [-1, 1], но не оба равны 0
+            if (Math.abs(dx) <= 1 && Math.abs(dy) <= 1 && (dx != 0 || dy != 0)) {
                 // Проверяем, что клетка свободна (нет других станций или меток)
-                if (world.getStationAt(newX, newY) == null && (world.getLabelAt(newX, newY) == null || world.getLabelAt(newX, newY) == this)) {
+                if (world.getStationAt(newX, newY) == null &&
+                        (world.getLabelAt(newX, newY) == null || world.getLabelAt(newX, newY) == this)) {
 
-                        world.getGameTile(getX(), getY()).setContent(null);
-                        this.x = newX;
-                        this.y = newY;
-                        world.getGameTile(getX(), getY()).setContent(this);
-                        return true;
-                    }
-                
+                    // Убираем метку из старой позиции
+                    world.getGameTile(getX(), getY()).setContent(null);
+
+                    // Обновляем логические координаты
+                    this.x = newX;
+                    this.y = newY;
+
+                    // Помещаем метку в новую позицию
+                    world.getGameTile(newX, newY).setContent(this);
+                    return true;
+                }
             }
         }
         return false;
     }
+
     @Override
     public void draw(Graphics2D g, int offsetX, int offsetY, float zoom) {
-        // Получаем относительное положение текста к станции
         if (!visible) {
             return;
         }
+
         if (parentStation != null) {
             int relX = getX() - parentStation.getX();
             int relY = getY() - parentStation.getY();
 
-            // Базовые смещения (для положения справа от станции)
-            int baseOffsetX = 32 + 8; // 32 - размер клетки, 8 - дополнительный отступ
+            int baseOffsetX = 32 + 8;
             int baseOffsetY = 20;
+
             FontMetrics fm = g.getFontMetrics();
             int textWidth = fm.stringWidth(text);
             int textHeight = fm.getHeight();
-            // Корректируем смещение в зависимости от положения
-            if (relX < 0) { // Если текст слева от станции
-                baseOffsetX = -textWidth - 8; // Смещаем влево на ширину текста
-            } else if (relX == 0) { // Если текст сверху/снизу станции
-                // Центрируем по горизонтали
-                baseOffsetX = (32 - textWidth) / 2;
 
-                if (relY < 0) { // Если текст выше станции
+            boolean isDiagonal = Math.abs(relX) == 1 && Math.abs(relY) == 1;
+
+            // Обработка диагональных позиций
+            if (isDiagonal) {
+                if (relX == -1 && relY == -1) { // Слева-сверху
+                    baseOffsetX = -textWidth - 8;
                     baseOffsetY = -textHeight + 4;
-                } else if (relY > 0) { // Если текст ниже станции
+                } else if (relX == 1 && relY == -1) { // Справа-сверху
+                    baseOffsetX = 32 + 8;
+                    baseOffsetY = -textHeight + 4;
+                } else if (relX == -1 && relY == 1) { // Слева-снизу
+                    baseOffsetX = -textWidth - 8;
+                    baseOffsetY = textHeight + 32;
+                } else if (relX == 1 && relY == 1) { // Справа-снизу
+                    baseOffsetX = 32 + 8;
+                    baseOffsetY = textHeight + 32;
+                }
+            }
+            // Обработка ортогональных позиций
+            else if (relX == -1) {
+                baseOffsetX = -textWidth - 8;
+                baseOffsetY = 20;
+            } else if (relX == 1) {
+                baseOffsetX = 32 + 8;
+                baseOffsetY = 20;
+            } else if (relX == 0) {
+                baseOffsetX = (32 - textWidth) / 2;
+                if (relY == -1) {
+                    baseOffsetY = -textHeight + 4;
+                } else if (relY == 1) {
                     baseOffsetY = textHeight + 32;
                 }
             }
@@ -108,19 +139,11 @@ public class StationLabel extends GameObject {
             Color textColor = isSelected() ? Color.RED : new Color(30, 30, 30);
             Color bgColor = new Color(255, 255, 255, 180);
 
-            // Настройка шрифта
             int fontSize = (int) (12 * zoom);
             fontSize = Math.max(fontSize, 8);
             Font font = new Font("Arial", Font.PLAIN, fontSize);
             g.setFont(font);
 
-
-            // Обновляем позицию с учетом ширины текста (если нужно)
-            if (relX < 0) {
-                drawX = (int) ((parentStation.getX() * 32 + offsetX - textWidth - 8) * zoom);
-            }
-
-            // Включаем сглаживание
             Graphics2D g2d = (Graphics2D) g;
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
@@ -139,6 +162,26 @@ public class StationLabel extends GameObject {
                 g2d.setStroke(new BasicStroke(2 * zoom));
                 g2d.drawRoundRect(drawX - 5, drawY - fm.getAscent() - 4,
                         textWidth + 10, textHeight + 8, round + 2, round + 2);
+            }
+
+            // === ДЕБАГ ===
+            if (((GameWorldScreen)getWorld().getWorldScreen()).debugMode) {
+                int logicalX = (int) ((getX() * 32 + offsetX + 16) * zoom);
+                int logicalY = (int) ((getY() * 32 + offsetY + 16) * zoom);
+
+                g2d.setColor(Color.RED);
+                g2d.setStroke(new BasicStroke(2 * zoom));
+                int circleSize = (int) (8 * zoom);
+                g2d.drawOval(logicalX - circleSize/2, logicalY - circleSize/2, circleSize, circleSize);
+
+                int visualCenterX = drawX + textWidth / 2;
+                int visualCenterY = drawY - textHeight / 2;
+                g2d.drawLine(logicalX, logicalY, visualCenterX, visualCenterY);
+
+                g2d.setColor(Color.RED);
+                g2d.setFont(new Font("Arial", Font.PLAIN, (int)(10 * zoom)));
+                g2d.drawString("Логическая позиция: " + getX() + "," + getY(),
+                        logicalX + 10, logicalY);
             }
         }
     }

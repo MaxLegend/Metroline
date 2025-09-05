@@ -52,6 +52,8 @@ world.station_revenue=Station revenue
 world.station_upkeep=Station upkeep
 world.tunnel_upkeep=Tunnel upkeep
 world.gameplay_units=Gameplay units
+world.cities_count=Cities
+world.cities_count_desc=Approximate value: the higher it is, the more cities there are, but it all depends on the randomness and conditions. For example, you won't be able to generate 40 cities on a 40-by-40-cell map.
 
 world.gen_abilityPay_zone_desc=Generate affordability zones that affect station revenue.
 world.gen_passengerCount_zone_desc=Generate passenger traffic that affects station revenue.

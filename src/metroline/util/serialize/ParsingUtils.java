@@ -478,6 +478,18 @@ public class ParsingUtils {
             Station parent = stationIdMap.get(parentStationId);
             if (parent != null) {
                 StationLabel stationLabel = new StationLabel(world, x, y, text, parent);
+
+                // ВОТ КРИТИЧЕСКИ ВАЖНЫЕ СТРОКИ:
+                // 1. Устанавливаем связь с родительской станцией
+                parent.setLabel(stationLabel); // Станция знает о метке
+                stationLabel.setParentGameObject(parent); // Метка знает о станции
+
+                // 2. Добавляем метку в игровую сетку
+                int index = x + y * world.getWidth();
+                if (index < world.gameGrid.length) {
+                    world.gameGrid[index].setContent(stationLabel);
+                }
+
                 return stationLabel;
             } else {
                 System.err.println("Родительская станция не найдена для метки: " + text + " с ID: " + parentStationId);

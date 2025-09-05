@@ -375,6 +375,7 @@ public class WorldClickController {
         station.x = newX;
         station.y = newY;
 
+
         // Добавляем в новую позицию
         world.getGameTile(newX, newY).setContent(station);
 
@@ -387,12 +388,16 @@ public class WorldClickController {
 
         // Перемещаем метку станции
         StationLabel stationLabel = world.getLabelForStation(station);
+     //   System.out.println("stationLabel " + station.getLabel());
         if (stationLabel != null) {
+
             PathPoint newLabelPos = world.findFreePositionNear(station.getX(), station.getY(), station.getName());
             if (newLabelPos != null) {
                 stationLabel.tryMoveTo(newLabelPos.x, newLabelPos.y);
+
             }
         }
+
 
         GameWorldScreen.getInstance().repaint();
     }
@@ -406,7 +411,6 @@ public class WorldClickController {
     }
     /**
      * Попытка выбрать метку
-     * FIX Метка перестает выбираться после перезагрузки!!!
      * TODO Скрытие меток надо сделать физическим, а не визуальным
      */
     private boolean trySelectLabel(int x, int y) {

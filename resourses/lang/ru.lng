@@ -53,6 +53,8 @@ world.station_revenue=Доход станции
 world.station_upkeep=Обслуживание станции
 world.tunnel_upkeep=Обслуживание перегона
 world.gameplay_units=Игровые точки
+world.cities_count=Города
+world.cities_count_desc=Примерное значение: чем оно больше, тем больше городов, но все зависит от рандома и условий. Например, вы не сможете сгенерировать 40 городов на карте 40 на 40 клеток.
 
 world.gen_abilityPay_zone_desc=Генерация зон платежеспособности, которые влияют на доход станций.
 world.gen_passengerCount_zone_desc=Генерация пассажиропотоков, которые влияют на доход станций.

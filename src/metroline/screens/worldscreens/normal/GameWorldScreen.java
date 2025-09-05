@@ -190,9 +190,9 @@ public class GameWorldScreen extends CachedWorldScreen {
         g.scale(zoom, zoom);
         g.translate(offsetX, offsetY);
 
-        drawAnimatedWater(g);
-        renderWorld(g);
 
+        renderWorld(g);
+        drawAnimatedWater(g);
         if (!GameWorld.showGrassZones) {
 
             drawDynamicWorld(g);

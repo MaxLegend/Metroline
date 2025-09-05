@@ -30,7 +30,7 @@ public class Station extends GameObject {
     private StationType type;
 
     private Train currentTrain;
-
+    private StationLabel label;
     private static final float WEAR_RATE_MULTIPLIER = 5.0f;
 
     public Station() {
@@ -43,9 +43,24 @@ public class Station extends GameObject {
         this.type = type;
         this.name = generateRandomName();
         this.constructionDate = world.getGameTime().getCurrentTimeMillis();
+    //    this.label = new StationLabel(world, x+1, y, name, this);
     }
 
+    /**
+     * Gets the station label
+     * @return StationLabel associated with this station
+     */
+    public StationLabel getLabel() {
+        return label;
+    }
 
+    /**
+     * Sets the station label
+     * @param label StationLabel to associate with this station
+     */
+    public void setLabel(StationLabel label) {
+        this.label = label;
+    }
     /**
      * Проверяет, есть ли соседняя станция того же цвета в радиусе одной клетки
      * @return true если есть соседняя станция того же цвета

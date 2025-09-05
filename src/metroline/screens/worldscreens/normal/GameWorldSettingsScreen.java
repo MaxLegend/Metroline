@@ -50,6 +50,8 @@ public class GameWorldSettingsScreen extends GameScreen {
     private MetrolineSlider baseTunnelUpkeepSlider;
     private MetrolineSlider gameplayUnitsCountSlider;
 
+    private MetrolineSlider citiesCountSlider;
+
     // Метки для новых слайдеров
     private MetrolineLabel centerTitle = new MetrolineLabel("create_world_title", SwingConstants.CENTER);
     private MetrolineLabel widthLabel;
@@ -60,7 +62,7 @@ public class GameWorldSettingsScreen extends GameScreen {
     private MetrolineLabel baseStationUpkeepValueLabel= new MetrolineLabel("M");
     private MetrolineLabel baseTunnelUpkeepValueLabel= new MetrolineLabel("M");
     private MetrolineLabel gameplayUnitsCountValueLabel= new MetrolineLabel("M");
-
+    private MetrolineLabel citiesCountSliderLabel = new MetrolineLabel("M");
     public GameWorldSettingsScreen(MainFrame parent) {
         super(parent);
         this.parent = parent;
@@ -165,10 +167,12 @@ public class GameWorldSettingsScreen extends GameScreen {
         moneyValueLabel.setFont(new Font("Sans Serif", Font.BOLD, 13));
 
         moneySlider = new MetrolineSlider("world.start_money_desc",50, 1000000, 2000, 100);
+        citiesCountSlider = new MetrolineSlider(LngUtil.translatable("world.cities_count_desc"),2, 60, 5, 1);
 
         moneyTextLabel = new MetrolineLabel(moneySlider.getValue() + " M");
         moneyTextLabel.setFont(new Font("Sans Serif", Font.BOLD, 13));
         addRow(centerPanel, "world.start_money", moneySlider, moneyTextLabel);
+        addRow(centerPanel, "world.cities_count", citiesCountSlider, citiesCountSliderLabel);
         centerPanel.add(moneyPanel);
         centerPanel.add(Box.createRigidArea(new Dimension(0, 20)));
 
@@ -386,6 +390,7 @@ public class GameWorldSettingsScreen extends GameScreen {
         boolean hasRivers = riversCheck.isSelected();
         boolean roundStations = roundStationsCheck.isSelected();
         float startMoney = moneySlider.getValue();
+        float startCities = citiesCountSlider.getValue();
         float stationBaseCost = stationBaseCostSlider.getValue();
         float tunnelCostPerSegment = tunnelCostPerSegmentSlider.getValue();
         float stationBaseRevenue = stationBaseRevenueSlider.getValue();
@@ -400,6 +405,7 @@ public class GameWorldSettingsScreen extends GameScreen {
         GameConstants.BASE_STATION_UPKEEP = baseStationUpkeep;
         GameConstants.BASE_TUNNEL_UPKEEP_PER_SEGMENT = baseTunnelUpkeep;
         GameConstants.GAMEPLAY_UNITS_COUNT = gameplayUnitsCount;
+        GameConstants.COUNT_DISTRICTS = startCities;
             parent.switchScreen(MainFrame.GAME_SCREEN_NAME);
             GameWorldScreen gameScreen = (GameWorldScreen) parent.getCurrentScreen();
             gameScreen.createNewWorld((short) width, (short) height,hasPassengerCount,hasAbilityPay,  hasLandscape, hasRivers, worldColor, (int) startMoney);

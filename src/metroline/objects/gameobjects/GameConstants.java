@@ -11,11 +11,8 @@ public class GameConstants {
     public static final long MAX_LIFETIME = TimeUnit.DAYS.toMillis(20 * 365);
     public static final long REPAIR_THRESHOLD = TimeUnit.DAYS.toMillis(15 * 365);
     public static final long ABANDONED_THRESHOLD = TimeUnit.DAYS.toMillis(11 * 365);
+    public static float COUNT_DISTRICTS = 20;
 
-//    public static  long STATION_DESTROY_TIME = 6048000000l;
-//    public static  long TUNNEL_DESTROY_TIME = 6048000000l;
-//    public static  long STATION_BUILD_TIME = 6048000000l;
-//    public static  long TUNNEL_BUILD_TIME = 6048000000l;
 
     public static float COST_STANDART_TRAIN = 1000;
 

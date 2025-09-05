@@ -314,6 +314,7 @@ public class GameWorld extends World {
 
         return null;
     }
+
     @Override
     public void addStation(Station station) {
         super.addStation(station);
@@ -512,7 +513,9 @@ public class GameWorld extends World {
             MainFrame.getInstance().mainFrameUI.updateMoneyDisplay(money);
         }
     }
-
+//    public StationLabel getLabelForStation(Station station) {
+//        return station.getLabel(); // Теперь это будет работать
+//    }
 
 
 

@@ -117,16 +117,16 @@ public class KeyboardController {
                 case KeyEvent.VK_ESCAPE:
                     worldScreen.isEscPressed = true;
                     break;
-                case KeyEvent.VK_2:
+                case KeyEvent.VK_F2:
                     mainFrame.mainFrameUI.toggleGrassZones();
                     break;
-                case KeyEvent.VK_1:
+                case KeyEvent.VK_F1:
                      mainFrame.mainFrameUI.toggleGameplayUnits();
                     break;
-                case KeyEvent.VK_3:
+                case KeyEvent.VK_F3:
                     mainFrame.mainFrameUI.togglePaymentZones();
                     break;
-                case KeyEvent.VK_4:
+                case KeyEvent.VK_F4:
                     mainFrame.mainFrameUI.togglePassengerZones();
                     break;
 

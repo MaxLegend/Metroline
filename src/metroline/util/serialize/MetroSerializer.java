@@ -459,8 +459,13 @@ public class MetroSerializer {
                     StationLabel stationLabel = ParsingUtils.parseLabel(line, gameWorld, stationIdMap); // Используем вспомогательный метод
                     if (stationLabel != null) {
                         gameWorld.stationLabels.add(stationLabel); // Добавляем в список меток мира
+                        //   gameWorld.addLabel(stationLabel);
+                        int index = stationLabel.getX() + stationLabel.getY() * gameWorld.getWidth();
+                        if (index < gameWorld.gameGrid.length) {
+                            gameWorld.gameGrid[index].setContent(stationLabel);
+                        }
                         // Также нужно установить контент в gameGrid, если это необходимо
-                        // gameGrid[label.getX()][label.getY()].setContent(label);
+                      //   gameGrid[label.getX()][label.getY()].setContent(label);
                     }
                 }
                 continue;
