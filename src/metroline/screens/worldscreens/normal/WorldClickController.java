@@ -33,6 +33,9 @@ import java.util.List;
 import static metroline.objects.gameobjects.GameConstants.COST_STANDART_TRAIN;
 
 // FIX Убрать возможность выбирать скрытые объекты
+// FIX Метка не удаляется при удалении станции
+// FIX Перестало переключаться по шифт между обычной и закрытой
+// TODO Добавить клики и обработку станций пострадавших от событий. Пока за деньги.
 public class WorldClickController {
 
     public static PathPoint dragOffset = null;

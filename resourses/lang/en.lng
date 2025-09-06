@@ -100,7 +100,7 @@ timebar.timespeed_desc=Double LM Click for change
 -------------------------------
 # Station and Tunnels
 -------------------------------
-stype.destroyed=Destructible
+stype.destroyed=Dismantled
 stype.closed=Closed
 stype.planned=Planned
 stype.building=Under construction
@@ -109,8 +109,12 @@ stype.transfer=Transfer
 stype.terminal=Terminal
 stype.transit=Regular
 stype.depo=Depot
+stype.ruined=Ruined
+stype.burned=Burned
+stype.drowned=Flooded
+stype.abandoned=Abandoned
 
-ttype.destroyed=Destructible
+ttype.destroyed=Dismantled
 ttype.planned=Planned
 ttype.building=Under construction
 ttype.active=Regular

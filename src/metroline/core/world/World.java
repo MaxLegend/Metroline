@@ -249,7 +249,7 @@ public class World implements Serializable {
                 selectionManager.deselect();
             }
         }
-        StationLabel stationLabel = getLabelForStation(station);
+        StationLabel stationLabel = station.getLabel();
         if (stationLabel != null) {
             removeLabel(stationLabel);
         }

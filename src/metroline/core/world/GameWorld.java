@@ -5,6 +5,7 @@ import metroline.core.time.ConstructionTimeProcessor;
 import metroline.core.time.GameTime;
 import metroline.core.world.cities.CityManager;
 import metroline.core.world.economic.EconomyManager;
+import metroline.core.world.event.WorldEventManager;
 import metroline.core.world.tiles.GameTile;
 import metroline.core.world.tiles.WorldTile;
 import metroline.objects.enums.*;
@@ -46,8 +47,10 @@ public class GameWorld extends World {
     private List<Train> trains = new ArrayList<>();
     public long lastTrainsUpdateTime;
 
+    //MANAGERS
     private CityManager cityManager;
     private EconomyManager economyManager;
+    private WorldEventManager eventManager;
 
     private long lastZoneUpdate;
 
@@ -68,6 +71,7 @@ public class GameWorld extends World {
         this.economyManager = new EconomyManager(this);
         generateWorld(hasPassengerCount, hasAbilityPay, hasLandscape, hasRivers, worldColor);
         this.cityManager = new CityManager(this);
+        this.eventManager = new WorldEventManager(this);
         this.lastTrainsUpdateTime = System.nanoTime();
     }
     /**
@@ -86,7 +90,7 @@ public class GameWorld extends World {
         processor.initTransientFields(); // Инициализируем transient поля
         worldSerializer = new MetroSerializer();
         this.economyManager = new EconomyManager(this);
-
+        this.eventManager = new WorldEventManager(this);
 
         worldSerializer.recreateWorld(reader, this);
 
@@ -180,7 +184,9 @@ public class GameWorld extends World {
     }
 
     public void update() {
-
+        if (eventManager != null) {
+            eventManager.update();
+        }
         economyManager.updateStationsWear();
         economyManager.processMaintenance();
 
@@ -200,7 +206,9 @@ public class GameWorld extends World {
             lastZoneUpdate = currentTime;
         }
     }
-
+    public WorldEventManager getEventManager() {
+        return eventManager;
+    }
     public EconomyManager getEconomyManager() {
         return economyManager;
     }
@@ -214,7 +222,14 @@ public class GameWorld extends World {
 
         MetroLogger.logInfo("Train added to station: " + station.getName());
     }
-
+    public StationLabel getLabelForStation(Station station) {
+        for (StationLabel stationLabel : stationLabels) {
+            if (stationLabel.getParentGameObject() == station) {
+                return stationLabel;
+            }
+        }
+        return null;
+    }
     // Метод для удаления поезда
     public void removeTrain(Train train) {
         trains.remove(train);

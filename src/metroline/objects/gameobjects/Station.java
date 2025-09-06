@@ -147,7 +147,7 @@ public class Station extends GameObject {
     public void setName(String name) {
         this.name = name;
         // Обновляем метку, если она существует
-        StationLabel stationLabel = getWorld().getLabelForStation(this);
+        StationLabel stationLabel = this.getLabel();
         if (stationLabel != null) {
             stationLabel.setText(name);
         }
@@ -258,7 +258,7 @@ public class Station extends GameObject {
 
 
         // Обновляем метку, если она существует
-        StationLabel stationLabel = getWorld().getLabelForStation(this);
+        StationLabel stationLabel = getLabel();
         if (stationLabel != null) {
             stationLabel.setText(name);
         }

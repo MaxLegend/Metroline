@@ -133,7 +133,7 @@ public class KeyboardController {
                     mainFrame.mainFrameUI.toggleGrassZones();
                     break;
                 case KeyEvent.VK_F1:
-                     mainFrame.mainFrameUI.toggleGameplayUnits();
+                    mainFrame.mainFrameUI.toggleGameplayUnits();
                     break;
                 case KeyEvent.VK_F3:
                     mainFrame.mainFrameUI.togglePaymentZones();
@@ -141,7 +141,6 @@ public class KeyboardController {
                 case KeyEvent.VK_F4:
                     mainFrame.mainFrameUI.togglePassengerZones();
                     break;
-
             }
         }
     }

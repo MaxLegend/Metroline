@@ -56,7 +56,7 @@ public class GameWorldScreen extends CachedWorldScreen {
     // Debug
     public boolean debugMode = false;
 
-
+    private long lastUpdateTime2 = System.nanoTime();
     public GameWorldScreen(MainFrame parent) {
         super(parent, new GameWorld());
         INSTANCE = this;
@@ -139,7 +139,7 @@ public class GameWorldScreen extends CachedWorldScreen {
 
         // Проверка прогресса строительства
         worldClickController.checkConstructionProgress();
-
+        updatePanByArrowKeys();
         // Обновление поездов
         ((GameWorld)getWorld()).updateTrains();
         StationPositionCache.cleanupCache();
@@ -155,7 +155,59 @@ public class GameWorldScreen extends CachedWorldScreen {
             gameTimer.purge();
         }
     }
+    /**
+     * Обновляет панорамирование на основе зажатых клавиш-стрелок.
+     * Вызывать каждый кадр в игровом цикле.
+     */
+    public void updatePanByArrowKeys() {
+        if (!(this instanceof GameWorldScreen)) return;
 
+        KeyboardController kb = KeyboardController.getInstance();
+        if (kb == null) return;
+
+        // Текущее время в наносекундах
+        long currentTime = System.nanoTime();
+        // Время, прошедшее с прошлого обновления, в секундах
+        float deltaTime = (currentTime - lastUpdateTime2) / 1_000_000_000.0f; // наносек → сек
+        lastUpdateTime2 = currentTime;
+
+        // Желаемая скорость движения: пикселей в секунду (на экране)
+        float pixelsPerSecond = 500.0f; // ← НАСТРОЙ ЭТО ЗНАЧЕНИЕ под себя!
+
+        // Ускорение при зажатом Shift
+        if (kb.isKeyPressed(KeyEvent.VK_SHIFT)) {
+            pixelsPerSecond *= 3;
+        }
+
+        // Конвертируем скорость в мировые координаты
+        float worldSpeed = pixelsPerSecond / this.getZoom();
+
+        int dx = 0, dy = 0;
+
+        if (kb.isKeyPressed(KeyEvent.VK_DOWN)) {
+            dy -= 1;
+        }
+        if (kb.isKeyPressed(KeyEvent.VK_UP)) {
+            dy += 1;
+        }
+        if (kb.isKeyPressed(KeyEvent.VK_RIGHT)) {
+            dx -= 1;
+        }
+        if (kb.isKeyPressed(KeyEvent.VK_LEFT)) {
+            dx += 1;
+        }
+
+        // Если есть движение — применяем смещение, пропорциональное времени
+        if (dx != 0 || dy != 0) {
+            float moveX = dx * worldSpeed * deltaTime;
+            float moveY = dy * worldSpeed * deltaTime;
+
+            this.setOffset(
+                    this.getOffsetX() + (int) moveX,
+                    this.getOffsetY() + (int) moveY
+            );
+        }
+    }
     public void updateMoneyDisplay() {
         if (getWorld() instanceof GameWorld) {
             float money = ((GameWorld)getWorld()).getMoney();

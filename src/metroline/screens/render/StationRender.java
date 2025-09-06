@@ -139,6 +139,13 @@ public class StationRender {
                 g2d.draw(cached.stationShape);
                 break;
 
+            case ABANDONED:
+            case REPAIR:
+            case RUINED:
+            case DESTROYED:
+            case BURNED:
+            case DROWNED:
+            case CLOSED:
             case PLANNED:
                 g2d.setColor(station.getColor());
                 g2d.setStroke(new BasicStroke(2 * zoom));
@@ -223,11 +230,19 @@ public class StationRender {
                 g2d.draw(cached.stationShape);
                 break;
 
+            case ABANDONED:
+            case REPAIR:
+            case RUINED:
+            case DESTROYED:
+            case BURNED:
+            case DROWNED:
+            case CLOSED:
             case PLANNED:
                 g2d.setColor(station.getColor());
                 g2d.setStroke(new BasicStroke(2 * zoom));
                 g2d.draw(cached.stationShape);
                 break;
+
 
             case BUILDING:
                 g2d.setColor(station.getColor());

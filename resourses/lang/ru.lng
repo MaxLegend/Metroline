@@ -101,7 +101,7 @@ timebar.timespeed_desc=Двойной ЛКМ чтобы изменить
 -------------------------------
 # Station and Tunnels
 -------------------------------
-stype.destroyed=Разрушаемая
+stype.destroyed=Демонтируемая
 stype.closed=Закрытая
 stype.planned=Планируемая
 stype.building=Строящаяся
@@ -110,8 +110,12 @@ stype.transfer=Пересадочная
 stype.terminal=Конечная
 stype.transit=Обычная
 stype.depo=Депо
+stype.ruined=Разрушенная
+stype.burned=Сгоревшая
+stype.drowned=Затопленная
+stype.abandoned=Заброшенная
 
-ttype.destroyed=Разрушаемый
+ttype.destroyed=Демонтируемый
 ttype.planned=Планируемый
 ttype.building=Строящийся
 ttype.active=Обычный

@@ -236,7 +236,7 @@ public class InfoWindow extends JWindow {
         if (currentObject instanceof Station) {
             Station station = (Station) currentObject;
             World world = station.getWorld();
-            StationLabel label = world.getLabelForStation(station);
+            StationLabel label = station.getLabel();
 
             if (label != null) {
                 label.setVisible(!label.isVisible());
@@ -255,7 +255,7 @@ public class InfoWindow extends JWindow {
     private void updateLabelToggleButtonIcon() {
         if (currentObject instanceof Station) {
             Station station = (Station) currentObject;
-            StationLabel label = station.getWorld().getLabelForStation(station);
+            StationLabel label = station.getLabel();
 
             if (label != null) {
                 if (label.isVisible()) {

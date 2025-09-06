@@ -367,7 +367,7 @@ public class SandboxClickHandler {
         }
 
         // Перемещаем метку станции
-        StationLabel stationLabel = world.getLabelForStation(station);
+        StationLabel stationLabel = station.getLabel();
         if (stationLabel != null) {
             PathPoint newLabelPos = world.findFreePositionNear(station.getX(), station.getY(), station.getName());
             if (newLabelPos != null) {
