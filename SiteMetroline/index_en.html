@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metroline – Download</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Montserrat:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        @font-face {
+            font-family: 'Hotel De Paris';
+            src: url('HotelDeParis.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        :root {
+            --paper-bg: #f4f1ea;
+            --ink: #2b2b2b;
+            --metro-red: #d63031;
+            --metro-blue: #0984e3;
+            --border: rgba(43, 43, 43, 0.15);
+        }
+
+        /* Эффект потертой бумаги из примера */
+        body::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: 
+                repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,.02) 2px, rgba(0,0,0,.02) 4px),
+                repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,0,0,.02) 2px, rgba(0,0,0,.02) 4px);
+            opacity: 0.4;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--paper-bg);
+            color: var(--ink);
+            display: flex;
+        }
+
+        /* ЛЕВАЯ ЧАСТЬ (Контент в стиле PHMGen) */
+        .content-panel {
+            flex: 0.9;
+            padding: 4rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            z-index: 5;
+        }
+
+        h1 {
+               font-family: 'JetBrains Mono', monospace;
+            font-size: 5.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            margin-bottom: 2rem;
+            line-height: 1.1;
+            width: 550px;
+        }
+
+        .tagline {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--metro-red);
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+            font-weight: bold;
+        }
+
+        .description {
+            font-size: 1rem;
+            line-height: 1.6;
+            max-width: 550px;
+            margin-bottom: 2rem;
+            color: #444;
+        }
+
+        /* Список в стиле PHMGen (features-code) */
+        .features-list {
+            background: rgba(0, 0, 0, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            max-width: 550px;
+            margin-bottom: 2.5rem;
+            position: relative;
+        }
+
+        .feature-item {
+            display: flex;
+            margin-bottom: 0.5rem;
+        }
+
+        .line-num { color: #aaa; width: 30px; user-select: none; }
+        .keyword { color: var(--metro-blue); font-weight: bold; }
+        .string { color: #6d8a5d; }
+
+        /* Кнопка загрузки */
+        .download-btn {
+            display: block;
+            background: var(--metro-red);
+            color: white;
+            padding: 18px 45px;
+            text-decoration: none;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: 2px solid var(--ink);
+            box-shadow: 6px 6px 0px var(--ink);
+            transition: 0.2s;
+            width: 100%;
+            max-width: 550px;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .download-btn:hover {
+            transform: translate(2px, 2px);
+            box-shadow: 3px 3px 0px var(--ink);
+        }
+
+        /* БЛОК ССЫЛОК (Компактный, под кнопкой) */
+        .links-block {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            max-width: 550px;
+        }
+
+        .link-item {
+            font-family: 'JetBrains Mono', monospace;
+            text-decoration: none;
+            color: var(--ink);
+            font-size: 0.75rem;
+            padding: 0.6rem 0.8rem;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.5);
+            transition: all 0.2s;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .link-item:hover {
+            background: var(--ink);
+            color: var(--paper-bg);
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+
+        /* Кнопки с копированием */
+        .copy-btn {
+            background: rgba(214, 48, 49, 0.1);
+            border: 1px solid rgba(214, 48, 49, 0.3);
+            color: var(--metro-red);
+            cursor: pointer;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            padding: 0.6rem 0.8rem;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: rgba(214, 48, 49, 0.25);
+            border-color: var(--metro-red);
+            box-shadow: 0 0 15px rgba(214, 48, 49, 0.3);
+            color: var(--ink);
+        }
+
+        /* Всплывающее уведомление */
+        .copy-toast {
+            background: rgba(43, 43, 43, 0.95);
+            color: var(--paper-bg);
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--metro-red);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+/* Специальный стиль для кнопки загрузки, чтобы она была широкой */
+.download-style {
+    display: flex;
+    max-width: 550px;
+    width: 100%;
+    margin-bottom: 1rem;
+    padding: 1.2rem !important; /* Делаем её чуть заметнее по высоте */
+    font-weight: 600;
+    font-size: 0.9rem !important;
+    border: 2px solid var(--ink) !important; /* Чуть жирнее рамка */
+}
+
+/* Эффект при наведении именно для этой кнопки (можно сделать акцентным) */
+.download-style:hover {
+    background: var(--metro-red) !important;
+    color: white !important;
+    border-color: var(--metro-red) !important;
+}
+        .copy-toast.show {
+            opacity: 1;
+        }
+
+.link-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px; /* Отступ между иконкой и текстом */
+    text-decoration: none;
+    vertical-align: middle;
+}
+
+.icon-svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+/* Опционально: небольшая анимация при наведении */
+.link-item:hover .icon-svg {
+    transform: scale(1.1);
+    transition: transform 0.2s ease;
+}
+        /* ПРАВАЯ ЧАСТЬ (Карусель) */
+        .carousel-panel {
+            flex: 1.1;
+            background: #ebe7dd;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem;
+            border-left: 2px solid var(--border);
+            position: relative;
+        }
+
+        .carousel-frame {
+            width: 95%;
+            max-width: 100%;
+            height: 75vh;
+            overflow: hidden;
+            background: transparent;
+            position: relative;
+        }
+
+        .carousel-track {
+            display: flex;
+            height: 100%;
+            transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .carousel-slide {
+            min-width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .carousel-slide img {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            filter: sepia(0.1);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25), 0 10px 30px rgba(0, 0, 0, 0.15);
+            cursor: zoom-in;
+        }
+
+        /* Навигация Метро (Точки) */
+        .metro-nav {
+            margin-top: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+            padding: 10px;
+        }
+
+        .metro-nav::before {
+            content: '';
+            position: absolute;
+            height: 4px;
+            background: var(--border);
+            left: 0; right: 0; top: 50%;
+            transform: translateY(-50%);
+            z-index: 1;
+        }
+
+        .dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #fff;
+            border: 3px solid var(--ink);
+            cursor: pointer;
+            transition: 0.3s;
+            position: relative;
+            z-index: 2;
+        }
+
+        .dot.active {
+            background: var(--metro-red);
+            transform: scale(1.3);
+            border-color: var(--metro-red);
+            box-shadow: 0 0 15px rgba(214, 48, 49, 0.5);
+        }
+
+        .dot:hover {
+            transform: scale(1.15);
+        }
+
+        /* Модальное окно для увеличения изображений */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            border: 3px solid var(--paper-bg);
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            font-size: 3rem;
+            color: var(--paper-bg);
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+            z-index: 1001;
+        }
+
+        .modal-close:hover {
+            color: var(--metro-red);
+        }
+        /* Специальное позиционирование для кнопки загрузки */
+.download-link {
+    display: flex;
+    justify-content: center; /* Текст по центру */
+    align-items: center;
+    max-width: 550px;
+    width: 100%;
+    margin-bottom: 2rem;
+    padding: 1.1rem !important; /* Делаем её чуть выше, чтобы она выделялась как главная */
+    font-size: 0.9rem !important;
+    font-weight: 600;
+}
+
+/* Настройка переключателя языков (если еще не добавили) */
+.lang-switcher {
+    position: fixed;
+    top: 2rem;
+    right: 2rem;
+    z-index: 100;
+    display: flex;
+    gap: 10px;
+}
+
+.lang-link {
+    font-family: 'JetBrains Mono', monospace;
+    text-decoration: none;
+    color: var(--ink);
+    font-size: 0.8rem;
+    padding: 5px 10px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.6);
+    transition: 0.2s;
+}
+
+.lang-link.active {
+    background: var(--ink);
+    color: var(--paper-bg);
+    border-color: var(--ink);
+}
+
+.lang-link:hover:not(.active) {
+    background: var(--metro-red);
+    color: white;
+    border-color: var(--metro-red);
+}
+/* Контейнер для переключателя */
+.lang-switcher {
+    position: fixed;
+    top: 2rem;
+    right: 2rem;
+    z-index: 100;
+    display: flex;
+    gap: 10px;
+}
+
+/* Общий стиль ссылок */
+.lang-link {
+    font-family: 'JetBrains Mono', monospace;
+    text-decoration: none;
+    color: var(--ink);
+    font-size: 0.8rem;
+    padding: 5px 10px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.6);
+    transition: 0.2s;
+}
+
+/* Стиль для активного языка */
+.lang-link.active {
+    background: var(--ink);
+    color: var(--paper-bg);
+    border-color: var(--ink);
+}
+
+/* Эффект при наведении */
+.lang-link:hover:not(.active) {
+    background: var(--metro-red);
+    color: white;
+    border-color: var(--metro-red);
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 1024px) {
+    .lang-switcher {
+        top: 1rem;
+        right: 1rem;
+    }
+}
+        @media (max-width: 1024px) {
+            body { flex-direction: column; overflow: auto; }
+            .content-panel, .carousel-panel { flex: none; width: 100%; }
+            h1 { font-size: 3.5rem; }
+            .links-block { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 640px) {
+            .content-panel { padding: 2rem; }
+            h1 { font-size: 2.5rem; }
+            .links-block { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+<div class="lang-switcher">
+    <a href="index.html" class="lang-link">RU</a>
+    <a href="index_en.html" class="lang-link active">EN</a>
+</div>
+<div class="content-panel">
+    <p class="tagline"># SYSTEM.RUN(METROLINE.EXE)</p>
+    <h1>Metroline</h1>
+    
+    <p class="description">
+     A metro scheme designer and editor featuring flexible configuration of station parameters and visual styles.
+    </p>
+
+    <div class="features-list">
+        <div class="feature-item"><span class="line-num">01</span><span><span class="keyword">Built with:</span> <span class="string">Java</span></span></div>
+        <div class="feature-item"><span class="line-num">02</span><span><span class="keyword">License:</span> <span class="string">GNU GPL v.3 (Free)</span></span></div>
+        <div class="feature-item"><span class="line-num">03</span><span><span class="keyword">Source:</span> <span class="string">Open Source Project</span></span></div>
+        <div class="feature-item"><span class="line-num">04</span><span><span class="keyword">Architecture:</span> <span class="string">Mod-friendly design</span></span></div>
+     <div class="feature-item"><span class="line-num">05</span><span><span class="keyword">Export:</span> <span class="string">Save to PNG up to 16k resolution</span></span></div>
+   
+    </div>
+
+<a href="#" class="link-item copy-btn download-link">
+    DOWNLOAD METROLINE
+</a>
+
+    <div class="links-block">
+        <a href="https://github.com/MaxLegend/Metroline" target="_blank" class="link-item copy-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+            GITHUB
+        </a>
+        
+        <a href="docs_ru.html" class="link-item copy-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-svg">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+            </svg>
+            DOCS_RU
+        </a>
+
+        <a href="docs_en.html" class="link-item copy-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-svg">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+            </svg>
+            DOCS_EN
+        </a>
+
+        <button class="link-item copy-btn" data-copy="tesmio_two" type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="icon-svg" viewBox="0 0 16 16">
+                <path d="M13.545 2.907a13.2 13.2 0 0 0-3.257-1.011.05.05 0 0 0-.052.025c-.141.25-.297.577-.406.833a12.2 12.2 0 0 0-3.658 0 8 8 0 0 0-.412-.833.05.05 0 0 0-.052-.025c-1.125.194-2.22.534-3.257 1.011a.04.04 0 0 0-.021.018C.356 6.024-.213 9.047.066 12.032q.003.022.021.037a13.3 13.3 0 0 0 3.995 2.02.05.05 0 0 0 .056-.019q.463-.63.818-1.329a.05.05 0 0 0-.01-.059l-.018-.011a9 9 0 0 1-1.248-.595.05.05 0 0 1-.02-.066l.015-.019q.127-.095.248-.195a.05.05 0 0 1 .051-.007c2.619 1.196 5.454 1.196 8.041 0a.05.05 0 0 1 .053.007q.121.1.248.195a.05.05 0 0 1-.004.085 8 8 0 0 1-1.249.594.05.05 0 0 0-.03.03.05.05 0 0 0 .003.041c.24.465.515.909.817 1.329a.05.05 0 0 0 .056.019 13.2 13.2 0 0 0 4.001-2.02.05.05 0 0 0 .021-.037c.334-3.451-.559-6.449-2.366-9.106a.03.03 0 0 0-.02-.019m-8.198 7.307c-.789 0-1.438-.724-1.438-1.612s.637-1.613 1.438-1.613c.807 0 1.45.73 1.438 1.613 0 .888-.637 1.612-1.438 1.612m5.316 0c-.788 0-1.438-.724-1.438-1.612s.637-1.613 1.438-1.613c.807 0 1.451.73 1.438 1.613 0 .888-.631 1.612-1.438 1.612"/>
+            </svg>
+            tesmio_two
+        </button>
+
+        <button class="link-item copy-btn" data-copy="@xcysteine" type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="icon-svg" viewBox="0 0 16 16">
+                <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M8.287 5.906q-1.168.486-4.666 2.01-.567.225-.595.442c-.03.243.275.339.69.47l.175.055c.408.133.958.288 1.243.294q.39.01.868-.32 3.269-2.206 3.374-2.23c.05-.012.12-.026.166.016s.042.12.037.141c-.03.129-1.227 1.241-1.846 1.817-.193.18-.33.307-.358.336a8 8 0 0 1-.188.186c-.38.366-.664.64.015 1.088.327.216.589.393.85.571.284.194.568.387.936.629q.14.092.27.187c.331.236.63.448.997.414.214-.02.435-.22.547-.82.265-1.417.786-4.486.906-5.751a1.4 1.4 0 0 0-.013-.315.34.34 0 0 0-.114-.217.53.53 0 0 0-.31-.093c-.3.005-.763.166-2.984 1.09"/>
+            </svg>
+            xcysteine
+        </button>
+
+        <button class="link-item copy-btn" data-copy="milesomnia@proton.me" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+            E-MAIL
+        </button>
+    </div>
+</div>
+
+   <div class="carousel-panel">
+    <div class="carousel-frame">
+        <div class="carousel-track" id="track">
+            <div class="carousel-slide"><img src="img/1.png" alt="Скриншот 1"></div>
+            <div class="carousel-slide"><img src="img/2.png" alt="Скриншот 2"></div>
+            <div class="carousel-slide"><img src="img/3.png" alt="Скриншот 3"></div>
+            <div class="carousel-slide"><img src="img/4.png" alt="Скриншот 4"></div>
+            <div class="carousel-slide"><img src="img/5.png" alt="Скриншот 5"></div>
+            <div class="carousel-slide"><img src="img/6.png" alt="Скриншот 6"></div>
+            <div class="carousel-slide"><img src="img/7.png" alt="Скриншот 7"></div>
+            <div class="carousel-slide"><img src="img/8.png" alt="Скриншот 8"></div>
+             <div class="carousel-slide"><img src="img/9.png" alt="Скриншот 9"></div>
+              <div class="carousel-slide"><img src="img/10.png" alt="Скриншот 10"></div>
+            </div>
+    </div>
+
+
+        <div class="metro-nav" id="dots-container">
+        </div>
+    </div>
+
+    <!-- Модальное окно для увеличения изображений -->
+    <div class="modal" id="imageModal">
+        <span class="modal-close" id="modalClose">&times;</span>
+        <img class="modal-content" id="modalImage">
+    </div>
+
+    <script>
+        const track = document.getElementById('track');
+        const dotsContainer = document.getElementById('dots-container');
+        const slides = document.querySelectorAll('.carousel-slide');
+        let current = 0;
+
+        // Создаем точки динамически для 15 слайдов
+        slides.forEach((_, i) => {
+            const dot = document.createElement('div');
+            dot.classList.add('dot');
+            if (i === 0) dot.classList.add('active');
+            dot.addEventListener('click', () => goTo(i));
+            dotsContainer.appendChild(dot);
+        });
+
+        const dots = document.querySelectorAll('.dot');
+
+        function goTo(index) {
+            current = index;
+            track.style.transform = `translateX(-${current * 100}%)`;
+            dots.forEach((d, i) => d.classList.toggle('active', i === current));
+        }
+
+        // Автопрокрутка
+        setInterval(() => {
+            current = (current + 1) % slides.length;
+            goTo(current);
+        }, 5000);
+
+        // ========== КОПИРОВАНИЕ И УВЕДОМЛЕНИЯ ==========
+        // Создаём одно общее уведомление (toast)
+        const toast = document.createElement('div');
+        toast.className = 'copy-toast';
+        toast.textContent = 'Copied';
+        toast.style.position = 'fixed';
+        toast.style.zIndex = '1001';
+        document.body.appendChild(toast);
+
+        function showCopyToastAbove(element) {
+            // Получаем позицию кнопки
+            const rect = element.getBoundingClientRect();
+            
+            // Позиционируем над центром кнопки
+            toast.style.left = (rect.left + rect.width / 2 - toast.offsetWidth / 2) + 'px';
+            toast.style.top = (rect.top - toast.offsetHeight - 8) + 'px'; // 8px — отступ сверху
+            
+            // Показываем
+            toast.classList.add('show');
+            
+            // Скрываем через 1.2 сек
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 1200);
+        }
+
+        // Обработчик клика на кнопки копирования
+        document.addEventListener('click', async (e) => {
+            const btn = e.target.closest('.copy-btn');
+            if (!btn) return;
+            const text = btn.getAttribute('data-copy');
+            if (!text) return;
+            try {
+                await navigator.clipboard.writeText(text);
+                showCopyToastAbove(btn);
+            } catch (err) {
+                console.error('Copy failed:', err);
+            }
+        });
+
+        // ========== МОДАЛЬНОЕ ОКНО ДЛЯ ИЗОБРАЖЕНИЙ ==========
+        const modal = document.getElementById('imageModal');
+        const modalImg = document.getElementById('modalImage');
+        const modalClose = document.getElementById('modalClose');
+
+        // Добавляем обработчик клика на все изображения в карусели
+        document.querySelectorAll('.carousel-slide img').forEach(img => {
+            img.addEventListener('click', function() {
+                modal.classList.add('active');
+                modalImg.src = this.src;
+            });
+        });
+
+        // Закрытие модального окна
+        modalClose.addEventListener('click', () => {
+            modal.classList.remove('active');
+        });
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.remove('active');
+            }
+        });
+
+        // Закрытие по клавише Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modal.classList.contains('active')) {
+                modal.classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>

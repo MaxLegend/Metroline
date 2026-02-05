@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metroline – Документация</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Montserrat:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        @font-face {
+            font-family: 'Hotel De Paris';
+            src: url('HotelDeParis.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        :root {
+            --paper-bg: #f4f1ea;
+            --ink: #2b2b2b;
+            --metro-red: #d63031;
+            --metro-blue: #0984e3;
+            --border: rgba(43, 43, 43, 0.15);
+        }
+
+        /* Эффект потертой бумаги */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: 
+                repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,.02) 2px, rgba(0,0,0,.02) 4px),
+                repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,0,0,.02) 2px, rgba(0,0,0,.02) 4px);
+            opacity: 0.4;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; scroll-behavior: smooth; }
+
+        body {
+            background-color: var(--paper-bg);
+            color: var(--ink);
+            font-family: 'Montserrat', sans-serif;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* ЛЕВАЯ ЧАСТЬ: КОНТЕНТ */
+        .docs-container {
+            flex: 3;
+            padding: 4rem 6rem;
+            border-right: 2px solid var(--border);
+            max-width: 75%;
+        }
+
+        .back-link {
+            font-family: 'JetBrains Mono', monospace;
+            text-decoration: none;
+            color: var(--metro-red);
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 2rem;
+            text-transform: uppercase;
+        }
+
+        h1 {
+             font-family: 'JetBrains Mono', monospace;
+            font-size: 4rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin-bottom: 3rem;
+            border-bottom: 4px solid var(--ink);
+            padding-bottom: 1rem;
+        }
+
+        h2 {
+             font-family: 'JetBrains Mono', monospace;
+            font-size: 2.5rem;
+            margin: 3rem 0 1.5rem 0;
+            color: var(--metro-red);
+        }
+
+        h3 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.2rem;
+            margin: 2rem 0 1rem 0;
+            background: var(--ink);
+            color: var(--paper-bg);
+            display: inline-block;
+            padding: 5px 15px;
+        }
+
+        p {
+            line-height: 1.8;
+            margin-bottom: 1.5rem;
+            font-size: 1.1rem;
+        }
+
+        ul {
+            list-style: none;
+            margin-bottom: 2rem;
+        }
+
+        li {
+            position: relative;
+            padding-left: 1.5rem;
+            margin-bottom: 0.8rem;
+            line-height: 1.6;
+        }
+
+        li::before {
+            content: '>';
+            position: absolute;
+            left: 0;
+            color: var(--metro-red);
+            font-weight: bold;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Блок архитектуры (стиль кода) */
+        .code-block {
+            background: rgba(0, 0, 0, 0.05);
+            border-left: 4px solid var(--metro-blue);
+            padding: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            margin: 2rem 0;
+            white-space: pre;
+            overflow-x: auto;
+        }
+
+        /* ПРАВАЯ ЧАСТЬ: НАВИГАЦИЯ */
+        .nav-panel {
+            flex: 1;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            padding: 4rem 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: rgba(0,0,0,0.02);
+        }
+
+        .nav-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: bold;
+            font-size: 0.8rem;
+            margin-bottom: 1rem;
+            color: #888;
+            text-transform: uppercase;
+        }
+
+        .nav-btn {
+            font-family: 'JetBrains Mono', monospace;
+            text-decoration: none;
+            color: var(--ink);
+            font-size: 0.8rem;
+            padding: 1rem;
+            border: 1px solid var(--border);
+            background: white;
+            transition: all 0.2s;
+            text-align: left;
+            text-transform: uppercase;
+            box-shadow: 4px 4px 0px var(--border);
+        }
+
+        .nav-btn:hover {
+            background: var(--ink);
+            color: var(--paper-bg);
+            transform: translate(2px, 2px);
+            box-shadow: 0px 0px 0px var(--ink);
+        }
+
+        .license-box {
+            font-size: 0.85rem;
+            border: 1px dashed var(--ink);
+            padding: 1.5rem;
+            margin-top: 4rem;
+            font-family: 'JetBrains Mono', monospace;
+            opacity: 0.8;
+        }
+
+        @media (max-width: 1024px) {
+            body { flex-direction: column; }
+            .docs-container { max-width: 100%; padding: 2rem; }
+            .nav-panel { position: static; height: auto; padding: 2rem; border-top: 2px solid var(--ink); }
+        }
+    </style>
+</head>
+<body>
+
+    <main class="docs-container">
+        <a href="index.html" class="back-link">← Вернуться на главную</a>
+        
+        <h1 id="top">Документация Metroline</h1>
+        
+        <p><strong>Приложение работает как редактор схем метрополитена с возможностью создания станций различных типов, соединения их туннелями, добавления рек и полной настройки визуального представления карты метро.</strong></p>
+
+        <section id="features">
+
+            <h3 id="stations">1. Управление станциями</h3>
+            <ul>
+                <li>Создание/удаление станций метро</li>
+               
+                <li>14 типов станций:  Обычная (тех.типы: одиночная, конечная, транзитня, пересадочная), планируемая, строящаяся, закрытая, разрушаемая, заброшенная, затопленная, разрушенная, ремонтируемая, депо, сгоревшая</li>
+                <li>Назначение цвета линии станции</li>
+                <li>Операции с названиями станций (перемещение вокруг, переименования)</li>
+                <li>Создание связей между станциями в октагональном пространстве</li>
+                <li>Кастомные свойства для станций</li>
+            </ul>
+
+            <h3 id="tunnels">2. Управление туннелями</h3>
+            <ul>
+                <li>Соединение станций туннелями</li>
+                <li>4 типа туннелей: Обычный, Планируемый, Строящийся, Разрушаемый</li>
+                <li>Настройка цвета туннеля</li>
+                <li>Поддержка умных туннелей через PathPoint</li>
+                <li>Автоматический расчёт пути</li>
+            </ul>
+
+            <h3 id="rivers">3. Управление реками</h3>
+            <ul>
+                <li>Создание рек через систему точек</li>
+                <li>Настройка цвета и ширины реки</li>
+                <li>Интерполированный рендеринг пути</li>
+            </ul>
+
+            <h3 id="world">4. Работа с миром</h3>
+            <ul>
+                <li>Создание игрового мира заданного размера</li>
+                <li>Тайловая система</li>
+                <li>Настройка цвета мира</li>
+                <li>Сохранение/загрузка проектов</li>
+            </ul>
+
+            <h3 id="ui">5. UI и Управление</h3>
+            <ul>
+                <li>Мышь: создание/выбор объектов</li>
+                <li>Клавиатура: обширная сетка горячих клавиш и сочетаний</li>
+                <li>Система выделения объектов</li>
+                <li>Всплывающие меню для типов станций/туннелей</li>
+                <li>Легенда линий с возможность редактирования названия линий</li>
+                <li>Окно информации об станции со свойствами</li>
+            </ul>
+
+            <h3 id="extra">6. Дополнительные функции</h3>
+            <ul>
+                <li>Логирование действий</li>
+                <li>Локализация интерфейса</li>
+                <li>Глобальные настройки приложения</li>
+                <li>Детальное логиррование и система краш-репортов</li>
+                <li>Работа в оконном режиме (максимизированное окно)</li>
+            </ul>
+        </section>
+
+        <section id="arch">
+            <h2>Архитектура</h2>
+            <div class="code-block">
+Core: GameObject → Station/Tunnel/River
+World: World → GameWorld (tile system)
+UI: MainFrame → Screens (Menu, Game, Settings)
+Render: StationRender, TunnelRender, RiverRender
+Control: Mouse/Keyboard/Click Controllers
+Utils: Serializer, Logger, Color/Image utilities</div>
+        </section>
+
+        <section id="license">
+            <h2>Лицензия</h2>
+            <div class="license-box">
+                <p><strong>Copyright (C) 2026 Max A. Vavaev</strong></p>
+                <p>Эта программа является свободным программным обеспечением: вы можете распространять её и/или модифицировать в соответствии с условиями GNU General Public License, опубликованной Фондом свободного программного обеспечения, либо версии 3 Лицензии, либо (по вашему выбору) любой более поздней версии.
+
+Эта программа распространяется в надежде, что она будет полезна, но БЕЗ КАКИХ-ЛИБО ГАРАНТИЙ; даже без подразумеваемой гарантии ТОВАРНОЙ ПРИГОДНОСТИ или ПРИГОДНОСТИ ДЛЯ ОПРЕДЕЛЕННОЙ ЦЕЛИ. См. GNU General Public License для получения более подробной информации.
+
+Вы должны были получить копию GNU General Public License вместе с этой программой. Если нет, см. https://www.gnu.org/licenses/.</p>
+            </div>
+        </section>
+    </main>
+
+    <aside class="nav-panel">
+        <div class="nav-title">Навигация по документу</div>
+        <a href="#top" class="nav-btn">Наверх ↑</a>
+        <a href="#stations" class="nav-btn">Станции</a>
+        <a href="#tunnels" class="nav-btn">Туннели</a>
+        <a href="#rivers" class="nav-btn">Реки</a>
+        <a href="#world" class="nav-btn">Мир</a>
+        <a href="#ui" class="nav-btn">Интерфейс</a>
+        <a href="#arch" class="nav-btn">Архитектура</a>
+        <a href="#license" class="nav-btn">Лицензия</a>
+    </aside>
+
+</body>
+</html>

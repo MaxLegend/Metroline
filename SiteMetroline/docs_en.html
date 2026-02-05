@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metroline – Documentation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Montserrat:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        @font-face {
+            font-family: 'Hotel De Paris';
+            src: url('HotelDeParis.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        :root {
+            --paper-bg: #f4f1ea;
+            --ink: #2b2b2b;
+            --metro-red: #d63031;
+            --metro-blue: #0984e3;
+            --border: rgba(43, 43, 43, 0.15);
+        }
+
+        /* Weathered paper effect */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: 
+                repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,.02) 2px, rgba(0,0,0,.02) 4px),
+                repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,0,0,.02) 2px, rgba(0,0,0,.02) 4px);
+            opacity: 0.4;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; scroll-behavior: smooth; }
+
+        body {
+            background-color: var(--paper-bg);
+            color: var(--ink);
+            font-family: 'Montserrat', sans-serif;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* LEFT SIDE: CONTENT */
+        .docs-container {
+            flex: 3;
+            padding: 4rem 6rem;
+            border-right: 2px solid var(--border);
+            max-width: 75%;
+        }
+
+        .back-link {
+            font-family: 'JetBrains Mono', monospace;
+            text-decoration: none;
+            color: var(--metro-red);
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 2rem;
+            text-transform: uppercase;
+        }
+
+        h1 {
+             font-family: 'JetBrains Mono', monospace;
+            font-size: 4rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin-bottom: 3rem;
+            border-bottom: 4px solid var(--ink);
+            padding-bottom: 1rem;
+        }
+
+        h2 {
+             font-family: 'JetBrains Mono', monospace;
+            font-size: 2.5rem;
+            margin: 3rem 0 1.5rem 0;
+            color: var(--metro-red);
+        }
+
+        h3 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.2rem;
+            margin: 2rem 0 1rem 0;
+            background: var(--ink);
+            color: var(--paper-bg);
+            display: inline-block;
+            padding: 5px 15px;
+        }
+
+        p {
+            line-height: 1.8;
+            margin-bottom: 1.5rem;
+            font-size: 1.1rem;
+        }
+
+        ul {
+            list-style: none;
+            margin-bottom: 2rem;
+        }
+
+        li {
+            position: relative;
+            padding-left: 1.5rem;
+            margin-bottom: 0.8rem;
+            line-height: 1.6;
+        }
+
+        li::before {
+            content: '>';
+            position: absolute;
+            left: 0;
+            color: var(--metro-red);
+            font-weight: bold;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Architecture block (code style) */
+        .code-block {
+            background: rgba(0, 0, 0, 0.05);
+            border-left: 4px solid var(--metro-blue);
+            padding: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            margin: 2rem 0;
+            white-space: pre;
+            overflow-x: auto;
+        }
+
+        /* RIGHT SIDE: NAVIGATION */
+        .nav-panel {
+            flex: 1;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            padding: 4rem 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: rgba(0,0,0,0.02);
+        }
+
+        .nav-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: bold;
+            font-size: 0.8rem;
+            margin-bottom: 1rem;
+            color: #888;
+            text-transform: uppercase;
+        }
+
+        .nav-btn {
+            font-family: 'JetBrains Mono', monospace;
+            text-decoration: none;
+            color: var(--ink);
+            font-size: 0.8rem;
+            padding: 1rem;
+            border: 1px solid var(--border);
+            background: white;
+            transition: all 0.2s;
+            text-align: left;
+            text-transform: uppercase;
+            box-shadow: 4px 4px 0px var(--border);
+        }
+
+        .nav-btn:hover {
+            background: var(--ink);
+            color: var(--paper-bg);
+            transform: translate(2px, 2px);
+            box-shadow: 0px 0px 0px var(--ink);
+        }
+
+        .license-box {
+            font-size: 0.85rem;
+            border: 1px dashed var(--ink);
+            padding: 1.5rem;
+            margin-top: 4rem;
+            font-family: 'JetBrains Mono', monospace;
+            opacity: 0.8;
+        }
+
+        @media (max-width: 1024px) {
+            body { flex-direction: column; }
+            .docs-container { max-width: 100%; padding: 2rem; }
+            .nav-panel { position: static; height: auto; padding: 2rem; border-top: 2px solid var(--ink); }
+        }
+    </style>
+</head>
+<body>
+
+    <main class="docs-container">
+        <a href="index.html" class="back-link">← Back to Main</a>
+        
+        <h1 id="top">Metroline Docs</h1>
+        
+        <p><strong>The application functions as a metro scheme editor with the ability to create various station types, connect them with tunnels, add rivers, and fully customize the visual representation of the subway map.</strong></p>
+
+        <section id="features">
+
+            <h3 id="stations">1. Station Management</h3>
+            <ul>
+                <li>Create/delete metro stations</li>
+               
+                <li>14 station types: Regular (tech types: single, terminal, transit, transfer), planned, under construction, closed, destructible, abandoned, flooded, destroyed, under repair, depot, burnt</li>
+                <li>Assign line colors to stations</li>
+                <li>Station name operations (repositioning, renaming)</li>
+                <li>Create connections between stations in octagonal space</li>
+                <li>Custom properties for stations</li>
+            </ul>
+
+            <h3 id="tunnels">2. Tunnel Management</h3>
+            <ul>
+                <li>Connect stations with tunnels</li>
+                <li>4 tunnel types: Regular, Planned, Under Construction, Destructible</li>
+                <li>Tunnel color customization</li>
+                <li>Support for smart tunnels via PathPoint</li>
+                <li>Automatic path calculation</li>
+            </ul>
+
+            <h3 id="rivers">3. River Management</h3>
+            <ul>
+                <li>Create rivers using a point-based system</li>
+                <li>Customize river color and width</li>
+                <li>Interpolated path rendering</li>
+            </ul>
+
+            <h3 id="world">4. World Management</h3>
+            <ul>
+                <li>Create a game world of a specified size</li>
+                <li>Tile-based system</li>
+                <li>World color customization</li>
+                <li>Save/load projects</li>
+            </ul>
+
+            <h3 id="ui">5. UI and Control</h3>
+            <ul>
+                <li>Mouse: object creation/selection</li>
+                <li>Keyboard: extensive grid of hotkeys and shortcuts</li>
+                <li>Object selection system</li>
+                <li>Pop-up menus for station and tunnel types</li>
+                <li>Line legend with the ability to edit line names</li>
+                <li>Station information window with properties</li>
+            </ul>
+
+            <h3 id="extra">6. Additional Features</h3>
+            <ul>
+                <li>Action logging</li>
+                <li>Interface localization</li>
+                <li>Global application settings</li>
+                <li>Detailed logging and crash report system</li>
+                <li>Windowed mode operation (maximized window)</li>
+            </ul>
+        </section>
+
+        <section id="arch">
+            <h2>Architecture</h2>
+            <div class="code-block">
+Core: GameObject → Station/Tunnel/River
+World: World → GameWorld (tile system)
+UI: MainFrame → Screens (Menu, Game, Settings)
+Render: StationRender, TunnelRender, RiverRender
+Control: Mouse/Keyboard/Click Controllers
+Utils: Serializer, Logger, Color/Image utilities</div>
+        </section>
+
+        <section id="license">
+            <h2>License</h2>
+            <div class="license-box">
+                <p><strong>Copyright (C) 2026 Max A. Vavaev</strong></p>
+                <p>This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.</p>
+            </div>
+        </section>
+    </main>
+
+    <aside class="nav-panel">
+        <div class="nav-title">Document Navigation</div>
+        <a href="#top" class="nav-btn">Top ↑</a>
+        <a href="#stations" class="nav-btn">Stations</a>
+        <a href="#tunnels" class="nav-btn">Tunnels</a>
+        <a href="#rivers" class="nav-btn">Rivers</a>
+        <a href="#world" class="nav-btn">World</a>
+        <a href="#ui" class="nav-btn">Interface</a>
+        <a href="#arch" class="nav-btn">Architecture</a>
+        <a href="#license" class="nav-btn">License</a>
+    </aside>
+
+</body>
+</html>
