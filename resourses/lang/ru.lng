@@ -1,0 +1,248 @@
+
+# COMMON LOCALIZATION
+button.backToMenu=Выход в меню
+author=Разработчик: Максим А. Ваваев (Tesmio)
+version=Metroline Версия 1.0
+powered_by=Работает на VMAEngine2D v.0.76b
+-------------------------------
+# Main menu
+-------------------------------
+create_world_title=СОЗДАТЬ НОВЫЙ МИР
+main_menu.start=Начать
+main_menu.global_settings=Настройки
+main_menu.exit=Выход
+
+-------------------------------
+# GLOBAL SETTINGS
+----------------------------
+global_settings.change_lng=Язык: Русский
+global_settings.title=НАСТРОЙКИ
+global_settings.volume=Общая громкость:
+global_settings.music_volume=Громкость музыки:
+global_settings.sfx_volume=Громкость интерфейса:
+global_settings.png_scale=Множитель PNG:
+global_settings.png_scale_desc=Определяет максимальное разрешение, с которым будет сохранена карта. Для миров 100+ клеток настоятельно рекомендуется использовать множитель 1x.
+-------------------------------
+# WORLD MENU
+----------------------------
+world_menu.start=Запустить редактор
+world_menu.start_sandbox=Редактор
+world_menu.load_sandbox=Загрузить редактор
+world_menu.load_standart=Загрузить карту
+world_menu.title=ВЫБЕРИТЕ РЕЖИМ
+-------------------------------
+# World
+-------------------------------
+world.not_loaded=Ошибка загрузки мира!
+world.not_saved=Ошибка сохранения мира!
+world.loaded=Мир успешно загружен!
+world.saved=Мир успешно сохранен!
+world.save_png=Изображение сохранено в
+world.color=Цвет карты метро
+world.back=Назад
+world.create_standart=Создать карту
+world.width=Ширина мира
+world.height=Высота мира
+width_world_slider_desc=Устанавливает ширину мира в клетках.
+height_world_slider_desc=Устанавливает высоту мира в клетках.
+
+world.cells=клеток
+world.round_stations=Круглые станции
+world.closeAfterNameCheckbox_desc=Закрывать после редактирования имени.
+station_info.desc=Информация о станции
+world.round_stations_desc=Просто отрисовка круглых станций вместо квадратных.
+
+loadScreen.load_title=Загрузить карту
+loadScreen.loadButton=Загрузить
+loadScreen.delButton=Удалить
+loadScreen.backButton=Назад
+-------------------------------
+# Toolbar
+-------------------------------
+toolbar.save_game=Сохранить карту
+toolbar.load_game=Загрузить карту
+toolbar.game=Карта
+toolbar.exit=Выход в Windows
+toolbar.build_station=●
+toolbar.build_station_desc=Установить станцию
+toolbar.build_tunnel=＝
+toolbar.build_tunnel_desc=Соединить станции туннелем
+toolbar.choose_color=🎨
+toolbar.choose_color_desc=Выбрать цвет станции
+toolbar.cancel_selection=↩
+toolbar.cancel_selection_desc=Отменить все
+toolbar.destroy=✕
+toolbar.destroy_desc=Удалить станцию\туннель
+toolbar.river_tool_desc=Нарисовать воду
+toolbar.river_tool=▩
+toolbar.river_brush3x3_desc=Нарисовать воду 3x3
+toolbar.river_brush3x3=■
+toolbar.river_lineTool=R
+toolbar.river_lineTool_desc=Нарисовать реку
+toolbar.save_png=Сохранить как PNG
+stationInfo.showLabel=Показ. название:
+stationInfo.showLabel_desc=Показывает или скрывает метку станции. Удобно для одноименных пересадочных.
+-------------------------------
+# Station and Tunnels
+-------------------------------
+stype.destroyed=Демонтируемая
+stype.closed=Закрытая
+stype.planned=Планируемая
+stype.building=Строящаяся
+stype.regular=Одиночная
+stype.transfer=Пересадочная
+stype.terminal=Конечная
+stype.transit=Обычная
+stype.depo=Депо
+stype.ruined=Разрушенная
+stype.burned=Сгоревшая
+stype.drowned=Затопленная
+stype.abandoned=Заброшенная
+stype.repair=Ремонтируемая
+ttype.destroyed=Демонтируемый
+ttype.planned=Планируемый
+ttype.building=Строящийся
+ttype.active=Обычный
+
+st_name_1=Московская
+st_name_2=Стрелка
+st_name_3=Нижегородская
+st_name_4=Каширская
+st_name_5=Симферопольская
+st_name_6=Охотный ряд
+st_name_7=Павелецкая
+st_name_8=Бабушкинская
+st_name_9=Митино
+st_name_10=Гагаринская
+st_name_11=Заельцевская
+st_name_12=Яшьлек
+st_name_13=Аметьево
+st_name_14=Проспект Победы
+st_name_15=Горьковская
+st_name_16=Могилевская
+st_name_17=Немига
+st_name_18=Арсенальная
+st_name_19=Автозаводская
+st_name_20=Театральная
+st_name_21=Харьковская
+st_name_22=Коммунаровская
+st_name_23=Центральная
+st_name_24=Максимовская
+st_name_25=Тракторный завод
+
+color.red=Красный
+color.dark_green=Темно-зеленый
+color.blue=Синий
+color.dark_blue=Темно-синий
+color.cyan=Голубой
+color.brown=Коричневый
+color.orange=Оранжевый
+color.purple=Фиолетовый
+color.yellow=Желтый
+color.gray=Серый
+color.lime=Лаймовый
+color.teal=Бирюзовый
+color.pink=Розовый
+color.mint=Мятный
+color.maroon=Бордовый
+color.light_green=Светло-зеленый
+
+
+line.red=Красная линия
+line.dark_green=Тёмно-зелёная линия
+line.blue=Голубая линия
+line.dark_blue=Синяя линия
+line.cyan=Бирюзовая линия
+line.brown=Коричневая линия
+line.orange=Оранжевая линия
+line.purple=Фиолетовая линия
+line.yellow=Жёлтая линия
+line.gray=Серая линия
+line.lime=Лаймовая линия
+line.teal=Бирюзово-зелёная линия
+line.pink=Розовая линия
+line.mint=Мятная линия
+line.maroon=Бордовая линия
+line.light_green=Светло-зелёная линия
+
+
+-------------------------------
+# Info
+-------------------------------
+infoWnd.position=Позиция:
+infoWnd.type=Тип:
+infoWnd.color=Цвет:
+infoWnd.cost=Стоимость:
+infoWnd.connections=Соединено:
+infoWnd.tunnel_from=От:
+infoWnd.tunnel_to=До:
+infoWnd.tunnel_length=Длина:
+infoWnd.tunnel_segments=сегментов
+infoWnd.tunnel_type=Тип:
+infoWnd.tunnel_cost=Стоимость:
+infoWnd.tunnel_title=Перегон
+infoWnd.abilityPay=Платежеспособность:
+infoWnd.passengerCount=Пассажиропоток:
+infoWnd.revenue:Доход:
+infoWnd.gUnits=Множитель доходности:
+infoWnd.stationLabel=Метка
+infoWnd.upkeep:Содержание:
+infoWnd.hideButton=Скрыть название станции
+infoWnd.station_build_date=Год постройки:
+infoWnd.station_wear_level=Степень износа:
+infoWnd.condition=Состояние:
+infoWnd.isAbandoned=Заброшенное
+infoWnd.train_wait_time=Время ожидания:
+infoWnd.train_speed=Скорость:
+
+units.big_personal_house=Усадьба Максима
+units.personal_house=Частный жилой дом
+units.big_house=Высотный жилой дом
+units.small_house=Малый жилой дом
+units.house=Средний жилой дом
+units.house_culture=Дом культуры
+units.church=Церковь
+units.airport=Аэропорт
+units.port=Порт
+units.cityhall=Управа
+units.shop=Магазин
+units.factory=Завод чипов
+units.factory2=Котельная
+units.factory3=Металлургический завод
+units.factory4=Швейный завод
+units.factory5=Специальное производство
+units.museum=Музей
+
+# Line Legend
+legend.title=Линии метро
+legend.button=Линии метро
+
+
+toolbar.hotkeys=Горячие клавиши
+hotkey.window_title=Горячие клавиши и управление
+hotkey.shift=SHIFT+ЛКМ
+hotkey.ctrl=CTRL+ЛКМ
+hotkey.arrows=<^>
+hotkey.alt=ALT+ЛКМ
+hotkey.c=SHIFT+C+ЛКМ
+hotkey.lmb=ЛКМ
+hotkey.rmb=ПКМ
+hotkey.mmb=Колесико мыши
+hotkey.esc=ESC
+hotkey.ctrl_s=CTRL + S
+hotkey.ctrl_d=CTRL + D
+
+hotkey.f11=F11
+
+hotkey.shift_desc=Построить-удалить станцию
+hotkey.ctrl_desc=Построить тоннель
+hotkey.arrows_desc=Панорамирование стрелками вверх-вниз, вправо-влево. С зажатым ШИФТ - быстрее.
+hotkey.alt_desc=Нарисовать реку
+hotkey.esc_desc=Отменить
+hotkey.ctrl_s_desc=Сохранить мир как PNG
+hotkey.ctrl_d_desc=Включить-выключить режим отладки
+hotkey.lmb_desc=Выделить. Двойной клик - открыть окно информации
+hotkey.rmb_desc=Клик по объекту: выбрать тип. Зажать и тащить - перемещение карты.
+hotkey.mmb_desc=Колесико - зум.
+hotkey.c_desc=Построить станцию с выбором цвета
+hotkey.f11_desc=Включить-выключить полноэкранный режим

@@ -1,0 +1,250 @@
+# COMMON LOCALIZATION
+button.backToMenu=Back to Menu
+author=Author: Max A. Vavaev (Tesmio)
+version=Metroline Version 1.0
+powered_by=Powered by VMAEngine2D v.0.76b
+-------------------------------
+# Main menu
+-------------------------------
+create_world_title=CREATE NEW WORLD
+main_menu.start=Launch
+main_menu.global_settings=Settings
+main_menu.exit=Exit
+
+-------------------------------
+# GLOBAL SETTINGS
+----------------------------
+global_settings.change_lng=Language: English
+global_settings.title=SETTINGS
+global_settings.volume=Main Volume:
+global_settings.music_volume=Music Volume:
+global_settings.sfx_volume=Interface Volume:
+global_settings.png_scale=PNG Multiplier:
+global_settings.png_scale_desc=Defines the maximum resolution with which the map will be saved. For worlds of 100+ cells, it is highly recommended to use a multiplier of 1x.
+-------------------------------
+# WORLD MENU
+----------------------------
+world_menu.start=Launch Editor
+world_menu.load_standart=Load Editor
+world_menu.title=SELECT ACTION
+-------------------------------
+# World
+-------------------------------
+world.not_loaded=World loading error!
+world.not_saved=World saving error!
+world.loaded=World loaded successfully!
+world.saved=World saved successfully!
+world.save_png=Image saved to
+world.color=Metro map color
+
+world.back=Back
+world.create_standart=Create map
+
+world.width=World width
+world.height=World height
+width_world_slider_desc=Sets the world width in cells.
+height_world_slider_desc=Sets the world height in cells.
+
+world.cells=cells
+world.round_stations=Round stations
+world.closeAfterNameCheckbox_desc=Close after editing the name
+station_info.desc=Station Info
+world.round_stations_desc=Simply renders round stations instead of square ones.
+
+loadScreen.load_title=Load Map
+loadScreen.loadButton=Load
+loadScreen.delButton=Delete
+loadScreen.backButton=Back
+
+-------------------------------
+# Toolbar
+-------------------------------
+toolbar.save_game=Save Map
+toolbar.load_game=Load Map
+toolbar.game=Map
+toolbar.exit=Exit Map
+toolbar.build_station=●
+toolbar.build_station_desc=Place station
+toolbar.build_tunnel=＝
+toolbar.build_tunnel_desc=Connect stations with a tunnel
+toolbar.choose_color=🎨
+toolbar.choose_color_desc=Choose station color
+toolbar.cancel_selection=↩
+toolbar.cancel_selection_desc=Cancel all
+toolbar.destroy=✕
+toolbar.destroy_desc=Delete station\tunnel
+toolbar.river_tool_desc=Water Tool
+toolbar.river_tool=▩
+toolbar.river_brush3x3_desc=Water Tool 3x3
+toolbar.river_brush3x3=■
+toolbar.river_lineTool=R
+toolbar.river_lineTool_desc=River Tool
+toolbar.save_png=Save as PNG
+stationInfo.showLabel=Show Label:
+stationInfo.showLabel_desc=Shows or hides the station label. Convenient for transfer stations of the same name
+-------------------------------
+# Station and Tunnels
+-------------------------------
+stype.destroyed=Dismantled
+stype.closed=Closed
+stype.planned=Planned
+stype.repair=Repairing
+stype.building=Under construction
+stype.regular=Single
+stype.transfer=Transfer
+stype.terminal=Terminal
+stype.transit=Regular
+stype.depo=Depot
+stype.ruined=Ruined
+stype.burned=Burned
+stype.drowned=Flooded
+stype.abandoned=Abandoned
+
+ttype.destroyed=Dismantled
+ttype.planned=Planned
+ttype.building=Under construction
+ttype.active=Regular
+
+st_name_1=Anacostia
+st_name_2=Second Avenue
+st_name_3=Third Avenue
+st_name_4=Archives
+st_name_5=18th Avenue
+st_name_6=Braddock Road
+st_name_7=Capitol Heights
+st_name_8=Cleveland Park
+st_name_9=Deanwood
+st_name_10=Federal Triangle
+st_name_11=Greensboro
+st_name_12=Herndon
+st_name_13=Florence
+st_name_14=Heritage Square
+st_name_15=Hollywood
+st_name_16=Armitage
+st_name_17=Acton Town
+st_name_18=Alperton
+st_name_19=Irwindale
+st_name_20=Archway
+st_name_21=Lynwood
+st_name_22=Garrettford
+st_name_23=Anderson Avenue
+st_name_24=Monroe Street
+st_name_25=Providence
+
+color.red=Red
+color.dark_green=Dark Green
+color.blue=Blue
+color.dark_blue=Dark Blue
+color.cyan=Cyan
+color.brown=Brown
+color.orange=Orange
+color.purple=Purple
+color.yellow=Yellow
+color.gray=Gray
+color.lime=Lime
+color.teal=Teal
+color.pink=Pink
+color.mint=Mint
+color.maroon=Maroon
+color.light_green=Light Green
+station.build_date=Build year:
+
+line.red=Red Line
+line.dark_green=Dark Green Line
+line.blue=Blue Line
+line.dark_blue=Dark Blue Line
+line.cyan=Cyan Line
+line.brown=Brown Line
+line.orange=Orange Line
+line.purple=Purple Line
+line.yellow=Yellow Line
+line.gray=Gray Line
+line.lime=Lime Line
+line.teal=Teal Line
+line.pink=Pink Line
+line.mint=Mint Line
+line.maroon=Maroon Line
+line.light_green=Light Green Line
+
+
+-------------------------------
+# Info
+-------------------------------
+infoWnd.position=Position:
+infoWnd.type=Type:
+infoWnd.color=Color:
+infoWnd.cost=Cost:
+infoWnd.connections=Connected:
+infoWnd.tunnel_from=From:
+infoWnd.tunnel_to=To:
+infoWnd.tunnel_length=Length:
+infoWnd.tunnel_segments=segments
+infoWnd.tunnel_type=Type:
+infoWnd.tunnel_cost=Cost:
+infoWnd.tunnel_title=Tunnel
+infoWnd.abilityPay=Affordability:
+infoWnd.passengerCount=Passenger Traffic:
+infoWnd.revenue:Revenue:
+infoWnd.gUnits=Revenue Multiplier:
+infoWnd.stationLabel=Label
+infoWnd.upkeep:Maintenance Costs:
+infoWnd.hideButton=Hide station name
+tunnel.upkeep:Maintenance Costs:
+
+
+units.big_personal_house=Tesmio's Manor
+units.personal_house=Personal House
+units.big_house=High House
+units.small_house=Small House
+units.house=House
+units.house_culture=House of Culture
+units.church=Church
+units.airport=Airport
+units.port=Port
+units.cityhall=City Hall
+units.shop=Shop
+units.factory=Chip Factory
+units.factory2=Heat Station
+units.factory3=Metallurgical Plant
+units.factory4=Cloth Factory
+units.factory5=Special Plant
+units.museum=Museum
+
+# Line Legend
+legend.title=Metro Lines
+legend.button=Metro Lines
+
+# Button text
+toolbar.hotkeys=Hotkeys
+
+# Window title
+hotkey.window_title=Hotkeys & Controls
+
+# Hotkey combinations
+
+hotkey.shift=SHIFT+LMB
+hotkey.ctrl=CTRL+LMB
+
+hotkey.arrows=<^>
+hotkey.alt=ALT+LMB
+hotkey.c=SHIFT+C+LMB
+hotkey.lmb=LMB
+hotkey.rmb=RMB
+hotkey.mmb=Scroll
+hotkey.esc=ESC
+hotkey.ctrl_s=CTRL + S
+hotkey.ctrl_d=CTRL + D
+
+
+hotkey.shift_desc=Build-Destroy Station
+hotkey.ctrl_desc=Build Tunnel
+hotkey.arrows_desc=Pan keyboard arrows up-down, left-right. With Shift - faster.
+hotkey.alt_desc=Нарисовать реку
+hotkey.esc_desc=Cancel
+hotkey.ctrl_s_desc=Save world as PNG
+hotkey.ctrl_d_desc=Toggle debug mode
+hotkey.lmb_desc=Select. Double click - open info window
+hotkey.rmb_desc=Click object: change type
+hotkey.mmb_desc=Scrolling Zoom
+hotkey.c_desc=Build station with choose color
+hotkey.f11_desc=Toggle fullscreen
